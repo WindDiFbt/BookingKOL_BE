@@ -1,13 +1,25 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/testdb
-    username: postgres
-    password: 123456
-
-server:
-  port: 8080
+    url: ${DEV_DATABASE_URL}
+    username: ${DEV_DATABASE_USERNAME}
+    password: ${DEV_DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
 
 logging:
   level:
     root: INFO
     org.springframework.web: DEBUG
+
+server:
+  servlet:
+    context-path: /api/v1
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
