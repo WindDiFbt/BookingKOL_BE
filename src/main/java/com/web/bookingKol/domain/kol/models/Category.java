@@ -1,4 +1,4 @@
-package com.web.bookingKol.temp_models;
+package com.web.bookingKol.domain.kol.models;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -23,6 +23,11 @@ public class Category {
     @NotNull
     @Column(name = "name", nullable = false, length = 120)
     private String name;
+
+    @Size(max = 120)
+    @NotNull
+    @Column(name = "key", nullable = false, length = 120)
+    private String key;
 
     @ManyToMany
     private Set<KolProfile> kolProfiles = new LinkedHashSet<>();

@@ -1,6 +1,7 @@
 package com.web.bookingKol.common.exception;
 
 import com.web.bookingKol.common.payload.ApiResponse;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -96,6 +97,18 @@ public class GlobalExceptionHandler {
                                 .message(exception.getAllErrors().stream()
                                         .map(DefaultMessageSourceResolvable::getDefaultMessage)
                                         .toList())
+                                .build()
+                );
+    }
+
+    @ExceptionHandler(value = EntityNotFoundException.class)
+    public ResponseEntity<ApiResponse<?>> EntityNotFoundExceptionHandler(EntityNotFoundException exception) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(
+                        ApiResponse.builder()
+                                .status(HttpStatus.NOT_FOUND.value())
+                                .message(List.of(exception.getMessage()))
                                 .build()
                 );
     }

@@ -1,5 +1,8 @@
 package com.web.bookingKol.domain.user.models;
 
+import com.web.bookingKol.domain.kol.models.KolFeedback;
+import com.web.bookingKol.domain.kol.models.KolProfile;
+import com.web.bookingKol.domain.kol.models.KolPromotion;
 import com.web.bookingKol.temp_models.*;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;

@@ -24,6 +24,13 @@ public class Enums {
         }
     }
 
+    // ---------------- KOL ----------------
+    public enum CategoryKey {
+        FASHION_BEAUTY,
+        FOOD_BEVERAGE,
+        TECH_DIGITAL
+    }
+
     // ---------------- BOOKING ----------------
     @Getter
     public enum BookingStatus {

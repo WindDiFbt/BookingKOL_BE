@@ -1,5 +1,8 @@
-package com.web.bookingKol.temp_models;
+package com.web.bookingKol.domain.kol.models;
 
+import com.web.bookingKol.temp_models.Brand;
+import com.web.bookingKol.temp_models.Contract;
+import com.web.bookingKol.temp_models.Offer;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;

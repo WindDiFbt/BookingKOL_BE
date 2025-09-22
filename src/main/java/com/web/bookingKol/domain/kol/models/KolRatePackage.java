@@ -1,4 +1,4 @@
-package com.web.bookingKol.temp_models;
+package com.web.bookingKol.domain.kol.models;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;

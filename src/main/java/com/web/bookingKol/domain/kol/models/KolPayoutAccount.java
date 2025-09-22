@@ -1,5 +1,6 @@
-package com.web.bookingKol.temp_models;
+package com.web.bookingKol.domain.kol.models;
 
+import com.web.bookingKol.temp_models.Payout;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
