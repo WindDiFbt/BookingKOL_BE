@@ -1,6 +1,7 @@
 package com.web.bookingKol.temp_models;
 
 import com.web.bookingKol.domain.kol.models.KolPromoUsage;
+import com.web.bookingKol.domain.kol.models.Platform;
 import com.web.bookingKol.domain.user.models.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;

@@ -1,12 +1,10 @@
 package com.web.bookingKol.domain.kol.rest;
 
+import com.web.bookingKol.domain.kol.dtos.FilterKolDTO;
 import com.web.bookingKol.domain.kol.services.KolProfileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
@@ -29,5 +27,20 @@ public class KolProfileRestController {
     @GetMapping("/kol-id/{kolId}")
     public ResponseEntity<?> getKolProfileByKolId(@PathVariable UUID kolId) {
         return ResponseEntity.ok(kolProfileService.getKolProfileByKolId(kolId));
+    }
+
+    @GetMapping("/all-available")
+    public ResponseEntity<?> getAllKolAvailableProfile() {
+        return ResponseEntity.ok(kolProfileService.getAllKolAvailableProfiles());
+    }
+
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<?> getAllKolProfilesByCategoryId(@PathVariable UUID categoryId) {
+        return ResponseEntity.ok(kolProfileService.getAllKolProfilesByCategoryId(categoryId));
+    }
+
+    @GetMapping("/filters")
+    public ResponseEntity<?> getAllKolWithFilter(@RequestBody FilterKolDTO filterKolDTO) {
+        return ResponseEntity.ok(kolProfileService.getAllKolWithFilter(filterKolDTO));
     }
 }

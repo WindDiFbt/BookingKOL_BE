@@ -1,6 +1,7 @@
 package com.web.bookingKol.domain.kol.services.impl;
 
 import com.web.bookingKol.common.payload.ApiResponse;
+import com.web.bookingKol.domain.kol.dtos.FilterKolDTO;
 import com.web.bookingKol.domain.kol.dtos.KolProfileDTO;
 import com.web.bookingKol.domain.kol.mappers.KolProfileMapper;
 import com.web.bookingKol.domain.kol.models.KolProfile;
@@ -33,9 +34,19 @@ public class KolProfileServiceImpl implements KolProfileService {
     }
 
     @Override
+    public ApiResponse<KolProfileDTO> getKolProfileByKolId(UUID kolId) {
+        KolProfile kolProfile = kolProfileRepository.findByKolId(kolId)
+                .orElseThrow(() -> new EntityNotFoundException("KolProfile not found for kolId: " + kolId));
+        return ApiResponse.<KolProfileDTO>builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Get kol profile by kolId success"))
+                .data(kolProfileMapper.toDto(kolProfile))
+                .build();
+    }
+
+    @Override
     public ApiResponse<List<KolProfileDTO>> getAllKolProfiles() {
-        List<KolProfile> kolProfiles = kolProfileRepository.findAll();
-        List<KolProfileDTO> kolProfileDTOS = kolProfileMapper.toDtoList(kolProfiles);
+        List<KolProfileDTO> kolProfileDTOS = kolProfileMapper.toDtoList(kolProfileRepository.findAll());
         return ApiResponse.<List<KolProfileDTO>>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Get all kol profiles success"))
@@ -44,13 +55,44 @@ public class KolProfileServiceImpl implements KolProfileService {
     }
 
     @Override
-    public ApiResponse<KolProfileDTO> getKolProfileByKolId(UUID kolId) {
-        KolProfile kolProfile = kolProfileRepository.findByKolId(kolId)
-                .orElseThrow(() -> new EntityNotFoundException("KolProfile not found for kolId: " + kolId));
-        return ApiResponse.<KolProfileDTO>builder()
+    public ApiResponse<List<KolProfileDTO>> getAllKolAvailableProfiles() {
+        List<KolProfileDTO> kolProfileDTOS = kolProfileMapper.toDtoList(kolProfileRepository.findAllKolAvailableProfiles());
+        return ApiResponse.<List<KolProfileDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("Get kol profile by kolId success"))
-                .data(kolProfileMapper.toDto(kolProfile))
+                .message(List.of("Get all kol profiles success"))
+                .data(kolProfileDTOS)
+                .build();
+    }
+
+    @Override
+    public ApiResponse<List<KolProfileDTO>> getAllKolProfilesByCategoryId(UUID categoryId) {
+        List<KolProfileDTO> kolProfileDTOS = kolProfileMapper.toDtoList(kolProfileRepository.findByCategoryId(categoryId));
+        return ApiResponse.<List<KolProfileDTO>>builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Get all kol profiles success"))
+                .data(kolProfileDTOS)
+                .build();
+    }
+
+    @Override
+    public ApiResponse<List<KolProfileDTO>> getAllKolWithFilter(FilterKolDTO filterKolDTO) {
+        Double minRating = filterKolDTO.getMinRating() != null ? filterKolDTO.getMinRating() : null;
+        UUID categoryId = filterKolDTO.getCategoryId() != null ? filterKolDTO.getCategoryId() : null;
+        Double minPrice = filterKolDTO.getMinBookingPrice() != null ? filterKolDTO.getMinBookingPrice() : null;
+        String city = filterKolDTO.getCity() != null ? filterKolDTO.getCity().trim() : null;
+        List<KolProfile> kolProfiles = kolProfileRepository.filterKols(minRating, categoryId, minPrice, city);
+        if (kolProfiles.isEmpty()) {
+            return ApiResponse.<List<KolProfileDTO>>builder()
+                    .status(HttpStatus.NOT_FOUND.value())
+                    .message(List.of("No kol profiles found with the given filters"))
+                    .data(null)
+                    .build();
+        }
+        List<KolProfileDTO> kolProfileDTOS = kolProfileMapper.toDtoList(kolProfiles);
+        return ApiResponse.<List<KolProfileDTO>>builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Get all kol profiles success"))
+                .data(kolProfileDTOS)
                 .build();
     }
 }

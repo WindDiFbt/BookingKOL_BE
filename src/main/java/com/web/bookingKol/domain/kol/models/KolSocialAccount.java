@@ -1,6 +1,5 @@
 package com.web.bookingKol.domain.kol.models;
 
-import com.web.bookingKol.temp_models.Platform;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -10,7 +9,6 @@ import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Getter
@@ -49,7 +47,7 @@ public class KolSocialAccount {
     private BigDecimal avgEngagement;
 
     @Column(name = "last_synced_at")
-    private OffsetDateTime lastSyncedAt;
+    private Instant lastSyncedAt;
 
     @ColumnDefault("false")
     @Column(name = "is_verified")

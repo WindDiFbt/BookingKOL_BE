@@ -38,9 +38,6 @@ public class KolProfile {
     @Column(name = "bio", length = Integer.MAX_VALUE)
     private String bio;
 
-    @Column(name = "avatar_url", length = Integer.MAX_VALUE)
-    private String avatarUrl;
-
     @Size(max = 100)
     @Column(name = "country", length = 100)
     private String country;
@@ -111,5 +108,11 @@ public class KolProfile {
 
     @OneToMany(mappedBy = "kol")
     private Set<Payout> payouts = new LinkedHashSet<>();
+
+    @Column(name = "overall_rating")
+    private Double overallRating;
+
+    @Column(name = "feedback_count")
+    private Integer feedbackCount;
 
 }

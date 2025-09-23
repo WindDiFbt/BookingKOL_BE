@@ -43,7 +43,7 @@ public class KolFeedback {
 
     @NotNull
     @Column(name = "overall_rating", nullable = false)
-    private Integer overallRating;
+    private Double overallRating;
 
     @Column(name = "professionalism_rating")
     private Integer professionalismRating;

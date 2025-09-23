@@ -12,6 +12,18 @@ public class Enums {
     }
 
     @Getter
+    public enum UserGender {
+        Male,
+        Female,
+    }
+
+    @Getter
+    public enum Languages {
+        vi,
+        en,
+    }
+
+    @Getter
     public enum Roles {
         SUPER_ADMIN(1),
         ADMIN(2),

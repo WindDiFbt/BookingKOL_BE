@@ -13,7 +13,6 @@ public class KolProfileDTO {
     private UUID userId;
     private String displayName;
     private String bio;
-    private String avatarUrl;
     private String country;
     private String city;
     private String languages;
@@ -23,6 +22,8 @@ public class KolProfileDTO {
     private Instant createdAt;
     private Instant updatedAt;
     private Instant deletedAt;
+    private Double overallRating;
+    private Integer feedbackCount;
 
     private Set<CategoryDTO> categories;
 }
