@@ -27,6 +27,7 @@ public class KolFeedback {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+
     @JoinColumn(name = "kol_id", nullable = false)
     private KolProfile kol;
 
