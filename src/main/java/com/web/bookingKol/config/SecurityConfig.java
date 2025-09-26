@@ -69,7 +69,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/actuator/**").hasAuthority("SUPER_ADMIN")
-                        .requestMatchers("/kol-profiles/**").permitAll()
+                        .requestMatchers("/kol-profiles/**", "/courses/**").permitAll()
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/v3/api-docs",

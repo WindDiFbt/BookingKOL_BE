@@ -50,4 +50,11 @@ public class Payment {
     @OneToMany(mappedBy = "payment")
     private Set<Refund> refunds = new LinkedHashSet<>();
 
+    @Size(max = 255)
+    @Column(name = "transaction_id")
+    private String transactionId;
+
+    @OneToMany(mappedBy = "payment")
+    private Set<PurchasedCoursePackage> purchasedCoursePackages = new LinkedHashSet<>();
+
 }

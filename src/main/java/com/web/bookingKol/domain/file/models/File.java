@@ -1,4 +1,4 @@
-package com.web.bookingKol.temp_models;
+package com.web.bookingKol.domain.file.models;
 
 import com.web.bookingKol.domain.user.models.User;
 import jakarta.persistence.*;
@@ -9,6 +9,8 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -39,15 +41,15 @@ public class File {
     @Column(name = "size_bytes")
     private Long sizeBytes;
 
-    @Size(max = 100)
-    @Column(name = "attached_type", length = 100)
-    private String attachedType;
-
-    @Column(name = "attached_id")
-    private UUID attachedId;
-
     @ColumnDefault("now()")
     @Column(name = "created_at")
     private Instant createdAt;
+
+    @Size(max = 25)
+    @Column(name = "status", length = 25)
+    private String status;
+
+    @OneToMany(mappedBy = "file")
+    private Set<FileUsage> fileUsages = new LinkedHashSet<>();
 
 }

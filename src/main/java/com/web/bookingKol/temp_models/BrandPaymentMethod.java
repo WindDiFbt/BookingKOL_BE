@@ -1,5 +1,6 @@
 package com.web.bookingKol.temp_models;
 
+import com.web.bookingKol.domain.user.models.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -18,11 +19,6 @@ public class BrandPaymentMethod {
     @Id
     @Column(name = "id", nullable = false)
     private UUID id;
-
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "brand_id", nullable = false)
-    private Brand brand;
 
     @Size(max = 50)
     @Column(name = "provider", length = 50)
@@ -51,5 +47,10 @@ public class BrandPaymentMethod {
     @ColumnDefault("now()")
     @Column(name = "updated_at")
     private Instant updatedAt;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
 }

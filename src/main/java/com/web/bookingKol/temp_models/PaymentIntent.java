@@ -1,5 +1,6 @@
 package com.web.bookingKol.temp_models;
 
+import com.web.bookingKol.domain.user.models.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -28,11 +29,6 @@ public class PaymentIntent {
     private Contract contract;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "brand_id", nullable = false)
-    private Brand brand;
-
-    @NotNull
     @Column(name = "amount", nullable = false, precision = 18, scale = 2)
     private BigDecimal amount;
 
@@ -57,10 +53,6 @@ public class PaymentIntent {
     @Column(name = "client_secret")
     private String clientSecret;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "commission_id")
-    private Commission commission;
-
     @Column(name = "commission_amount", precision = 18, scale = 2)
     private BigDecimal commissionAmount;
 
@@ -74,5 +66,10 @@ public class PaymentIntent {
 
     @OneToMany(mappedBy = "paymentIntent")
     private Set<Payment> payments = new LinkedHashSet<>();
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
 }

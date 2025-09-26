@@ -1,5 +1,6 @@
 package com.web.bookingKol.temp_models;
 
+import com.web.bookingKol.domain.kol.models.KolProfile;
 import com.web.bookingKol.domain.user.models.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -31,8 +32,8 @@ public class Review {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "reviewee_id", nullable = false)
-    private User reviewee;
+    @JoinColumn(name = "kol_id", nullable = false)
+    private KolProfile kol;
 
     @NotNull
     @Column(name = "rating", nullable = false)

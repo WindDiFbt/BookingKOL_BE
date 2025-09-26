@@ -2,7 +2,6 @@ package com.web.bookingKol.domain.kol.models;
 
 import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.temp_models.BookingRequest;
-import com.web.bookingKol.temp_models.Brand;
 import com.web.bookingKol.temp_models.Campaign;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -61,10 +60,6 @@ public class KolPromotion {
     @Size(max = 50)
     @Column(name = "scope", length = 50)
     private String scope;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "brand_id")
-    private Brand brand;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "campaign_id")

@@ -1,5 +1,6 @@
 package com.web.bookingKol.domain.user.models;
 
+import com.web.bookingKol.domain.file.models.File;
 import com.web.bookingKol.domain.kol.models.KolFeedback;
 import com.web.bookingKol.domain.kol.models.KolProfile;
 import com.web.bookingKol.domain.kol.models.KolPromotion;
@@ -124,9 +125,9 @@ public class User {
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
-        name = "user_roles",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "role_id"))
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles;
 
 }

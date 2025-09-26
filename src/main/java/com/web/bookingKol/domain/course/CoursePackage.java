@@ -1,5 +1,7 @@
-package com.web.bookingKol.temp_models;
+package com.web.bookingKol.domain.course;
 
+import com.web.bookingKol.domain.file.models.FileUsage;
+import com.web.bookingKol.temp_models.PurchasedCoursePackage;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -33,11 +35,13 @@ public class CoursePackage {
     @Column(name = "description", length = Integer.MAX_VALUE)
     private String description;
 
-    @Size(max = 20)
-    @Column(name = "package_type", length = 20)
-    private String packageType;
-
     @OneToMany(mappedBy = "coursePackage")
     private Set<PurchasedCoursePackage> purchasedCoursePackages = new LinkedHashSet<>();
 
+//    @OneToMany(mappedBy = "packageField", cascade =  CascadeType.ALL)
+//    private Set<CoursePackageMedia> coursePackageMedia = new LinkedHashSet<>();
+
+    @OneToMany
+    @JoinColumn(name = "target_id", referencedColumnName = "id", insertable = false, updatable = false)
+    private Set<FileUsage> fileUsages;
 }

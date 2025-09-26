@@ -27,11 +27,6 @@ public class Campaign {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "brand_id", nullable = false)
-    private Brand brand;
-
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
 
@@ -85,5 +80,13 @@ public class Campaign {
 
     @OneToMany(mappedBy = "campaign")
     private Set<KolPromotion> kolPromotions = new LinkedHashSet<>();
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @OneToMany(mappedBy = "campaign")
+    private Set<PurchasedServicePackage> purchasedServicePackages = new LinkedHashSet<>();
 
 }

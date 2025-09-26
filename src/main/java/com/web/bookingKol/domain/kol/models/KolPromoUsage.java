@@ -1,6 +1,6 @@
 package com.web.bookingKol.domain.kol.models;
 
-import com.web.bookingKol.temp_models.Brand;
+import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.temp_models.Contract;
 import com.web.bookingKol.temp_models.Offer;
 import jakarta.persistence.*;
@@ -32,11 +32,6 @@ public class KolPromoUsage {
     @JoinColumn(name = "kol_id", nullable = false)
     private KolProfile kol;
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "brand_id", nullable = false)
-    private Brand brand;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "offer_id")
     private Offer offer;
@@ -54,5 +49,10 @@ public class KolPromoUsage {
     @ColumnDefault("now()")
     @Column(name = "created_at")
     private Instant createdAt;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
 }

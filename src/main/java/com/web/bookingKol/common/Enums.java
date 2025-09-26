@@ -37,10 +37,37 @@ public class Enums {
     }
 
     // ---------------- KOL ----------------
+    @Getter
     public enum CategoryKey {
         FASHION_BEAUTY,
         FOOD_BEVERAGE,
         TECH_DIGITAL
+    }
+
+    // ---------------- File ----------------
+    @Getter
+    public enum FileType {
+        IMAGE,
+        VIDEO,
+        DOCUMENT,
+        OTHER
+    }
+
+    @Getter
+    public enum TargetType {
+        AVATAR,
+        PORTFOLIO,
+        CONTRACT,
+        COURSE_PACKAGE,
+        SERVICE_PACKAGE,
+        OTHER
+    }
+
+    @Getter
+    public enum FileStatus {
+        ACTIVE,
+        INACTIVE,
+        DELETED
     }
 
     // ---------------- BOOKING ----------------
