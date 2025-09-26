@@ -38,9 +38,6 @@ public class CoursePackage {
     @OneToMany(mappedBy = "coursePackage")
     private Set<PurchasedCoursePackage> purchasedCoursePackages = new LinkedHashSet<>();
 
-//    @OneToMany(mappedBy = "packageField", cascade =  CascadeType.ALL)
-//    private Set<CoursePackageMedia> coursePackageMedia = new LinkedHashSet<>();
-
     @OneToMany
     @JoinColumn(name = "target_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Set<FileUsage> fileUsages;
