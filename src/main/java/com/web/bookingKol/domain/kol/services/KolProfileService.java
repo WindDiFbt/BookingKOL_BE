@@ -3,6 +3,7 @@ package com.web.bookingKol.domain.kol.services;
 import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.domain.kol.dtos.FilterKolDTO;
 import com.web.bookingKol.domain.kol.dtos.KolProfileDTO;
+import com.web.bookingKol.domain.kol.dtos.KolOverviewDTO;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,11 +15,11 @@ public interface KolProfileService {
 
     ApiResponse<KolProfileDTO> getKolProfileByKolId(UUID kolId);
 
-    ApiResponse<List<KolProfileDTO>> getAllKolProfiles();
+    ApiResponse<List<KolOverviewDTO>> getAllKolProfiles();
 
-    ApiResponse<List<KolProfileDTO>> getAllKolAvailableProfiles();
+    ApiResponse<List<KolOverviewDTO>> getAllKolAvailableProfiles();
 
-    ApiResponse<List<KolProfileDTO>> getAllKolProfilesByCategoryId(UUID categoryId);
+    ApiResponse<List<KolOverviewDTO>> getAllKolProfilesByCategoryId(UUID categoryId);
 
-    ApiResponse<List<KolProfileDTO>> getAllKolWithFilter(FilterKolDTO filterKolDTO);
+    ApiResponse<List<KolOverviewDTO>> getAllKolWithFilter(FilterKolDTO filterKolDTO);
 }

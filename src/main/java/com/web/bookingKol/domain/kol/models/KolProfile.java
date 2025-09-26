@@ -1,5 +1,6 @@
 package com.web.bookingKol.domain.kol.models;
 
+import com.web.bookingKol.domain.file.models.FileUsage;
 import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.temp_models.BookingRequest;
 import com.web.bookingKol.temp_models.Payout;
@@ -115,4 +116,7 @@ public class KolProfile {
     @Column(name = "feedback_count")
     private Integer feedbackCount;
 
+    @OneToMany
+    @JoinColumn(name = "target_id", referencedColumnName = "id", insertable = false, updatable = false)
+    private Set<FileUsage> fileUsages;
 }

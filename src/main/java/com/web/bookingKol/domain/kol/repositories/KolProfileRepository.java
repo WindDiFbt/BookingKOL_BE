@@ -12,11 +12,21 @@ import java.util.UUID;
 
 @Repository
 public interface KolProfileRepository extends JpaRepository<KolProfile, UUID> {
-    @Query("SELECT k FROM KolProfile k WHERE k.user.id = :userId")
-    Optional<KolProfile> findByUserId(@Param("userId") UUID userId);
+    @Query(""" 
+            SELECT k FROM KolProfile k 
+            LEFT JOIN FETCH k.fileUsages fu
+            LEFT JOIN FETCH fu.file f
+            WHERE k.user.id = :userId AND fu.targetType = :targetType
+            """)
+    Optional<KolProfile> findByUserId(@Param("userId") UUID userId, @Param("targetType") String targetType);
 
-    @Query("SELECT k FROM KolProfile k WHERE k.id = :kolId")
-    Optional<KolProfile> findByKolId(@Param("kolId") UUID kolId);
+    @Query(""" 
+            SELECT k FROM KolProfile k 
+            LEFT JOIN FETCH k.fileUsages fu
+            LEFT JOIN FETCH fu.file f
+            WHERE k.id = :kolId AND fu.targetType = :targetType
+            """)
+    Optional<KolProfile> findByKolId(@Param("kolId") UUID kolId, @Param("targetType") String targetType);
 
     @Query("SELECT k FROM KolProfile k JOIN k.categories c WHERE c.id = :CategoryId")
     List<KolProfile> findByCategoryId(UUID CategoryId);

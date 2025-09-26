@@ -1,8 +1,11 @@
 package com.web.bookingKol.domain.kol.services.impl;
 
+import com.web.bookingKol.common.Enums;
 import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.domain.kol.dtos.FilterKolDTO;
+import com.web.bookingKol.domain.kol.dtos.KolOverviewDTO;
 import com.web.bookingKol.domain.kol.dtos.KolProfileDTO;
+import com.web.bookingKol.domain.kol.mappers.KolOverviewMapper;
 import com.web.bookingKol.domain.kol.mappers.KolProfileMapper;
 import com.web.bookingKol.domain.kol.models.KolProfile;
 import com.web.bookingKol.domain.kol.repositories.KolProfileRepository;
@@ -21,10 +24,12 @@ public class KolProfileServiceImpl implements KolProfileService {
     private KolProfileRepository kolProfileRepository;
     @Autowired
     private KolProfileMapper kolProfileMapper;
+    @Autowired
+    private KolOverviewMapper kolOverviewMapper;
 
     @Override
     public ApiResponse<KolProfileDTO> getKolProfileByUserId(UUID userId) {
-        KolProfile kolProfile = kolProfileRepository.findByUserId(userId)
+        KolProfile kolProfile = kolProfileRepository.findByUserId(userId, Enums.TargetType.PORTFOLIO.name())
                 .orElseThrow(() -> new EntityNotFoundException("KolProfile not found for userId: " + userId));
         return ApiResponse.<KolProfileDTO>builder()
                 .status(HttpStatus.OK.value())
@@ -35,7 +40,7 @@ public class KolProfileServiceImpl implements KolProfileService {
 
     @Override
     public ApiResponse<KolProfileDTO> getKolProfileByKolId(UUID kolId) {
-        KolProfile kolProfile = kolProfileRepository.findByKolId(kolId)
+        KolProfile kolProfile = kolProfileRepository.findByKolId(kolId, Enums.TargetType.PORTFOLIO.name())
                 .orElseThrow(() -> new EntityNotFoundException("KolProfile not found for kolId: " + kolId));
         return ApiResponse.<KolProfileDTO>builder()
                 .status(HttpStatus.OK.value())
@@ -45,54 +50,53 @@ public class KolProfileServiceImpl implements KolProfileService {
     }
 
     @Override
-    public ApiResponse<List<KolProfileDTO>> getAllKolProfiles() {
-        List<KolProfileDTO> kolProfileDTOS = kolProfileMapper.toDtoList(kolProfileRepository.findAll());
-        return ApiResponse.<List<KolProfileDTO>>builder()
+    public ApiResponse<List<KolOverviewDTO>> getAllKolProfiles() {
+        List<KolOverviewDTO> kolOverviewDTOS = kolProfileRepository.findAll().stream().map(kol -> kolOverviewMapper.toDto(kol)).toList();
+        return ApiResponse.<List<KolOverviewDTO>>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Get all kol profiles success"))
-                .data(kolProfileDTOS)
+                .data(kolOverviewDTOS)
                 .build();
     }
 
     @Override
-    public ApiResponse<List<KolProfileDTO>> getAllKolAvailableProfiles() {
-        List<KolProfileDTO> kolProfileDTOS = kolProfileMapper.toDtoList(kolProfileRepository.findAllKolAvailableProfiles());
-        return ApiResponse.<List<KolProfileDTO>>builder()
+    public ApiResponse<List<KolOverviewDTO>> getAllKolAvailableProfiles() {
+        List<KolOverviewDTO> kolOverviewDTOS = kolProfileRepository.findAllKolAvailableProfiles().stream().map(kol -> kolOverviewMapper.toDto(kol)).toList();
+        return ApiResponse.<List<KolOverviewDTO>>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Get all kol profiles success"))
-                .data(kolProfileDTOS)
+                .data(kolOverviewDTOS)
                 .build();
     }
 
     @Override
-    public ApiResponse<List<KolProfileDTO>> getAllKolProfilesByCategoryId(UUID categoryId) {
-        List<KolProfileDTO> kolProfileDTOS = kolProfileMapper.toDtoList(kolProfileRepository.findByCategoryId(categoryId));
-        return ApiResponse.<List<KolProfileDTO>>builder()
+    public ApiResponse<List<KolOverviewDTO>> getAllKolProfilesByCategoryId(UUID categoryId) {
+        List<KolOverviewDTO> kolOverviewDTOS = kolProfileRepository.findByCategoryId(categoryId).stream().map(kol -> kolOverviewMapper.toDto(kol)).toList();
+        return ApiResponse.<List<KolOverviewDTO>>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Get all kol profiles success"))
-                .data(kolProfileDTOS)
+                .data(kolOverviewDTOS)
                 .build();
     }
 
     @Override
-    public ApiResponse<List<KolProfileDTO>> getAllKolWithFilter(FilterKolDTO filterKolDTO) {
+    public ApiResponse<List<KolOverviewDTO>> getAllKolWithFilter(FilterKolDTO filterKolDTO) {
         Double minRating = filterKolDTO.getMinRating() != null ? filterKolDTO.getMinRating() : null;
         UUID categoryId = filterKolDTO.getCategoryId() != null ? filterKolDTO.getCategoryId() : null;
         Double minPrice = filterKolDTO.getMinBookingPrice() != null ? filterKolDTO.getMinBookingPrice() : null;
         String city = filterKolDTO.getCity() != null ? filterKolDTO.getCity().trim() : null;
-        List<KolProfile> kolProfiles = kolProfileRepository.filterKols(minRating, categoryId, minPrice, city);
-        if (kolProfiles.isEmpty()) {
-            return ApiResponse.<List<KolProfileDTO>>builder()
+        List<KolOverviewDTO> kolOverviewDTOS = kolProfileRepository.filterKols(minRating, categoryId, minPrice, city).stream().map(kol -> kolOverviewMapper.toDto(kol)).toList();
+        if (kolOverviewDTOS.isEmpty()) {
+            return ApiResponse.<List<KolOverviewDTO>>builder()
                     .status(HttpStatus.NOT_FOUND.value())
                     .message(List.of("No kol profiles found with the given filters"))
                     .data(null)
                     .build();
         }
-        List<KolProfileDTO> kolProfileDTOS = kolProfileMapper.toDtoList(kolProfiles);
-        return ApiResponse.<List<KolProfileDTO>>builder()
+        return ApiResponse.<List<KolOverviewDTO>>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Get all kol profiles success"))
-                .data(kolProfileDTOS)
+                .data(kolOverviewDTOS)
                 .build();
     }
 }
