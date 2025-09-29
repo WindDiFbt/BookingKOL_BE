@@ -2,7 +2,13 @@ package com.web.bookingKol.auth;
 
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
@@ -44,7 +50,7 @@ public class TikTokAuthController {
                 + "?client_key=" + CLIENT_KEY
                 + "&scope=user.info.basic"
                 + "&response_type=code"
-                + "&redirect_uri=" + REDIRECT_URI + "/api/v1/auth/tiktok/callback"
+                + "&redirect_uri=" + REDIRECT_URI
                 + "&state=abc123"
                 + "&code_challenge=" + codeChallenge
                 + "&code_challenge_method=S256";
@@ -53,28 +59,37 @@ public class TikTokAuthController {
 
     // B2: Callback từ TikTok
     @GetMapping("/auth/tiktok/callback")
-    public String callback(@RequestParam("code") String code,
-                           @RequestParam("state") String state,
-                           HttpSession session) {
+    public ResponseEntity<?> callback(
+            @RequestParam("code") String code,
+            @RequestParam("state") String state,
+            HttpSession session) {
 
         String codeVerifier = (String) session.getAttribute("code_verifier");
+        if (codeVerifier == null) {
+            return ResponseEntity.badRequest().body("Missing code_verifier");
+        }
+        RestTemplate restTemplate = new RestTemplate();
 
-        String tokenUrl = "https://open.tiktokapis.com/v2/oauth/token/";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        RestTemplate rest = new RestTemplate();
-        Map<String, String> body = Map.of(
-                "client_key", CLIENT_KEY,
-                "client_secret", CLIENT_SECRET,
-                "code", code,
-                "grant_type", "authorization_code",
-                "redirect_uri", REDIRECT_URI,
-                "code_verifier", codeVerifier
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("client_key", CLIENT_KEY);
+        body.add("client_secret", CLIENT_SECRET);
+        body.add("code", code);
+        body.add("grant_type", "authorization_code");
+        body.add("redirect_uri", REDIRECT_URI);
+        body.add("code_verifier", codeVerifier);
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
+
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+                "https://open.tiktokapis.com/v2/oauth/token/",
+                request,
+                Map.class
         );
 
-        Map response = rest.postForObject(tokenUrl, body, Map.class);
-
-        System.out.println("TikTok token response: " + response);
-
-        return "redirect:/success";
+        System.out.println("TikTok token response: " + response.getBody());
+        return ResponseEntity.ok(response.getBody());
     }
 }
