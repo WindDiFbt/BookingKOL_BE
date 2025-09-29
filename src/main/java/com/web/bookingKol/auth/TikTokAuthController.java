@@ -44,7 +44,7 @@ public class TikTokAuthController {
                 + "?client_key=" + CLIENT_KEY
                 + "&scope=user.info.basic"
                 + "&response_type=code"
-                + "&redirect_uri=" + REDIRECT_URI
+                + "&redirect_uri=" + REDIRECT_URI + "/api/v1/auth/tiktok/callback"
                 + "&state=abc123"
                 + "&code_challenge=" + codeChallenge
                 + "&code_challenge_method=S256";
