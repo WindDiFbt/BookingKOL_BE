@@ -34,6 +34,10 @@ public class KolAvailability {
     @Column(name = "end_at", nullable = false)
     private OffsetDateTime endAt;
 
+    @Column(name = "google_event_id")
+    private String googleEventId;
+
+
     @Size(max = 50)
     @Column(name = "status", length = 50)
     private String status;

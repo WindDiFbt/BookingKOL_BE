@@ -29,6 +29,23 @@ public interface KolAvailabilityRepository extends JpaRepository<KolAvailability
             @Param("end") OffsetDateTime end
     );
 
+    @Query("""
+        SELECT k FROM KolAvailability k
+        WHERE k.user.id = :userId
+          AND (:start IS NULL OR k.startAt >= :start)
+          AND (:end IS NULL OR k.endAt <= :end)
+          AND (:status IS NULL OR k.status = :status)
+          AND (:note IS NULL OR LOWER(k.note) LIKE LOWER(CONCAT('%', :note, '%')))
+        ORDER BY k.startAt
+    """)
+    List<KolAvailability> search(
+            @Param("userId") UUID userId,
+            @Param("start") OffsetDateTime start,
+            @Param("end") OffsetDateTime end,
+            @Param("status") String status,
+            @Param("note") String note
+    );
+
 
 
 
