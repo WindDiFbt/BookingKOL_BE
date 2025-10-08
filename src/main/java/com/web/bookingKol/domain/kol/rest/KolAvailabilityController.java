@@ -3,6 +3,7 @@ package com.web.bookingKol.domain.kol.rest;
 import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.domain.kol.dtos.KolAvailabilityDTO;
 import com.web.bookingKol.domain.kol.services.KolAvailabilityService;
+import com.web.bookingKol.domain.kol.services.impl.KolAvailabilityServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;

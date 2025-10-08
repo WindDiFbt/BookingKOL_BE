@@ -9,7 +9,6 @@ import com.web.bookingKol.domain.kol.repositories.GoogleCalendarLinkRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import com.google.api.*;
 import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventDateTime;
@@ -27,10 +26,10 @@ public class GoogleCalendarService {
 
     private final GoogleCalendarLinkRepository linkRepo;
 
-    @Value("${google.oauth2.client-id}")
+    @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private String clientId;
 
-    @Value("${google.oauth2.client-secret}")
+    @Value("${spring.security.oauth2.client.registration.google.client-secret}")
     private String clientSecret;
     private Calendar buildClient(String refreshToken) throws IOException, GeneralSecurityException {
         var creds = UserCredentials.newBuilder()
@@ -49,7 +48,7 @@ public class GoogleCalendarService {
     public String upsertEvent(UUID userId, KolAvailability a) throws IOException, GeneralSecurityException {
         var link = linkRepo.findByUserId(userId).orElseThrow();
         var client = buildClient(link.getRefreshToken());
-        String calendarId = Optional.ofNullable(a.getGoogleCalendarId()).orElse("primary");
+        String calendarId = Optional.ofNullable(a.getGoogleEventId()).orElse("primary");
 
         Event event = new Event()
                 .setSummary("Lịch làm việc KOL")

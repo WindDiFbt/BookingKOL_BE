@@ -5,7 +5,7 @@ import com.web.bookingKol.domain.kol.dtos.KolAvailabilityDTO;
 import com.web.bookingKol.domain.kol.models.KolAvailability;
 import com.web.bookingKol.domain.kol.repositories.KolAvailabilityRepository;
 import com.web.bookingKol.domain.kol.services.KolAvailabilityService;
-import com.web.bookingKol.integration.google.GoogleCalendarService;
+import com.web.bookingKol.domain.kol.services.impl.GoogleCalendarService;
 import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.domain.user.repositories.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -61,7 +61,7 @@ public class KolAvailabilityServiceImpl implements KolAvailabilityService {
             entity.setGoogleEventId(googleEventId);
             kolAvailabilityRepository.save(entity);
         } catch (Exception e) {
-            entity.setSyncStatus("FAILED");
+            entity.setStatus("FAILED");
             kolAvailabilityRepository.save(entity);
         }
 
@@ -90,9 +90,9 @@ public class KolAvailabilityServiceImpl implements KolAvailabilityService {
         try {
             String googleEventId = googleCalendarService.upsertEvent(userId, entity);
             entity.setGoogleEventId(googleEventId);
-            entity.setSyncStatus("SUCCESS");
+            entity.setStatus("SUCCESS");
         } catch (Exception e) {
-            entity.setSyncStatus("FAILED");
+            entity.setStatus("FAILED");
         }
         kolAvailabilityRepository.save(entity);
 
@@ -113,7 +113,7 @@ public class KolAvailabilityServiceImpl implements KolAvailabilityService {
 
         try {
             if (entity.getGoogleEventId() != null)
-                googleCalendarService.deleteEvent(userId, entity.getGoogleEventId(), entity.getGoogleCalendarId());
+                googleCalendarService.deleteEvent(userId, entity.getGoogleEventId(), entity.getGoogleEventId());
         } catch (Exception ignored) {}
 
         kolAvailabilityRepository.delete(entity);
