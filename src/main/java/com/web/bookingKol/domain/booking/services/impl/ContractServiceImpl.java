@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Service
 public class ContractServiceImpl implements ContractService {
@@ -19,7 +18,6 @@ public class ContractServiceImpl implements ContractService {
     @Override
     public Contract createNewContract(BookingRequest bookingRequest) {
         Contract contract = new Contract();
-        contract.setId(UUID.randomUUID());
         contract.setBookingRequest(bookingRequest);
         contract.setStatus(Enums.ContractStatus.SIGNED.name());
         contract.setCreatedAt(Instant.now());

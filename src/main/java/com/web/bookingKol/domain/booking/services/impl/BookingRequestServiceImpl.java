@@ -2,7 +2,6 @@ package com.web.bookingKol.domain.booking.services.impl;
 
 import com.web.bookingKol.common.Enums;
 import com.web.bookingKol.common.payload.ApiResponse;
-import com.web.bookingKol.config.TimezoneConfig;
 import com.web.bookingKol.domain.booking.dtos.BookingSingleReqDTO;
 import com.web.bookingKol.domain.booking.dtos.BookingSingleResDTO;
 import com.web.bookingKol.domain.booking.mappers.BookingSingleResMapper;
@@ -37,7 +36,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -63,13 +62,6 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     private PaymentService paymentService;
     @Autowired
     private SoftHoldBookingService softHoldBookingService;
-    private final ZoneId ZONE;
-    private TimezoneConfig timezoneConfig;
-
-    public BookingRequestServiceImpl(TimezoneConfig timezoneConfig) {
-        this.ZONE = timezoneConfig.getZoneId();
-    }
-
     @Autowired
     private BookingValidationService bookingValidationService;
 
@@ -113,7 +105,7 @@ public class BookingRequestServiceImpl implements BookingRequestService {
         }
         // --- 5. Create Contract ---
         Contract contract = new Contract();
-        bookingRequestRepository.save(newBookingRequest);
+        bookingRequestRepository.saveAndFlush(newBookingRequest);
         if (bookingRequestDTO.getIsConfirmWithTerms() == true) {
             contract = contractService.createNewContract(newBookingRequest);
             newBookingRequest.getContracts().add(contract);
@@ -155,22 +147,22 @@ public class BookingRequestServiceImpl implements BookingRequestService {
         if (startAt != null) {
             spec = spec.and((root, query, cb) ->
                     cb.greaterThanOrEqualTo(root.get("startAt"),
-                            startAt.atStartOfDay(ZONE).toInstant()));
+                            startAt.atStartOfDay(ZoneOffset.UTC).toInstant()));
         }
         if (endAt != null) {
             spec = spec.and((root, query, cb) ->
                     cb.lessThanOrEqualTo(root.get("endAt"),
-                            endAt.plusDays(1).atStartOfDay(ZONE).toInstant()));
+                            endAt.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant()));
         }
         if (createdAtFrom != null) {
             spec = spec.and((root, query, cb) ->
                     cb.greaterThanOrEqualTo(root.get("createdAt"),
-                            createdAtFrom.atStartOfDay(ZONE).toInstant()));
+                            createdAtFrom.atStartOfDay(ZoneOffset.UTC).toInstant()));
         }
         if (createdAtTo != null) {
             spec = spec.and((root, query, cb) ->
                     cb.lessThanOrEqualTo(root.get("createdAt"),
-                            createdAtTo.plusDays(1).atStartOfDay(ZONE).toInstant()));
+                            createdAtTo.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant()));
         }
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 

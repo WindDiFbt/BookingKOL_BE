@@ -3,7 +3,6 @@ package com.web.bookingKol.domain.payment.services;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.web.bookingKol.common.Enums;
 import com.web.bookingKol.common.payload.ApiResponse;
-import com.web.bookingKol.config.TimezoneConfig;
 import com.web.bookingKol.domain.booking.models.Contract;
 import com.web.bookingKol.domain.booking.repositories.ContractRepository;
 import com.web.bookingKol.domain.payment.dtos.SePayWebhookRequest;
@@ -22,7 +21,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
@@ -40,16 +39,8 @@ public class SePayService {
     private MerchantService merchantService;
     @Autowired
     private PasswordEncoder passwordEncoder;
-
-    private final TransactionRepository transactionRepository;
-    private TimezoneConfig timezoneConfig;
-    private final ZoneId ZONE;
-
-    public SePayService(TransactionRepository transactionRepository,
-                        TimezoneConfig timezoneConfig) {
-        this.transactionRepository = transactionRepository;
-        this.ZONE = timezoneConfig.getZoneId();
-    }
+    @Autowired
+    private TransactionRepository transactionRepository;
 
     private final String SEPAY_API_URL = "https://qr.sepay.vn/img?";
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -85,7 +76,7 @@ public class SePayService {
             String content = request.getContent();
             Transaction tx = Transaction.builder()
                     .gateway(request.getGateway())
-                    .transactionDate(transactionDate.atZone(ZONE).toInstant())
+                    .transactionDate(transactionDate.atZone(ZoneOffset.UTC).toInstant())
                     .accountNumber(request.getAccountNumber())
                     .subAccount(request.getSubAccount())
                     .amountIn(request.getTransferType().equalsIgnoreCase("in") ? request.getTransferAmount() : BigDecimal.ZERO)

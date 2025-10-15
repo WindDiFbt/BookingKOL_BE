@@ -15,4 +15,3 @@ spring:
 app:
   jwtSecretKey: ${JWT_SECRET_KEY}
   jwtExpirationMs: ${JWT_EXPIRATION_MS}
-  timezone: Asia/Ho_Chi_Minh

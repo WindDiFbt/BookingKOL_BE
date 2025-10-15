@@ -1,7 +1,6 @@
 package com.web.bookingKol.domain.booking.services;
 
 import com.web.bookingKol.common.Enums;
-import com.web.bookingKol.config.TimezoneConfig;
 import com.web.bookingKol.domain.booking.dtos.BookingSingleReqDTO;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.booking.repositories.BookingRequestRepository;
@@ -12,7 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 
 @Service
@@ -21,12 +20,6 @@ public class BookingValidationService {
     private KolAvailabilityRepository kolAvailabilityRepository;
     @Autowired
     private BookingRequestRepository bookingRequestRepository;
-    private final ZoneId ZONE;
-    private TimezoneConfig timezoneConfig;
-
-    public BookingValidationService(TimezoneConfig timezoneConfig) {
-        this.ZONE = timezoneConfig.getZoneId();
-    }
 
     public void validateBookingRequest(BookingSingleReqDTO bookingRequestDTO, KolProfile kol) {
         if (bookingRequestDTO.getIsConfirmWithTerms() == false) {
@@ -42,7 +35,7 @@ public class BookingValidationService {
             throw new IllegalArgumentException("Bookings must be made at least 3 days in advance.");
         }
         //Check if the KOL is available during the requested time range
-        if (!kolAvailabilityRepository.isKolAvailabilityInRange(kol.getId(), startAt.atZone(ZONE).toOffsetDateTime(), endAt.atZone(ZONE).toOffsetDateTime())) {
+        if (!kolAvailabilityRepository.isKolAvailabilityInRange(kol.getId(), startAt.atZone(ZoneOffset.UTC).toOffsetDateTime(), endAt.atZone(ZoneOffset.UTC).toOffsetDateTime())) {
             throw new IllegalArgumentException("KOL is not available for that time!");
         }
         //Check for any existing booking requests with the exact same start & end times
