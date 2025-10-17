@@ -120,4 +120,12 @@ public class AdminKolRestController {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(kolProfileService.removeCategoryForKol(adminId, kolId, categoryId));
     }
+
+    @PatchMapping("/medias/delete/{fileId}")
+    public ResponseEntity<?> deleteFileMedia(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                             @PathVariable UUID fileId) {
+        UUID changerId = userDetails.getId();
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(kolProfileService.deleteFileMedia(changerId, fileId));
+    }
 }

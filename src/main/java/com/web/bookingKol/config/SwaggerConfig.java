@@ -19,6 +19,12 @@ public class SwaggerConfig {
         Server ngrokServer = new Server()
                 .url("https://untumid-disposingly-santos.ngrok-free.dev/api/v1")
                 .description("Ngrok/Production Server");
+        Server localHost = new Server()
+                .url("http://localhost:8080/api/v1")
+                .description("Ngrok/Production Server");
+        Server testServer = new Server()
+                .url("http://54.179.248.120/api/v1")
+                .description("Test Server");
         return new OpenAPI()
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
                 .components(new Components()
@@ -29,7 +35,7 @@ public class SwaggerConfig {
                                         .scheme("bearer")
                                         .bearerFormat("JWT")
                         )
-                ).servers(List.of(ngrokServer));
+                ).servers(List.of(ngrokServer, localHost, testServer));
     }
 }
 

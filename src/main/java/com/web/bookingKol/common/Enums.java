@@ -95,6 +95,7 @@ public class Enums {
         DRAFT,
         SENT,
         SIGNED,
+        COMPLETED,
         CANCELLED,
         EXPIRED
     }

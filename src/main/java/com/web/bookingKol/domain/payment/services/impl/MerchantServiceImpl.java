@@ -1,5 +1,6 @@
 package com.web.bookingKol.domain.payment.services.impl;
 
+import com.web.bookingKol.common.UpdateEntityUtil;
 import com.web.bookingKol.domain.payment.dtos.MerchantDTO;
 import com.web.bookingKol.domain.payment.dtos.MerchantRequest;
 import com.web.bookingKol.domain.payment.mappers.MerchantMapper;
@@ -8,8 +9,6 @@ import com.web.bookingKol.domain.payment.repositories.MerchantRepository;
 import com.web.bookingKol.domain.payment.services.MerchantService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.BeanWrapper;
-import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,10 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.beans.PropertyDescriptor;
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -68,7 +64,7 @@ public class MerchantServiceImpl implements MerchantService {
         Merchant existingMerchant = merchantRepository.findById(merchantDTO.getId()).orElseThrow(
                 () -> new IllegalStateException("Merchant not found with ID: " + merchantDTO.getId())
         );
-        BeanUtils.copyProperties(merchantDTO, existingMerchant, getNullPropertyNames(merchantDTO));
+        BeanUtils.copyProperties(merchantDTO, existingMerchant, UpdateEntityUtil.getNullPropertyNames(merchantDTO));
         existingMerchant.setApiKey(passwordEncoder.encode(merchantDTO.getApiKey()));
         existingMerchant.setUpdatedAt(Instant.now());
         Merchant updatedMerchant = merchantRepository.save(existingMerchant);
@@ -88,18 +84,6 @@ public class MerchantServiceImpl implements MerchantService {
 
     private void deactivateAllMerchants() {
         merchantRepository.deactivateAll();
-    }
-
-    private static String[] getNullPropertyNames(Object source) {
-        final BeanWrapper src = new BeanWrapperImpl(source);
-        PropertyDescriptor[] pds = src.getPropertyDescriptors();
-        Set<String> emptyNames = new HashSet<>();
-        for (PropertyDescriptor pd : pds) {
-            Object srcValue = src.getPropertyValue(pd.getName());
-            if (srcValue == null) emptyNames.add(pd.getName());
-        }
-        String[] result = new String[emptyNames.size()];
-        return emptyNames.toArray(result);
     }
 
     @Override

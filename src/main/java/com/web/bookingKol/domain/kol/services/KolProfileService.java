@@ -48,6 +48,8 @@ public interface KolProfileService {
 
     ApiResponse<?> activateOrDeactivateKolMediaFile(UUID kolId, List<UUID> fileUsageIds, boolean isActive);
 
+    ApiResponse<?> deleteFileMedia(UUID changerId, UUID fileId);
+
     ApiResponse<FileUsageDTO> setCoverImage(UUID kolId, UUID fileId);
 
     ApiResponse<FileUsageDTO> setAvatarWithExistedImage(UUID kolId, UUID fileId);

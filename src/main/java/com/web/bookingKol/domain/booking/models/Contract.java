@@ -68,9 +68,6 @@ public class Contract {
     @OneToMany(mappedBy = "contract")
     private Set<Payout> payouts = new LinkedHashSet<>();
 
-    @OneToMany(mappedBy = "contract")
-    private Set<Review> reviews = new LinkedHashSet<>();
-
     @OneToOne(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)
     private Payment payment;
 

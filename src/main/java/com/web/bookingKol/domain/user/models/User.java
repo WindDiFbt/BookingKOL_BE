@@ -3,7 +3,6 @@ package com.web.bookingKol.domain.user.models;
 import com.web.bookingKol.domain.booking.models.Campaign;
 import com.web.bookingKol.domain.booking.models.Dispute;
 import com.web.bookingKol.domain.booking.models.Offer;
-import com.web.bookingKol.domain.booking.models.Review;
 import com.web.bookingKol.domain.file.models.File;
 import com.web.bookingKol.domain.kol.models.KolFeedback;
 import com.web.bookingKol.domain.kol.models.KolProfile;
@@ -98,8 +97,6 @@ public class User {
     @Column(name = "introduction", length = 1000)
     private String introduction;
 
-
-
     @OneToMany(mappedBy = "user")
     private Set<ConversationMember> conversationMembers = new LinkedHashSet<>();
 
@@ -126,9 +123,6 @@ public class User {
 
     @OneToMany(mappedBy = "sentBy")
     private Set<Offer> offers = new LinkedHashSet<>();
-
-    @OneToMany(mappedBy = "reviewer")
-    private Set<Review> reviews = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "user")
     private Set<UserQuestionLog> userQuestionLogs = new LinkedHashSet<>();

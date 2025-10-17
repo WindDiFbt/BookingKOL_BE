@@ -9,6 +9,7 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Getter
@@ -69,4 +70,7 @@ public class KolFeedback {
     @Column(name = "created_at")
     private Instant createdAt;
 
+    @ColumnDefault("now()")
+    @Column(name = "updated_at")
+    private Instant updatedAt;
 }

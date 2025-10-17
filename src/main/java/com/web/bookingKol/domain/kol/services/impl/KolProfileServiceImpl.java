@@ -15,10 +15,12 @@ import com.web.bookingKol.domain.file.repositories.FileRepository;
 import com.web.bookingKol.domain.file.repositories.FileUsageRepository;
 import com.web.bookingKol.domain.file.services.FileService;
 import com.web.bookingKol.domain.kol.dtos.*;
+import com.web.bookingKol.domain.kol.mappers.FeedbackUserViewMapper;
 import com.web.bookingKol.domain.kol.mappers.KolCreatedMapper;
 import com.web.bookingKol.domain.kol.mappers.KolDetailMapper;
 import com.web.bookingKol.domain.kol.mappers.KolProfileMapper;
 import com.web.bookingKol.domain.kol.models.Category;
+import com.web.bookingKol.domain.kol.models.KolFeedback;
 import com.web.bookingKol.domain.kol.models.KolProfile;
 import com.web.bookingKol.domain.kol.repositories.CategoryRepository;
 import com.web.bookingKol.domain.kol.repositories.KolProfileRepository;
@@ -76,15 +78,25 @@ public class KolProfileServiceImpl implements KolProfileService {
     private FileRepository fileRepository;
     @Autowired
     private FileValidator fileValidator;
+    @Autowired
+    private FeedbackUserViewMapper feedbackUserViewMapper;
 
     @Override
     public ApiResponse<KolDetailDTO> getKolProfileByUserId(UUID userId) {
         KolProfile kolProfile = kolProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new EntityNotFoundException("KolProfile not found for userId: " + userId));
+        KolDetailDTO kolDetailDTO = kolDetailMapper.toDto(kolProfile);
+        if (kolProfile.getKolFeedbacks() != null) {
+            kolDetailDTO.setFeedbacks(kolProfile.getKolFeedbacks().stream()
+                    .filter(KolFeedback::getIsPublic)
+                    .sorted(Comparator.comparing(KolFeedback::getCreatedAt).reversed())
+                    .limit(3)
+                    .map(feedbackUserViewMapper::toDto).collect(Collectors.toSet()));
+        }
         return ApiResponse.<KolDetailDTO>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Get kol profile success"))
-                .data(kolDetailMapper.toDto(kolProfile))
+                .data(kolDetailDTO)
                 .build();
     }
 
@@ -92,10 +104,18 @@ public class KolProfileServiceImpl implements KolProfileService {
     public ApiResponse<KolDetailDTO> getKolProfileByKolId(UUID kolId) {
         KolProfile kolProfile = kolProfileRepository.findByKolId(kolId)
                 .orElseThrow(() -> new EntityNotFoundException("KolProfile not found for kolId: " + kolId));
+        KolDetailDTO kolDetailDTO = kolDetailMapper.toDto(kolProfile);
+        if (kolProfile.getKolFeedbacks() != null) {
+            kolDetailDTO.setFeedbacks(kolProfile.getKolFeedbacks().stream()
+                    .filter(KolFeedback::getIsPublic)
+                    .sorted(Comparator.comparing(KolFeedback::getCreatedAt).reversed())
+                    .limit(3)
+                    .map(feedbackUserViewMapper::toDto).collect(Collectors.toSet()));
+        }
         return ApiResponse.<KolDetailDTO>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Get kol profile by kolId success"))
-                .data(kolDetailMapper.toDto(kolProfile))
+                .data(kolDetailDTO)
                 .build();
     }
 
@@ -365,6 +385,27 @@ public class KolProfileServiceImpl implements KolProfileService {
         return ApiResponse.builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Successfully " + action + " " + fileUsages.size() + " media files"))
+                .data(null)
+                .build();
+    }
+
+    @Override
+    public ApiResponse<?> deleteFileMedia(UUID changerId, UUID fileId) {
+        User changer = userRepository.findById(changerId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + changerId));
+        File file = fileRepository.findById(fileId)
+                .orElseThrow(() -> new EntityNotFoundException("File not found for ID: " + fileId));
+        boolean isUploader = file.getUploader().getId().equals(changer.getId());
+        boolean isAdmin = changer.getRoles().stream()
+                .anyMatch(role -> Enums.Roles.ADMIN.name().equals(role.getKey()));
+        if (!isUploader && !isAdmin) {
+            throw new AccessDeniedException("Only admin or the uploader can delete this file.");
+        }
+        file.setStatus(Enums.FileStatus.DELETED.name());
+        fileRepository.save(file);
+        return ApiResponse.builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Delete media file successfully"))
                 .data(null)
                 .build();
     }

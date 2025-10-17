@@ -15,7 +15,9 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -161,6 +163,18 @@ public class GlobalExceptionHandler {
                         ApiResponse.builder()
                                 .status(HttpStatus.BAD_REQUEST.value())
                                 .message(List.of("Malformed JSON request" + exception))
+                                .build()
+                );
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<?>> handleNoResultException(NoResourceFoundException exception) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(
+                        ApiResponse.builder()
+                                .status(HttpStatus.BAD_REQUEST.value())
+                                .message(List.of("No static resource found: " + exception))
                                 .build()
                 );
     }
