@@ -34,7 +34,7 @@ public class UserDetailsImpl implements UserDetails {
         this.isAccountNonLocked = true;
         this.isAccountNonExpired = true;
         this.isCredentialsNonExpired = true;
-        this.isEnabled = !user.getStatus().equals(Enums.UserStatus.SUSPENDED.name());
+        this.isEnabled = user.getStatus().equals(Enums.UserStatus.ACTIVE.name());
     }
 
     @Override

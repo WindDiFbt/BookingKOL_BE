@@ -78,4 +78,6 @@ public class Transaction {
     @JoinColumn(name = "payment_id")
     private Payment payment;
 
+    @Column(name = "status")
+    private String status;
 }

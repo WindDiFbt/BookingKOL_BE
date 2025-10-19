@@ -1,13 +1,13 @@
 package com.web.bookingKol.domain.payment.mappers;
 
-import com.web.bookingKol.domain.payment.dtos.transaction.TransactionDTO;
+import com.web.bookingKol.domain.payment.dtos.transaction.TransactionResponseDTO;
 import com.web.bookingKol.domain.payment.models.Transaction;
 import org.springframework.stereotype.Component;
 
 @Component
-public class TransactionMapper {
-    public TransactionDTO toDto(Transaction transaction) {
-        TransactionDTO dto = new TransactionDTO();
+public class TransactionResMapper {
+    public TransactionResponseDTO toDto(Transaction transaction) {
+        TransactionResponseDTO dto = new TransactionResponseDTO();
         dto.setId(transaction.getId());
         dto.setGateway(transaction.getGateway());
         dto.setTransactionDate(transaction.getTransactionDate());
@@ -24,6 +24,7 @@ public class TransactionMapper {
         if (transaction.getPayment() != null) {
             dto.setPaymentId(transaction.getPayment().getId());
         }
+        dto.setStatus(transaction.getStatus());
         return dto;
     }
 }

@@ -1,4 +1,4 @@
-package com.web.bookingKol.domain.payment.dtos;
+package com.web.bookingKol.domain.payment.dtos.transaction;
 
 import lombok.Data;
 

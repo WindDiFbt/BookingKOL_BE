@@ -113,7 +113,7 @@ public class Enums {
     }
 
     @Getter
-    public enum BookingType{
+    public enum BookingType {
         SINGLE,
     }
 
@@ -152,9 +152,11 @@ public class Enums {
 
     @Getter
     public enum TransactionStatus {
+        PENDING,
         COMPLETED,
         FAILED,
-        CANCELLED
+        CANCELLED,
+        ORPHANED
     }
 
     // ---------------- PLATFORM ----------------

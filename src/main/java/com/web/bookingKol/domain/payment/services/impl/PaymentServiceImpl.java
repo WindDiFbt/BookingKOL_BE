@@ -5,7 +5,7 @@ import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.booking.models.Contract;
 import com.web.bookingKol.domain.booking.repositories.BookingRequestRepository;
 import com.web.bookingKol.domain.payment.dtos.PaymentReqDTO;
-import com.web.bookingKol.domain.payment.dtos.TransactionDTO;
+import com.web.bookingKol.domain.payment.dtos.transaction.TransactionDTO;
 import com.web.bookingKol.domain.payment.models.Merchant;
 import com.web.bookingKol.domain.payment.models.Payment;
 import com.web.bookingKol.domain.payment.repositories.PaymentRepository;
