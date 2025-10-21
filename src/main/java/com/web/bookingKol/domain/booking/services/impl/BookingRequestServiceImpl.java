@@ -36,7 +36,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AuthorizationServiceException;
-import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -134,8 +133,8 @@ public class BookingRequestServiceImpl implements BookingRequestService {
         );
         paymentReqDTO.setTransferContent(transferContent);
         // --- Create KOL work time ---
-        KolAvailability ka = kolAvailabilityRepository.findAvailability(kol.getId(), bookingRequestDTO.getStartAt().atZone(ZoneOffset.UTC).toOffsetDateTime(),
-                bookingRequestDTO.getEndAt().atZone(ZoneOffset.UTC).toOffsetDateTime());
+        KolAvailability ka = kolAvailabilityRepository.findAvailability(kol.getId(), bookingRequestDTO.getStartAt(),
+                bookingRequestDTO.getEndAt());
         kolWorkTimeService.createNewKolWorkTime(ka, newBookingRequest, Enums.BookingStatus.REQUESTED.name(),
                 bookingRequestDTO.getStartAt(),
                 bookingRequestDTO.getEndAt());

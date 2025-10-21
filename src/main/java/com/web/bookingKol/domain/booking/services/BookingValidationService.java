@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 
 @Service
@@ -35,7 +34,7 @@ public class BookingValidationService {
             throw new IllegalArgumentException("Bookings must be made at least 3 days in advance.");
         }
         //Check if the KOL is available during the requested time range
-        if (!kolAvailabilityRepository.isKolAvailabilityInRange(kol.getId(), startAt.atZone(ZoneOffset.UTC).toOffsetDateTime(), endAt.atZone(ZoneOffset.UTC).toOffsetDateTime())) {
+        if (!kolAvailabilityRepository.isKolAvailabilityInRange(kol.getId(), startAt, endAt)) {
             throw new IllegalArgumentException("KOL is not available for that time!");
         }
         //Check for any existing booking requests with the exact same start & end times
