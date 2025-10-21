@@ -39,8 +39,10 @@ public class SoftHoldBookingService {
         KolProfile kol = kolProfileRepository.findById(kolId).
                 orElseThrow(() -> new IllegalArgumentException("Kol Not Found"));
         BookingSingleReqDTO bookingSingleReqDTO = new BookingSingleReqDTO();
+        bookingSingleReqDTO.setKolId(UUID.randomUUID());
         bookingSingleReqDTO.setStartAt(startTime);
         bookingSingleReqDTO.setEndAt(endTime);
+        bookingSingleReqDTO.setIsConfirmWithTerms(true);
         bookingValidationService.validateBookingRequest(bookingSingleReqDTO, kol);
         Cache cache = cacheManager.getCache(CacheConfig.SOFT_HOLD_CACHE);
         if (cache == null) {

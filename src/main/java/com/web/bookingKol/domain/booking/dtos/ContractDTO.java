@@ -1,5 +1,6 @@
 package com.web.bookingKol.domain.booking.dtos;
 
+import com.web.bookingKol.domain.payment.dtos.PaymentDTO;
 import lombok.Data;
 
 import java.time.Instant;
@@ -15,4 +16,6 @@ public class ContractDTO {
     private Instant signedAtKol;
     private Instant createdAt;
     private Instant updatedAt;
+
+    private PaymentDTO paymentDTO;
 }

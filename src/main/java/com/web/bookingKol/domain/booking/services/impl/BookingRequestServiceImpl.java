@@ -2,8 +2,10 @@ package com.web.bookingKol.domain.booking.services.impl;
 
 import com.web.bookingKol.common.Enums;
 import com.web.bookingKol.common.payload.ApiResponse;
+import com.web.bookingKol.domain.booking.dtos.BookingDetailDTO;
 import com.web.bookingKol.domain.booking.dtos.BookingSingleReqDTO;
 import com.web.bookingKol.domain.booking.dtos.BookingSingleResDTO;
+import com.web.bookingKol.domain.booking.mappers.BookingDetailMapper;
 import com.web.bookingKol.domain.booking.mappers.BookingSingleResMapper;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.booking.models.Contract;
@@ -33,6 +35,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AuthorizationServiceException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -71,6 +75,8 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     private KolAvailabilityRepository kolAvailabilityRepository;
     @Autowired
     private KolWorkTimeService kolWorkTimeService;
+    @Autowired
+    private BookingDetailMapper bookingDetailMapper;
 
     @Transactional
     @Override
@@ -142,17 +148,39 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     }
 
     @Override
-    public ApiResponse<List<BookingSingleResDTO>> getAllRequestAdmin(UUID kolId,
-                                                                     String status,
-                                                                     LocalDate startAt,
-                                                                     LocalDate endAt,
-                                                                     LocalDate createdAtFrom,
-                                                                     LocalDate createdAtTo,
-                                                                     int page,
-                                                                     int size) {
+    public ApiResponse<List<BookingSingleResDTO>> getAllSingleRequestAdmin(UUID kolId,
+                                                                           UUID userId,
+                                                                           String status,
+                                                                           LocalDate startAt,
+                                                                           LocalDate endAt,
+                                                                           LocalDate createdAtFrom,
+                                                                           LocalDate createdAtTo,
+                                                                           int page,
+                                                                           int size) {
+        List<BookingSingleResDTO> bookingSingleResDTOPage = findAllWithCondition(kolId, userId, status, startAt, endAt, createdAtFrom, createdAtTo, page, size);
+        return ApiResponse.<List<BookingSingleResDTO>>builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("GET All Booking Request successfully!"))
+                .data(bookingSingleResDTOPage)
+                .build();
+    }
+
+    private List<BookingSingleResDTO> findAllWithCondition(UUID kolId,
+                                                           UUID userId,
+                                                           String status,
+                                                           LocalDate startAt,
+                                                           LocalDate endAt,
+                                                           LocalDate createdAtFrom,
+                                                           LocalDate createdAtTo,
+                                                           int page,
+                                                           int size) {
         Specification<BookingRequest> spec = Specification.allOf();
+        spec = spec.and(((root, query, cb) -> cb.equal(root.get("bookingType"), Enums.BookingType.SINGLE.name())));
         if (kolId != null) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("kol").get("id"), kolId));
+        }
+        if (userId != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("user").get("id"), userId));
         }
         if (status != null) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
@@ -178,29 +206,66 @@ public class BookingRequestServiceImpl implements BookingRequestService {
                             createdAtTo.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant()));
         }
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-
-        List<BookingSingleResDTO> bookingSingleResDTOPage = bookingRequestRepository.findAll(spec, pageable)
+        return bookingRequestRepository.findAll(spec, pageable)
                 .map(bookingRequest -> bookingSingleResMapper.toDto(bookingRequest)).stream().toList();
-        return ApiResponse.<List<BookingSingleResDTO>>builder()
+    }
+
+    @Override
+    public ApiResponse<BookingDetailDTO> getDetailSingleRequestAdmin(UUID bookingRequestId) {
+        BookingRequest bookingRequest = bookingRequestRepository.findById(bookingRequestId)
+                .orElseThrow(() -> new EntityNotFoundException("Booking Request Not Found"));
+        return ApiResponse.<BookingDetailDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("Booking Request successfully!"))
-                .data(bookingSingleResDTOPage)
+                .message(List.of("Get detail booking request successfully!"))
+                .data(bookingDetailMapper.toDto(bookingRequest))
                 .build();
     }
 
     @Override
-    public ApiResponse<BookingSingleResDTO> getDetailBooking(UUID bookingRequestId) {
-        BookingRequest bookingRequest = bookingRequestRepository.findById(bookingRequestId)
-                .orElseThrow(() -> new EntityNotFoundException("Booking Request Not Found"));
-        return ApiResponse.<BookingSingleResDTO>builder()
+    public ApiResponse<List<BookingSingleResDTO>> getAllSingleRequestUser(UUID userId, String status, LocalDate startAt, LocalDate endAt, LocalDate createdAtFrom, LocalDate createdAtTo, int page, int size) {
+        List<BookingSingleResDTO> bookingSingleResList = findAllWithCondition(null, userId, status, startAt, endAt, createdAtFrom, createdAtTo, page, size);
+        return ApiResponse.<List<BookingSingleResDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("Get detail booking request successfully!"))
-                .data(bookingSingleResMapper.toDto(bookingRequest))
+                .message(List.of("GET All Booking Request successfully, userId: " + userId))
+                .data(bookingSingleResList)
                 .build();
     }
 
-    public void acceptBookingRequest(BookingRequest bookingRequest) {
-        bookingRequest.setStatus(Enums.BookingStatus.ACCEPTED.name());
-        bookingRequestRepository.save(bookingRequest);
+    @Override
+    public ApiResponse<List<BookingSingleResDTO>> getAllSingleRequestKol(UUID kolId, String status, LocalDate startAt, LocalDate endAt, LocalDate createdAtFrom, LocalDate createdAtTo, int page, int size) {
+        List<BookingSingleResDTO> bookingSingleResList = findAllWithCondition(kolId, null, status, startAt, endAt, createdAtFrom, createdAtTo, page, size);
+        return ApiResponse.<List<BookingSingleResDTO>>builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("GET All Booking Request successfully, kolId: " + kolId))
+                .data(bookingSingleResList)
+                .build();
+    }
+
+    @Override
+    public ApiResponse<BookingDetailDTO> getDetailSingleRequestKol(UUID bookingRequestId, UUID kolId) {
+        BookingRequest bookingRequest = bookingRequestRepository.findById(bookingRequestId)
+                .orElseThrow(() -> new EntityNotFoundException("Booking Request Not Found"));
+        if (!bookingRequest.getKol().getId().equals(kolId)) {
+            throw new AuthorizationServiceException("You are not authorized to view this booking request");
+        }
+        return ApiResponse.<BookingDetailDTO>builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Get detail booking request successfully!"))
+                .data(bookingDetailMapper.toDto(bookingRequest))
+                .build();
+    }
+
+    @Override
+    public ApiResponse<BookingDetailDTO> getDetailSingleRequestUser(UUID bookingRequestId, UUID userId) {
+        BookingRequest bookingRequest = bookingRequestRepository.findById(bookingRequestId)
+                .orElseThrow(() -> new EntityNotFoundException("Booking Request Not Found"));
+        if (!bookingRequest.getUser().getId().equals(userId)) {
+            throw new AuthorizationServiceException("You are not authorized to view this booking request");
+        }
+        return ApiResponse.<BookingDetailDTO>builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Get detail booking request successfully!"))
+                .data(bookingDetailMapper.toDto(bookingRequest))
+                .build();
     }
 }

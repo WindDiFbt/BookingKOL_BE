@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -24,8 +25,8 @@ public interface KolAvailabilityRepository extends JpaRepository<KolAvailability
             """, nativeQuery = true)
     List<KolAvailability> findByKolIdAndDateRange(
             @Param("kolId") UUID kolId,
-            @Param("start") OffsetDateTime start,
-            @Param("end") OffsetDateTime end
+            @Param("start") Instant start,
+            @Param("end") Instant end
     );
 
     @Query("""
@@ -43,16 +44,15 @@ public interface KolAvailabilityRepository extends JpaRepository<KolAvailability
     );
 
     @Query("""
-                SELECT a FROM KolAvailability a
-                WHERE a.kol.id = :kolId
-                AND (:startDate IS NULL OR a.startAt >= :startDate)
-                AND (:endDate IS NULL OR a.endAt <= :endDate)
-                ORDER BY a.startAt DESC
-            """)
+    SELECT ka FROM KolAvailability ka
+    WHERE ka.kol.id = :kolId
+      AND (COALESCE(:startDate, ka.startAt) <= ka.startAt)
+      AND (COALESCE(:endDate, ka.endAt) >= ka.endAt)
+""")
     Page<KolAvailability> findByKolIdAndDateRangePaged(
             @Param("kolId") UUID kolId,
-            @Param("startDate") OffsetDateTime startDate,
-            @Param("endDate") OffsetDateTime endDate,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate,
             Pageable pageable
     );
 
@@ -60,6 +60,22 @@ public interface KolAvailabilityRepository extends JpaRepository<KolAvailability
     KolAvailability findAvailability(@Param("kolId") UUID kolId,
                                      @Param("startTime") OffsetDateTime startTime,
                                      @Param("endTime") OffsetDateTime endTime);
+
+
+    @Query("""
+    SELECT ka FROM KolAvailability ka
+    WHERE ka.kol.id = :kolId
+      AND ka.status = 'AVAILABLE'
+      AND (CAST(:startDate AS timestamp) IS NULL OR ka.endAt >= :startDate)
+      AND (CAST(:endDate AS timestamp) IS NULL OR ka.startAt <= :endDate)
+    ORDER BY ka.startAt ASC
+""")
+
+    List<KolAvailability> findAvailabilities(
+            @Param("kolId") UUID kolId,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate
+    );
 
 }
 

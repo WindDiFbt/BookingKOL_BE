@@ -9,6 +9,8 @@ import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -29,24 +31,22 @@ public class KolAvailability {
 
     @NotNull
     @Column(name = "start_at", nullable = false)
-    private OffsetDateTime startAt;
+    private Instant startAt;
 
     @NotNull
     @Column(name = "end_at", nullable = false)
-    private OffsetDateTime endAt;
+    private Instant endAt;
 
     @Size(max = 50)
     @Column(name = "status", length = 50)
     private String status;
 
-    @Column(name = "note", length = Integer.MAX_VALUE)
-    private String note;
+    @OneToMany(mappedBy = "availability", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<KolWorkTime> workTimes = new ArrayList<>();
+
 
     @ColumnDefault("now()")
     @Column(name = "created_at")
     private Instant createdAt;
-
-    @OneToMany(mappedBy = "availability")
-    private Set<KolWorkTime> kolWorkTimes = new LinkedHashSet<>();
 
 }

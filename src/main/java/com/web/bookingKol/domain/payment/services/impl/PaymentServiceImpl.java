@@ -33,7 +33,7 @@ public class PaymentServiceImpl implements PaymentService {
     private MerchantService merchantService;
 
     private final String VND_CURRENCY = "VND";
-    private final Integer EXPIRES_TIME = 3;
+    private final Integer EXPIRES_TIME = 15;
 
     @Override
     public PaymentReqDTO initiatePayment(BookingRequest bookingRequest, Contract contract, String qrUrl, User user, BigDecimal amount) {

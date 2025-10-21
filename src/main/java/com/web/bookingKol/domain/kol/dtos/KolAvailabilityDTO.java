@@ -4,19 +4,22 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.web.bookingKol.domain.kol.models.KolAvailability;
 import com.web.bookingKol.domain.user.models.User;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public class KolAvailabilityDTO {
+
     private UUID id;
-    private OffsetDateTime startAt;
-    private OffsetDateTime endAt;
+    private Instant startAt;
+    private Instant endAt;
     private String status;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+
     private String note;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private List<WorkTimeDTO> timeLine;
+
+    private List<WorkTimeDTO> workTimes = new ArrayList<>();
 
     private UUID kolId;
     private String fullName;
@@ -32,7 +35,13 @@ public class KolAvailabilityDTO {
         this.startAt = availability.getStartAt();
         this.endAt = availability.getEndAt();
         this.status = availability.getStatus();
-        this.note = availability.getNote();
+
+        if (availability.getWorkTimes() != null && !availability.getWorkTimes().isEmpty()) {
+            this.workTimes = availability.getWorkTimes()
+                    .stream()
+                    .map(WorkTimeDTO::new)
+                    .toList();
+        }
 
         User user = availability.getKol().getUser();
         if (user != null) {
@@ -52,19 +61,19 @@ public class KolAvailabilityDTO {
         this.id = id;
     }
 
-    public OffsetDateTime getStartAt() {
+    public Instant getStartAt() {
         return startAt;
     }
 
-    public void setStartAt(OffsetDateTime startAt) {
+    public void setStartAt(Instant startAt) {
         this.startAt = startAt;
     }
 
-    public OffsetDateTime getEndAt() {
+    public Instant getEndAt() {
         return endAt;
     }
 
-    public void setEndAt(OffsetDateTime endAt) {
+    public void setEndAt(Instant endAt) {
         this.endAt = endAt;
     }
 
@@ -88,8 +97,8 @@ public class KolAvailabilityDTO {
         return kolId;
     }
 
-    public void setKolId(UUID userId) {
-        this.kolId = userId;
+    public void setKolId(UUID kolId) {
+        this.kolId = kolId;
     }
 
     public String getFullName() {
@@ -124,11 +133,11 @@ public class KolAvailabilityDTO {
         this.avatarUrl = avatarUrl;
     }
 
-    public List<WorkTimeDTO> getTimeLine() {
-        return timeLine;
+    public List<WorkTimeDTO> getWorkTimes() {
+        return workTimes;
     }
 
-    public void setTimeLine(List<WorkTimeDTO> timeLine) {
-        this.timeLine = timeLine;
+    public void setWorkTimes(List<WorkTimeDTO> workTimes) {
+        this.workTimes = workTimes;
     }
 }
