@@ -8,10 +8,13 @@ import com.web.bookingKol.domain.user.models.User;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Service
 public interface PaymentService {
     PaymentReqDTO initiatePayment(BookingRequest bookingRequest, Contract contract, String qrUrl, User user, BigDecimal amount);
 
     void updatePaymentAfterTransactionSuccess(TransactionDTO transactionDTO);
+
+    boolean checkContractPaymentSuccess(UUID contractId);
 }

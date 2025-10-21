@@ -2,8 +2,11 @@ package com.web.bookingKol.domain.booking.services;
 
 import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.config.CacheConfig;
+import com.web.bookingKol.domain.booking.dtos.BookingSingleReqDTO;
 import com.web.bookingKol.domain.booking.dtos.SoftHoldDetails;
 import com.web.bookingKol.domain.booking.dtos.SoftHoldSlotDTO;
+import com.web.bookingKol.domain.kol.models.KolProfile;
+import com.web.bookingKol.domain.kol.repositories.KolProfileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -23,12 +26,22 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SoftHoldBookingService {
     @Autowired
     private CacheManager cacheManager;
+    @Autowired
+    private BookingValidationService bookingValidationService;
+    @Autowired
+    private KolProfileRepository kolProfileRepository;
 
     public String generateHoldKey(UUID kolId, String startTimeIso, String endTimeIso) {
         return kolId + "_" + startTimeIso + "_" + endTimeIso;
     }
 
     public ApiResponse<SoftHoldSlotDTO> attemptHoldSlot(UUID kolId, Instant startTime, Instant endTime, String holdingUserId) {
+        KolProfile kol = kolProfileRepository.findById(kolId).
+                orElseThrow(() -> new IllegalArgumentException("Kol Not Found"));
+        BookingSingleReqDTO bookingSingleReqDTO = new BookingSingleReqDTO();
+        bookingSingleReqDTO.setStartAt(startTime);
+        bookingSingleReqDTO.setEndAt(endTime);
+        bookingValidationService.validateBookingRequest(bookingSingleReqDTO, kol);
         Cache cache = cacheManager.getCache(CacheConfig.SOFT_HOLD_CACHE);
         if (cache == null) {
             return ApiResponse.<SoftHoldSlotDTO>builder()

@@ -96,4 +96,13 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setStatus(status);
         paymentRepository.save(payment);
     }
+
+    @Override
+    public boolean checkContractPaymentSuccess(UUID contractId) {
+        Payment payment = paymentRepository.findByContractId(contractId);
+        if (payment == null) {
+            throw new IllegalArgumentException("Payment not found");
+        }
+        return payment.getStatus().equals(Enums.PaymentStatus.PAID.name()) || payment.getStatus().equals(Enums.PaymentStatus.OVERPAID.name());
+    }
 }

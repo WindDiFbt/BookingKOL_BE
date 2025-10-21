@@ -15,7 +15,7 @@ public class EmailService {
 
     public void sendVerificationEmail(String toEmail, String code) {
         String subject = "Xác thực tài khoản - Nexussocial";
-        String verifyUrl = "http://localhost:8080/api/v1/register/verify?email=" + toEmail + "&code=" + code;
+        String verifyUrl = "http://52.220.206.47/api/v1/register/verify?email=" + toEmail + "&code=" + code;
         String content = "Xin chào!\n\nVui lòng click link dưới đây để xác thực tài khoản của bạn:\n"
                 + verifyUrl + "\n\nLink có hiệu lực trong 24h.";
 

@@ -14,4 +14,7 @@ import java.util.UUID;
 public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     @Query("SELECT p FROM Payment p WHERE p.status = 'PENDING' AND p.expiresAt <= :currentTime")
     List<Payment> findPendingAndExpired(@Param("currentTime") Instant currentTime);
+
+    @Query("SELECT p FROM Payment p WHERE p.contract.id = :contractId")
+    Payment findByContractId(UUID contractId);
 }
