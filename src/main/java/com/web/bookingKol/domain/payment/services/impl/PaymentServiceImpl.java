@@ -4,6 +4,7 @@ import com.web.bookingKol.common.Enums;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.booking.models.Contract;
 import com.web.bookingKol.domain.booking.repositories.BookingRequestRepository;
+import com.web.bookingKol.domain.kol.models.KolWorkTime;
 import com.web.bookingKol.domain.payment.dtos.PaymentReqDTO;
 import com.web.bookingKol.domain.payment.dtos.transaction.TransactionDTO;
 import com.web.bookingKol.domain.payment.models.Merchant;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -31,7 +33,7 @@ public class PaymentServiceImpl implements PaymentService {
     private MerchantService merchantService;
 
     private final String VND_CURRENCY = "VND";
-    private final Integer EXPIRES_TIME = 15;
+    private final Integer EXPIRES_TIME = 3;
 
     @Override
     public PaymentReqDTO initiatePayment(BookingRequest bookingRequest, Contract contract, String qrUrl, User user, BigDecimal amount) {
@@ -63,7 +65,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Transactional
     @Override
-    public void updatePayment(TransactionDTO transactionDTO) {
+    public void updatePaymentAfterTransactionSuccess(TransactionDTO transactionDTO) {
         Payment payment = paymentRepository.findById(transactionDTO.getPaymentId())
                 .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
 
@@ -83,6 +85,13 @@ public class PaymentServiceImpl implements PaymentService {
             BookingRequest bookingRequest = payment.getContract().getBookingRequest();
             bookingRequest.setStatus(Enums.BookingStatus.ACCEPTED.name());
             bookingRequestRepository.save(bookingRequest);
+            Set<KolWorkTime> kolWorkTime = bookingRequest.getKolWorkTimes();
+            for (KolWorkTime workTime : kolWorkTime) {
+                if (workTime.getStatus().equals(Enums.BookingStatus.REQUESTED.name())) {
+                    workTime.setStatus(Enums.KOLWorkTimeStatus.COMPLETED.name());
+                    bookingRequestRepository.save(bookingRequest);
+                }
+            }
         }
         payment.setStatus(status);
         paymentRepository.save(payment);

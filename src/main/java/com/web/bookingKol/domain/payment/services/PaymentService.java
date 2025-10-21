@@ -13,5 +13,5 @@ import java.math.BigDecimal;
 public interface PaymentService {
     PaymentReqDTO initiatePayment(BookingRequest bookingRequest, Contract contract, String qrUrl, User user, BigDecimal amount);
 
-    void updatePayment(TransactionDTO transactionDTO);
+    void updatePaymentAfterTransactionSuccess(TransactionDTO transactionDTO);
 }

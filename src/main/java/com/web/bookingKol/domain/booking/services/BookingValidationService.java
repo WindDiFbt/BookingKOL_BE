@@ -2,10 +2,10 @@ package com.web.bookingKol.domain.booking.services;
 
 import com.web.bookingKol.common.Enums;
 import com.web.bookingKol.domain.booking.dtos.BookingSingleReqDTO;
-import com.web.bookingKol.domain.booking.models.BookingRequest;
-import com.web.bookingKol.domain.booking.repositories.BookingRequestRepository;
 import com.web.bookingKol.domain.kol.models.KolProfile;
+import com.web.bookingKol.domain.kol.models.KolWorkTime;
 import com.web.bookingKol.domain.kol.repositories.KolAvailabilityRepository;
+import com.web.bookingKol.domain.kol.repositories.KolWorkTimeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +19,7 @@ public class BookingValidationService {
     @Autowired
     private KolAvailabilityRepository kolAvailabilityRepository;
     @Autowired
-    private BookingRequestRepository bookingRequestRepository;
+    private KolWorkTimeRepository kolWorkTimeRepository;
 
     public void validateBookingRequest(BookingSingleReqDTO bookingRequestDTO, KolProfile kol) {
         if (bookingRequestDTO.getIsConfirmWithTerms() == false) {
@@ -39,25 +39,25 @@ public class BookingValidationService {
             throw new IllegalArgumentException("KOL is not available for that time!");
         }
         //Check for any existing booking requests with the exact same start & end times
-        if (bookingRequestRepository.existsRequestSameTime(kol.getId(), startAt, endAt)) {
+        if (kolWorkTimeRepository.existsRequestSameTime(kol.getId(), startAt, endAt)) {
             throw new IllegalArgumentException("Already exist a booking request for this KOL at this time!");
         }
         //Check for overlapping bookings
         // Correct logic: overlap exists if (start < existing.end) AND (end > existing.start)
         // If this condition is true → conflict detected → reject the new booking
-        if (bookingRequestRepository.existsOverlappingBooking(kol.getId(), startAt, endAt)) {
+        if (kolWorkTimeRepository.existsOverlappingBooking(kol.getId(), startAt, endAt)) {
             throw new IllegalArgumentException("Overlapping Bookings for this KOL at this time!");
         }
         //Enforce a minimum 1-hour break between consecutive bookings
-        BookingRequest bookingPrevious = bookingRequestRepository.findFirstPreviousBooking(kol.getId(), startAt)
+        KolWorkTime kolWorkTimePrevious = kolWorkTimeRepository.findFirstPreviousBooking(kol.getId(), startAt)
                 .stream().findFirst().orElse(null);
-        BookingRequest bookingNext = bookingRequestRepository.findNextBooking(kol.getId(), endAt)
+        KolWorkTime kolWorkTimeNext = kolWorkTimeRepository.findNextBooking(kol.getId(), endAt)
                 .stream().findFirst().orElse(null);
         //Check the booking before/after the current one
-        if (bookingPrevious != null && startAt.isBefore(bookingPrevious.getEndAt().plus(Enums.BookingRules.REST_TIME.getValue(), ChronoUnit.HOURS))) {
+        if (kolWorkTimePrevious != null && startAt.isBefore(kolWorkTimePrevious.getEndAt().plus(Enums.BookingRules.REST_TIME.getValue(), ChronoUnit.HOURS))) {
             throw new IllegalArgumentException("KOLs need at least 1 hour break between shifts.");
         }
-        if (bookingNext != null && endAt.isAfter(bookingNext.getStartAt().minus(Enums.BookingRules.REST_TIME.getValue(), ChronoUnit.HOURS))) {
+        if (kolWorkTimeNext != null && endAt.isAfter(kolWorkTimeNext.getStartAt().minus(Enums.BookingRules.REST_TIME.getValue(), ChronoUnit.HOURS))) {
             throw new IllegalArgumentException("KOLs need at least 1 hour break between shifts.");
         }
     }

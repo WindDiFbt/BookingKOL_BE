@@ -16,8 +16,11 @@ import com.web.bookingKol.domain.file.dtos.FileUsageDTO;
 import com.web.bookingKol.domain.file.mappers.FileUsageMapper;
 import com.web.bookingKol.domain.file.models.File;
 import com.web.bookingKol.domain.file.services.FileService;
+import com.web.bookingKol.domain.kol.models.KolAvailability;
 import com.web.bookingKol.domain.kol.models.KolProfile;
+import com.web.bookingKol.domain.kol.repositories.KolAvailabilityRepository;
 import com.web.bookingKol.domain.kol.repositories.KolProfileRepository;
+import com.web.bookingKol.domain.kol.services.KolWorkTimeService;
 import com.web.bookingKol.domain.payment.dtos.PaymentReqDTO;
 import com.web.bookingKol.domain.payment.services.PaymentService;
 import com.web.bookingKol.domain.payment.services.SePayService;
@@ -64,6 +67,10 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     private SoftHoldBookingService softHoldBookingService;
     @Autowired
     private BookingValidationService bookingValidationService;
+    @Autowired
+    private KolAvailabilityRepository kolAvailabilityRepository;
+    @Autowired
+    private KolWorkTimeService kolWorkTimeService;
 
     @Transactional
     @Override
@@ -120,6 +127,12 @@ public class BookingRequestServiceImpl implements BookingRequestService {
                 contract.getAmount()
         );
         paymentReqDTO.setTransferContent(transferContent);
+        // --- Create KOL work time ---
+        KolAvailability ka = kolAvailabilityRepository.findAvailability(kol.getId(), bookingRequestDTO.getStartAt().atZone(ZoneOffset.UTC).toOffsetDateTime(),
+                bookingRequestDTO.getEndAt().atZone(ZoneOffset.UTC).toOffsetDateTime());
+        kolWorkTimeService.createNewKolWorkTime(ka, newBookingRequest, Enums.BookingStatus.REQUESTED.name(),
+                bookingRequestDTO.getStartAt(),
+                bookingRequestDTO.getEndAt());
         // --- 7. Build and return response ---
         return ApiResponse.<PaymentReqDTO>builder()
                 .status(HttpStatus.OK.value())

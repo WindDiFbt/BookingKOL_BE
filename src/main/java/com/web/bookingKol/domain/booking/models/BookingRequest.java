@@ -3,6 +3,7 @@ package com.web.bookingKol.domain.booking.models;
 import com.web.bookingKol.domain.file.models.FileUsage;
 import com.web.bookingKol.domain.kol.models.KolProfile;
 import com.web.bookingKol.domain.kol.models.KolPromotion;
+import com.web.bookingKol.domain.kol.models.KolWorkTime;
 import com.web.bookingKol.domain.user.models.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -94,5 +95,8 @@ public class BookingRequest {
 
     @Column(name = "location", length = Integer.MAX_VALUE)
     private String location;
+
+    @OneToMany(mappedBy = "bookingRequest")
+    private Set<KolWorkTime> kolWorkTimes = new LinkedHashSet<>();
 
 }

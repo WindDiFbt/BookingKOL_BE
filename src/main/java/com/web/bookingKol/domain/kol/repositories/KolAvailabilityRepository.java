@@ -43,12 +43,12 @@ public interface KolAvailabilityRepository extends JpaRepository<KolAvailability
     );
 
     @Query("""
-    SELECT a FROM KolAvailability a
-    WHERE a.kol.id = :kolId
-    AND (:startDate IS NULL OR a.startAt >= :startDate)
-    AND (:endDate IS NULL OR a.endAt <= :endDate)
-    ORDER BY a.startAt DESC
-""")
+                SELECT a FROM KolAvailability a
+                WHERE a.kol.id = :kolId
+                AND (:startDate IS NULL OR a.startAt >= :startDate)
+                AND (:endDate IS NULL OR a.endAt <= :endDate)
+                ORDER BY a.startAt DESC
+            """)
     Page<KolAvailability> findByKolIdAndDateRangePaged(
             @Param("kolId") UUID kolId,
             @Param("startDate") OffsetDateTime startDate,
@@ -56,6 +56,10 @@ public interface KolAvailabilityRepository extends JpaRepository<KolAvailability
             Pageable pageable
     );
 
+    @Query("SELECT ka FROM KolAvailability ka WHERE ka.kol.id = :kolId AND ka.startAt <= :startTime AND ka.endAt >= :endTime")
+    KolAvailability findAvailability(@Param("kolId") UUID kolId,
+                                     @Param("startTime") OffsetDateTime startTime,
+                                     @Param("endTime") OffsetDateTime endTime);
 
 }
 

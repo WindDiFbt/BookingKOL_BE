@@ -9,6 +9,8 @@ import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -43,5 +45,8 @@ public class KolAvailability {
     @ColumnDefault("now()")
     @Column(name = "created_at")
     private Instant createdAt;
+
+    @OneToMany(mappedBy = "availability")
+    private Set<KolWorkTime> kolWorkTimes = new LinkedHashSet<>();
 
 }

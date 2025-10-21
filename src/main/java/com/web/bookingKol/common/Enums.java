@@ -117,6 +117,14 @@ public class Enums {
         SINGLE,
     }
 
+    @Getter
+    public enum KOLWorkTimeStatus {
+        REQUESTED,
+        ACCEPTED,
+        CANCELLED,
+        COMPLETED
+    }
+
     // ---------------- PAYMENT ----------------
     @Getter
     public enum PaymentIntentStatus {
