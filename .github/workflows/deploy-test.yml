@@ -23,6 +23,6 @@ jobs:
           script_stop: true
           script: |
             set -euxo pipefail
-            cd "${{ secrets.WORKDIR || vars.WORKDIR }}"
+            cd "${{ secrets.WORKDIR || vars.WORKDIR }}"   # phải là /home/ubuntu/bookingkol/bookingkol-deploy
             [ -x deploy.sh ] || chmod +x deploy.sh
             ./deploy.sh
