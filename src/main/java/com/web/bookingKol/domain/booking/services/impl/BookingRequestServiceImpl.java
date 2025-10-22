@@ -42,6 +42,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -109,6 +111,10 @@ public class BookingRequestServiceImpl implements BookingRequestService {
         newBookingRequest.setLocation(bookingRequestDTO.getLocation());
         newBookingRequest.setStartAt(bookingRequestDTO.getStartAt());
         newBookingRequest.setEndAt(bookingRequestDTO.getEndAt());
+        Duration duration = Duration.between(bookingRequestDTO.getStartAt(), bookingRequestDTO.getEndAt());
+        BigDecimal totalHours = BigDecimal.valueOf(duration.toHours());
+        BigDecimal totalAmount = totalHours.multiply(kol.getMinBookingPrice());
+        newBookingRequest.setContractAmount(totalAmount);
         newBookingRequest.setStatus(Enums.BookingStatus.REQUESTED.name());
         newBookingRequest.setBookingType(Enums.BookingType.SINGLE.name());
         newBookingRequest.setCreatedAt(Instant.now());

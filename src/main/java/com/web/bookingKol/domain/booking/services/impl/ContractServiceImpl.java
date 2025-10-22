@@ -21,7 +21,7 @@ public class ContractServiceImpl implements ContractService {
         contract.setBookingRequest(bookingRequest);
         contract.setStatus(Enums.ContractStatus.SIGNED.name());
         contract.setCreatedAt(Instant.now());
-        contract.setAmount(bookingRequest.getKol().getMinBookingPrice());
+        contract.setAmount(bookingRequest.getContractAmount());
         contractRepository.save(contract);
         return contract;
     }
