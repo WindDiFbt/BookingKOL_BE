@@ -45,4 +45,6 @@ public interface CoursePackageService {
     ApiResponse<?> removeCourseMediaFile(UUID courseId, List<UUID> fileUsageIds);
 
     ApiResponse<FileUsageDTO> setCoverImage(UUID courseId, UUID fileId);
+
+    ApiResponse<?> deleteCoursePackage(UUID courseId);
 }

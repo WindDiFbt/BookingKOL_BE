@@ -99,4 +99,16 @@ public class BookingRequest {
     @OneToMany(mappedBy = "bookingRequest")
     private Set<KolWorkTime> kolWorkTimes = new LinkedHashSet<>();
 
+    @Size(max = 255)
+    @Column(name = "full_name", length = 100)
+    private String fullName;
+
+    @Size(max = 50)
+    @Column(name = "phone", length = 50)
+    private String phone;
+
+    @Size(max = 255)
+    @Column(name = "email")
+    private String email;
+
 }

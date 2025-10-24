@@ -20,7 +20,8 @@ public interface KolProfileRepository extends JpaRepository<KolProfile, UUID> {
             SELECT k FROM KolProfile k 
             LEFT JOIN FETCH k.fileUsages fu
             LEFT JOIN FETCH fu.file f
-            WHERE k.user.id = :userId AND fu.isActive = true ORDER BY f.fileType DESC , fu.createdAt DESC
+            WHERE f.fileType IN ('IMAGE', 'VIDEO') AND f.status = 'ACTIVE'
+            AND k.user.id = :userId AND fu.isActive = true ORDER BY f.fileType DESC , fu.createdAt DESC
             """)
     Optional<KolProfile> findByUserId(@Param("userId") UUID userId);
 
@@ -28,7 +29,8 @@ public interface KolProfileRepository extends JpaRepository<KolProfile, UUID> {
             SELECT k FROM KolProfile k 
             LEFT JOIN FETCH k.fileUsages fu
             LEFT JOIN FETCH fu.file f
-            WHERE k.id = :kolId AND fu.isActive = true ORDER BY f.fileType DESC , fu.createdAt DESC
+            WHERE f.fileType IN ('IMAGE', 'VIDEO') AND f.status = 'ACTIVE'
+            AND k.id = :kolId AND fu.isActive = true ORDER BY f.fileType DESC , fu.createdAt DESC
             """)
     Optional<KolProfile> findByKolId(@Param("kolId") UUID kolId);
 
@@ -44,6 +46,7 @@ public interface KolProfileRepository extends JpaRepository<KolProfile, UUID> {
                   AND (:minRating IS NULL OR k.overallRating >= :minRating)
                   AND (:categoryId IS NULL OR c.id = :categoryId)
                   AND (:minPrice IS NULL OR k.minBookingPrice >= :minPrice)
+                  AND (:nameKeyword IS NULL OR LOWER(k.displayName) LIKE %:nameKeyword%)
                   AND (:role IS NULL OR k.role = :role)
             """)
     Page<KolProfile> findAllKolAvailableWithFilter(
@@ -52,6 +55,7 @@ public interface KolProfileRepository extends JpaRepository<KolProfile, UUID> {
             @Param("categoryId") UUID categoryId,
             @Param("minPrice") BigDecimal minPrice,
             @Param("role") Enums.Roles role,
+            @Param("nameKeyword") String nameKeyword,
             Pageable pageable
     );
 
@@ -63,12 +67,14 @@ public interface KolProfileRepository extends JpaRepository<KolProfile, UUID> {
                   AND (:isAvailable IS NULL OR k.isAvailable = :isAvailable)
                   AND (:minRating IS NULL OR k.overallRating >= :minRating)
                   AND (:role IS NULL OR k.role = :role)
+                  AND (:nameKeyword IS NULL OR LOWER(k.displayName) LIKE %:nameKeyword%)
             """)
     Page<KolProfile> findAllFiltered(
             @Param("minBookingPrice") BigDecimal minBookingPrice,
             @Param("isAvailable") Boolean isAvailable,
             @Param("minRating") Double minRating,
             @Param("role") Enums.Roles role,
+            @Param("nameKeyword") String nameKeyword,
             Pageable pageable
     );
 

@@ -3,7 +3,6 @@ package com.web.bookingKol.domain.file.services.impl;
 import com.web.bookingKol.common.Enums;
 import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.domain.file.FileValidator;
-import com.web.bookingKol.domain.file.services.SupabaseStorageService;
 import com.web.bookingKol.domain.file.dtos.FileDTO;
 import com.web.bookingKol.domain.file.dtos.FileUsageDTO;
 import com.web.bookingKol.domain.file.mappers.FileMapper;
@@ -13,6 +12,7 @@ import com.web.bookingKol.domain.file.models.FileUsage;
 import com.web.bookingKol.domain.file.repositories.FileRepository;
 import com.web.bookingKol.domain.file.repositories.FileUsageRepository;
 import com.web.bookingKol.domain.file.services.FileService;
+import com.web.bookingKol.domain.file.services.SupabaseStorageService;
 import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.domain.user.repositories.UserRepository;
 import org.apache.commons.io.FilenameUtils;
@@ -123,5 +123,14 @@ public class FileServiceImpl implements FileService {
         fileUsage.setCreatedAt(Instant.now());
         fileUsageRepository.save(fileUsage);
         return fileUsageMapper.toDto(fileUsage);
+    }
+
+    @Override
+    public void deleteFile(List<UUID> fileIds) {
+        for (UUID fileId : fileIds) {
+            File file = fileRepository.findById(fileId).orElseThrow(() -> new IllegalArgumentException("File not found"));
+            file.setStatus(Enums.FileStatus.DELETED.name());
+            fileRepository.save(file);
+        }
     }
 }

@@ -21,4 +21,6 @@ public interface FileService {
     ApiResponse<List<FileDTO>> uploadMultipleFiles(UUID uploaderId, List<MultipartFile> files);
 
     FileUsageDTO createFileUsage(File file, UUID targetId, String targetType, Boolean isCover);
+
+    void deleteFile(List<UUID> fileIds);
 }

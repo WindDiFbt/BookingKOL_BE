@@ -126,10 +126,11 @@ public class KolProfileServiceImpl implements KolProfileService {
             Double minRating,
             int page,
             int size,
-            Enums.Roles role
+            Enums.Roles role,
+            String nameKeyword
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("overallRating").descending());
-        Page<KolProfileDTO> kolDtos = kolProfileRepository.findAllFiltered(minBookingPrice, isAvailable, minRating, role, pageable)
+        Page<KolProfileDTO> kolDtos = kolProfileRepository.findAllFiltered(minBookingPrice, isAvailable, minRating, role, nameKeyword, pageable)
                 .map(kol -> {
                     KolProfileDTO dto = kolProfileMapper.toDto(kol);
                     dto.setFileUsageDtos(getActiveCoverFiles(dto.getFileUsageDtos()));
@@ -144,10 +145,10 @@ public class KolProfileServiceImpl implements KolProfileService {
 
     @Override
     public ApiResponse<Page<KolProfileDTO>> getAllKolAvailable(
-            Double minRating, UUID categoryId, BigDecimal minPrice, int page, int size, Enums.Roles role) {
+            Double minRating, UUID categoryId, BigDecimal minPrice, int page, int size, Enums.Roles role, String nameKeyword) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "overallRating"));
         Page<KolProfileDTO> kolProfilePage = kolProfileRepository
-                .findAllKolAvailableWithFilter(Enums.UserStatus.ACTIVE.name(), minRating, categoryId, minPrice, role, pageable)
+                .findAllKolAvailableWithFilter(Enums.UserStatus.ACTIVE.name(), minRating, categoryId, minPrice, role, nameKeyword, pageable)
                 .map(kol -> {
                     KolProfileDTO dto = kolProfileMapper.toDto(kol);
                     dto.setFileUsageDtos(getActiveCoverFiles(dto.getFileUsageDtos()));

@@ -72,4 +72,9 @@ public class AdminCourseRestController {
                                            @RequestParam UUID fileId) {
         return ResponseEntity.ok(coursePackageService.setCoverImage(courseId, fileId));
     }
+
+    @DeleteMapping("/delete/{courseId}")
+    public ResponseEntity<?> deleteCourse(@PathVariable("courseId") UUID courseId) {
+        return ResponseEntity.ok(coursePackageService.deleteCoursePackage(courseId));
+    }
 }

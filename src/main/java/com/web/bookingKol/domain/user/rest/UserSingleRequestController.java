@@ -1,13 +1,17 @@
 package com.web.bookingKol.domain.user.rest;
 
+import com.web.bookingKol.domain.booking.dtos.UpdateBookingReqDTO;
 import com.web.bookingKol.domain.booking.services.BookingRequestService;
 import com.web.bookingKol.domain.user.models.UserDetailsImpl;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -34,5 +38,22 @@ public class UserSingleRequestController {
                                                          @PathVariable UUID requestId) {
         UUID userId = userDetails.getId();
         return ResponseEntity.ok(bookingRequestService.getDetailSingleRequestUser(requestId, userId));
+    }
+
+    @PatchMapping("/update/{requestId}")
+    public ResponseEntity<?> updateBookingRequest(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                                  @PathVariable UUID requestId,
+                                                  @RequestPart(value = "attachedFiles", required = false) List<MultipartFile> attachedFiles,
+                                                  @RequestPart(required = false) @Valid UpdateBookingReqDTO updateBookingReqDTO,
+                                                  @RequestPart(required = false) List<UUID> fileIdsToDelete) {
+        UUID userId = userDetails.getId();
+        return ResponseEntity.ok(bookingRequestService.updateBookingRequest(userId, requestId, updateBookingReqDTO, attachedFiles, fileIdsToDelete));
+    }
+
+    @PatchMapping("/cancel/{requestId}")
+    public ResponseEntity<?> cancelBookingRequest(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                                  @PathVariable UUID requestId) {
+        UUID userId = userDetails.getId();
+        return ResponseEntity.ok(bookingRequestService.cancelBookingRequest(userId, requestId));
     }
 }

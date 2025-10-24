@@ -1,6 +1,7 @@
 package com.web.bookingKol.domain.booking.dtos;
 
 import com.web.bookingKol.domain.file.dtos.FileUsageDTO;
+import com.web.bookingKol.domain.kol.models.KolWorkTimeDTO;
 import lombok.Data;
 
 import java.time.Instant;
@@ -28,4 +29,5 @@ public class BookingSingleResDTO {
 
     private Set<FileUsageDTO> attachedFiles;
     private Set<ContractDTO> contracts;
+    private Set<KolWorkTimeDTO> kolWorkTimes;
 }

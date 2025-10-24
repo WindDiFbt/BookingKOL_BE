@@ -1,6 +1,7 @@
 package com.web.bookingKol.domain.kol.models;
 
 import com.web.bookingKol.domain.booking.models.BookingRequest;
+import com.web.bookingKol.domain.booking.models.LivestreamMetric;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -23,12 +24,8 @@ public class KolWorkTime {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "availability_id", nullable = false)
+    @JoinColumn(name = "availability_id")
     private KolAvailability availability;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "booking_request_id", nullable = true)
-    private BookingRequest bookingRequest;
 
     @NotNull
     @Column(name = "start_at", nullable = false)
@@ -43,5 +40,12 @@ public class KolWorkTime {
 
     @Column(name = "status", length = 50)
     private String status;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "booking_request_id")
+    private BookingRequest bookingRequest;
+
+    @OneToOne(mappedBy = "kolWorkTime")
+    private LivestreamMetric livestreamMetrics;
 
 }

@@ -61,9 +61,6 @@ public class Payment {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-    @OneToMany(mappedBy = "payment")
-    private Set<Refund> refunds = new LinkedHashSet<>();
-
     @OneToMany(mappedBy = "payment", fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.SET_NULL)
     private Set<Transaction> transactions = new LinkedHashSet<>();

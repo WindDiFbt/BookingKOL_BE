@@ -4,6 +4,7 @@ import com.web.bookingKol.domain.kol.models.KolFeedback;
 import com.web.bookingKol.domain.kol.models.KolPromoUsage;
 import com.web.bookingKol.domain.payment.models.Payment;
 import com.web.bookingKol.domain.payment.models.Payout;
+import com.web.bookingKol.domain.payment.models.Refund;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -83,4 +84,7 @@ public class Contract {
 
     @Column(name = "signed_at_kol")
     private Instant signedAtKol;
+
+    @OneToMany(mappedBy = "contract")
+    private Set<Refund> refunds = new LinkedHashSet<>();
 }

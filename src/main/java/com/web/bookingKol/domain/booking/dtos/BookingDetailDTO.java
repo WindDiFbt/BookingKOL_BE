@@ -20,10 +20,12 @@ public class BookingDetailDTO {
     private String status;
     private String description;
     private String location;
+    private String fullName;
+    private String phone;
+    private String email;
 
     private Instant startAt;
     private Instant endAt;
-    private Boolean isConfirmWithTerms;
 
     private Instant createdAt;
     private Instant updatedAt;

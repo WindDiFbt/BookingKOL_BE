@@ -9,6 +9,7 @@ import com.web.bookingKol.domain.kol.models.KolWorkTimeDTO;
 import com.web.bookingKol.domain.kol.services.KolAvailabilityService;
 import com.web.bookingKol.domain.kol.services.impl.KolAvailabilityServiceImpl;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,13 +25,17 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/kol/availabilities")
-@RequiredArgsConstructor
+@RequestMapping("/availabilities")
 public class KolAvailabilityController {
 
-    private final KolAvailabilityService availabilityService;
-    private final KolAvailabilityServiceImpl kolAvailabilityServiceImpl;
-    private final KolAvailabilityService kolAvailabilityService;
+    @Autowired
+    private KolAvailabilityService availabilityService;
+
+    @Autowired
+    private KolAvailabilityServiceImpl kolAvailabilityServiceImpl;
+
+    @Autowired
+    private KolAvailabilityService kolAvailabilityService;
 
 //    @PreAuthorize("hasAuthority('KOL')")
 //    @GetMapping("/{kolId}/schedule")
@@ -76,20 +81,20 @@ public class KolAvailabilityController {
 
     @PreAuthorize("hasAnyAuthority('ADMIN','SUPER_ADMIN','USER','LIVE','KOL')")
     @GetMapping("/free-time/{kolId}")
-    public ResponseEntity<ApiResponse<Page<TimeSlotDTO>>> getKolFreeTimes(
+    public ResponseEntity<ApiResponse<List<TimeSlotDTO>>> getKolFreeTimes(
             @PathVariable UUID kolId,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate
     ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("startAt").ascending());
-        return ResponseEntity.ok(kolAvailabilityServiceImpl.getKolFreeTimes(kolId, startDate, endDate, pageable));
+        return ResponseEntity.ok(
+                kolAvailabilityServiceImpl.getKolFreeTimes(kolId, startDate, endDate, null)
+        );
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN','SUPER_ADMIN')")
+
+    @PreAuthorize("hasAnyAuthority('ADMIN','SUPER_ADMIN','KOL')")
     @PutMapping("/schedule/{workTimeId}")
     public ResponseEntity<ApiResponse<KolWorkTimeDTO>> updateKolWorkTime(
             @PathVariable UUID workTimeId,
@@ -97,5 +102,18 @@ public class KolAvailabilityController {
     ) {
         return ResponseEntity.ok(kolAvailabilityService.updateKolWorkTimeByAdmin(workTimeId, dto));
     }
+
+    // api admin thêm lịch làm việc cho kol
+    @PreAuthorize("hasAnyAuthority('ADMIN','SUPER_ADMIN')")
+    @PostMapping("/admin/schedule")
+    public ResponseEntity<ApiResponse<KolAvailabilityDTO>> createKolScheduleByAdmin(
+            @RequestBody KolAvailabilityDTO dto
+    ) {
+        return ResponseEntity.ok(availabilityService.createKolScheduleByAdmin(dto));
+    }
+
+
+
+
 
 }

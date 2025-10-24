@@ -18,6 +18,7 @@ import com.web.bookingKol.domain.file.models.FileUsage;
 import com.web.bookingKol.domain.file.repositories.FileRepository;
 import com.web.bookingKol.domain.file.repositories.FileUsageRepository;
 import com.web.bookingKol.domain.file.services.FileService;
+import com.web.bookingKol.domain.user.repositories.PurchasedCoursePackageRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,14 +49,16 @@ public class CoursePackageServiceImpl implements CoursePackageService {
     private FileUsageMapper fileUsageMapper;
     @Autowired
     private FileUsageRepository fileUsageRepository;
+    @Autowired
+    private PurchasedCoursePackageRepository purchasedCoursePackageRepository;
 
     @Override
     public ApiResponse<CoursePackageDTO> getCoursePackageById(UUID coursePackageId) {
         CoursePackage coursePackage = coursePackageRepository.findByCoursePackageId(coursePackageId, Enums.TargetType.COURSE_PACKAGE.name())
-                .orElseThrow(() -> new RuntimeException("CoursePackage not found for id: " + coursePackageId));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy Gói khóa học với id: " + coursePackageId));
         return ApiResponse.<CoursePackageDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("Get course package by coursePackageId success"))
+                .message(List.of("Lấy gói khóa học theo coursePackageId thành công"))
                 .data(coursePackageMapper.toDto(coursePackage))
                 .build();
     }
@@ -79,7 +82,7 @@ public class CoursePackageServiceImpl implements CoursePackageService {
                 .map(coursePackageMapper::toDto);
         return ApiResponse.<Page<CoursePackageDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("Get all available course packages success"))
+                .message(List.of("Lấy tất cả các gói khóa học có sẵn thành công"))
                 .data(coursePackageDtos)
                 .build();
     }
@@ -104,7 +107,7 @@ public class CoursePackageServiceImpl implements CoursePackageService {
                 .map(coursePackageMapper::toDto);
         return ApiResponse.<Page<CoursePackageDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("Get all course packages success"))
+                .message(List.of("Lấy tất cả các gói khóa học thành công"))
                 .data(coursePackageDtos)
                 .build();
     }
@@ -112,10 +115,10 @@ public class CoursePackageServiceImpl implements CoursePackageService {
     @Override
     public ApiResponse<CoursePackageDTO> getDetailCourseAdmin(UUID coursePackageId) {
         CoursePackage coursePackage = coursePackageRepository.findById(coursePackageId)
-                .orElseThrow(() -> new RuntimeException("CoursePackage not found for id: " + coursePackageId));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy Gói khóa học với id: " + coursePackageId));
         return ApiResponse.<CoursePackageDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("Get course package by coursePackageId success"))
+                .message(List.of("Lấy gói khóa học theo coursePackageId thành công"))
                 .data(coursePackageMapper.toDto(coursePackage))
                 .build();
     }
@@ -143,7 +146,7 @@ public class CoursePackageServiceImpl implements CoursePackageService {
         coursePackageRepository.save(cp);
         return ApiResponse.<CoursePackageDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("Create Course package successfully!"))
+                .message(List.of("Tạo gói khóa học thành công!"))
                 .data(coursePackageMapper.toDto(cp))
                 .build();
     }
@@ -152,14 +155,14 @@ public class CoursePackageServiceImpl implements CoursePackageService {
     @Override
     public ApiResponse<CoursePackageDTO> updateCoursePackage(UUID coursePackageId, UpdateCoursePackageDTO updateCoursePackageDTO) {
         CoursePackage cp = coursePackageRepository.findById(coursePackageId)
-                .orElseThrow(() -> new EntityNotFoundException("CoursePackage not found for id: " + coursePackageId));
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy Gói khóa học với id: " + coursePackageId));
         if (updateCoursePackageDTO != null) {
             BeanUtils.copyProperties(updateCoursePackageDTO, cp, UpdateEntityUtil.getNullPropertyNames(updateCoursePackageDTO));
         }
         coursePackageRepository.save(cp);
         return ApiResponse.<CoursePackageDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("Update Course package successfully!"))
+                .message(List.of("Cập nhật gói khóa học thành công!"))
                 .data(coursePackageMapper.toDto(cp))
                 .build();
     }
@@ -168,7 +171,7 @@ public class CoursePackageServiceImpl implements CoursePackageService {
     @Override
     public ApiResponse<List<FileUsageDTO>> uploadCourseMediaFiles(UUID uploaderId, UUID courseId, List<MultipartFile> files) {
         CoursePackage cp = coursePackageRepository.findById(courseId)
-                .orElseThrow(() -> new EntityNotFoundException("CoursePackage not found for id: " + courseId));
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy Gói khóa học với id: " + courseId));
         if (files != null && !files.isEmpty()) {
             List<FileUsageDTO> fileUsageDTOS = new ArrayList<>();
             for (MultipartFile file : files) {
@@ -178,13 +181,13 @@ public class CoursePackageServiceImpl implements CoursePackageService {
             }
             return ApiResponse.<List<FileUsageDTO>>builder()
                     .status(HttpStatus.OK.value())
-                    .message(List.of("Upload media files success: " + fileUsageDTOS.size() + " files"))
+                    .message(List.of("Tải lên tệp phương tiện thành công: " + fileUsageDTOS.size() + " tệp"))
                     .data(fileUsageDTOS)
                     .build();
         } else {
             return ApiResponse.<List<FileUsageDTO>>builder()
                     .status(HttpStatus.BAD_REQUEST.value())
-                    .message(List.of("No files to upload"))
+                    .message(List.of("Không có tệp nào để tải lên"))
                     .data(null)
                     .build();
         }
@@ -194,12 +197,12 @@ public class CoursePackageServiceImpl implements CoursePackageService {
     @Override
     public ApiResponse<?> removeCourseMediaFile(UUID courseId, List<UUID> fileUsageIds) {
         if (!coursePackageRepository.existsById(courseId)) {
-            throw new EntityNotFoundException("CoursePackage not found for id: " + courseId);
+            throw new EntityNotFoundException("Không tìm thấy Gói khóa học với id: " + courseId);
         }
         List<FileUsage> fileUsages = fileUsageRepository.findAllById(fileUsageIds).stream()
                 .filter(fu -> fu.getTargetType().equals(Enums.TargetType.COURSE_PACKAGE.name())).toList();
         if (fileUsages.size() != fileUsageIds.size()) {
-            throw new EntityNotFoundException("Some COURSE_PACKAGE File not found for provided IDs " + fileUsages.size() + "/" + fileUsageIds.size());
+            throw new EntityNotFoundException("Một số tệp COURSE_PACKAGE không tìm thấy cho các ID được cung cấp " + fileUsages.size() + "/" + fileUsageIds.size());
         }
         fileUsages.forEach(fileUsage -> {
             fileUsage.setIsActive(false);
@@ -208,7 +211,7 @@ public class CoursePackageServiceImpl implements CoursePackageService {
         fileUsageRepository.saveAll(fileUsages);
         return ApiResponse.builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("Successfully remove " + fileUsages.size() + " media files"))
+                .message(List.of("Xóa thành công " + fileUsages.size() + " tệp phương tiện"))
                 .data(null)
                 .build();
     }
@@ -216,19 +219,19 @@ public class CoursePackageServiceImpl implements CoursePackageService {
     @Override
     public ApiResponse<FileUsageDTO> setCoverImage(UUID courseId, UUID fileId) {
         CoursePackage cp = coursePackageRepository.findById(courseId)
-                .orElseThrow(() -> new EntityNotFoundException("CoursePackage not found for id: " + courseId));
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy Gói khóa học với id: " + courseId));
         File file = fileRepository.findById(fileId)
-                .orElseThrow(() -> new EntityNotFoundException("File not found for id: " + fileId));
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy tệp với id: " + fileId));
         if (!file.getFileType().equals(Enums.FileType.IMAGE.name())) {
-            throw new IllegalArgumentException("File is not an image for ID: " + fileId);
+            throw new IllegalArgumentException("Tệp không phải là hình ảnh cho ID: " + fileId);
         }
         if (!file.getStatus().equals(Enums.FileStatus.ACTIVE.name())) {
-            throw new IllegalArgumentException("File is not active for ID: " + fileId);
+            throw new IllegalArgumentException("Tệp không hoạt động cho ID: " + fileId);
         }
         FileUsage fileUsage = file.getFileUsages().stream()
                 .filter(fu -> fu.getTargetId().equals(courseId) && fu.getTargetType().equals(Enums.TargetType.COURSE_PACKAGE.name()))
                 .findAny()
-                .orElseThrow(() -> new IllegalArgumentException("File is not associated with this Course package Id: " + courseId));
+                .orElseThrow(() -> new IllegalArgumentException("Tệp không được liên kết với Id gói khóa học này: " + courseId));
         if (fileUsage.getTargetType().equals(Enums.TargetType.COURSE_PACKAGE.name())) {
             cp.getFileUsages().stream()
                     .filter(fu -> fu.getIsActive() && fu.getIsCover())
@@ -240,12 +243,35 @@ public class CoursePackageServiceImpl implements CoursePackageService {
             fileUsage.setIsCover(true);
             fileUsageRepository.save(fileUsage);
         } else {
-            throw new IllegalArgumentException("File is not a COURSE_PACKAGE media of this Course package!");
+            throw new IllegalArgumentException("Tệp không phải là phương tiện COURSE_PACKAGE của gói Khóa học này!");
         }
         return ApiResponse.<FileUsageDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("Set cover image successfully"))
+                .message(List.of("Đặt ảnh bìa thành công"))
                 .data(fileUsageMapper.toDto(fileUsage))
+                .build();
+    }
+
+    @Override
+    public ApiResponse<?> deleteCoursePackage(UUID courseId) {
+        CoursePackage cp = coursePackageRepository.findById(courseId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy Gói khóa học với id: " + courseId));
+        if (cp.getIsAvailable() != false) {
+            throw new IllegalArgumentException("Khóa học cần phải được ẩn trước khi xóa hoàn toàn.");
+        }
+        if (purchasedCoursePackageRepository.existsPurchasedCoursePackageByCoursePackageId(courseId)) {
+            throw new IllegalArgumentException("Khóa học đã được mua, không thể xóa vĩnh viễn, courseId: " + courseId);
+        }
+        Set<FileUsage> fileUsages = cp.getFileUsages();
+        for (FileUsage fileUsage : fileUsages) {
+            fileUsageRepository.delete(fileUsage);
+            fileRepository.delete(fileUsage.getFile());
+        }
+        coursePackageRepository.delete(cp);
+        return ApiResponse.builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Xóa khóa học thành công" + courseId))
+                .data(null)
                 .build();
     }
 }

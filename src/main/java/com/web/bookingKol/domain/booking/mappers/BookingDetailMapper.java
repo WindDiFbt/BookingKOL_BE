@@ -26,7 +26,7 @@ public class BookingDetailMapper {
         BookingDetailDTO dto = new BookingDetailDTO();
         dto.setId(bookingRequest.getId());
         dto.setUser(userMapper.toDto(bookingRequest.getUser()));
-        dto.setKol(kolDetailMapper.toDto(bookingRequest.getKol()));
+        dto.setKol(kolDetailMapper.toDtoBasicInformation(bookingRequest.getKol()));
         dto.setBookingType(bookingRequest.getBookingType());
         dto.setStatus(bookingRequest.getStatus());
         dto.setDescription(bookingRequest.getDescription());
@@ -35,6 +35,9 @@ public class BookingDetailMapper {
         dto.setEndAt(bookingRequest.getEndAt());
         dto.setCreatedAt(bookingRequest.getCreatedAt());
         dto.setUpdatedAt(bookingRequest.getUpdatedAt());
+        dto.setFullName(bookingRequest.getFullName());
+        dto.setPhone(bookingRequest.getPhone());
+        dto.setEmail(bookingRequest.getEmail());
         if (bookingRequest.getAttachedFiles() != null) {
             dto.setAttachedFiles(fileUsageMapper.toDtoSet(bookingRequest.getAttachedFiles()));
         }

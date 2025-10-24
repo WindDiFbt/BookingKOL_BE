@@ -1,5 +1,6 @@
 package com.web.bookingKol.domain.payment.models;
 
+import com.web.bookingKol.domain.booking.models.Contract;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -24,12 +25,6 @@ public class Refund {
     private UUID id;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "payment_id", nullable = false)
-    private Payment payment;
-
-    @NotNull
     @Column(name = "amount", nullable = false, precision = 18, scale = 2)
     private BigDecimal amount;
 
@@ -52,4 +47,8 @@ public class Refund {
     @Column(name = "created_at")
     private Instant createdAt;
 
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "contract_id", nullable = false)
+    private Contract contract;
 }

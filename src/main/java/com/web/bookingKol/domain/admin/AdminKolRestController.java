@@ -28,9 +28,10 @@ public class AdminKolRestController {
                                               @RequestParam(required = false) Boolean isAvailable,
                                               @RequestParam(required = false) Double minRating,
                                               @RequestParam(required = false) Enums.Roles role,
+                                              @RequestParam(required = false) String nameKeyword,
                                               @RequestParam(defaultValue = "0") int page,
                                               @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(kolProfileService.getAllKol(minBookingPrice, isAvailable, minRating, page, size, role));
+        return ResponseEntity.ok(kolProfileService.getAllKol(minBookingPrice, isAvailable, minRating, page, size, role, nameKeyword));
     }
 
     @PostMapping("/create-new-kol")

@@ -15,3 +15,5 @@ spring:
 app:
   jwtSecretKey: ${JWT_SECRET_KEY}
   jwtExpirationMs: ${JWT_EXPIRATION_MS}
+
+

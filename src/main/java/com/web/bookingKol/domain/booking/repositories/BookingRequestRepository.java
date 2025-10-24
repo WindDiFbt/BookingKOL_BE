@@ -63,4 +63,13 @@ public interface BookingRequestRepository extends JpaRepository<BookingRequest, 
             @Param("newStartAt") Instant newStartAt,
             @Param("newEndAt") Instant newEndAt
     );
+
+    @Query("""
+            SELECT br FROM BookingRequest br
+            LEFT JOIN FETCH br.attachedFiles fu
+            LEFT JOIN FETCH fu.file f
+            WHERE br.id = :bookingRequestId AND f.status = 'ACTIVE'
+            """)
+    BookingRequest findByIdWithAttachedFiles(@Param("bookingRequestId") UUID bookingRequestId);
+
 }
