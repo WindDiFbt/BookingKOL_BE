@@ -38,7 +38,7 @@ public interface KolProfileRepository extends JpaRepository<KolProfile, UUID> {
     List<KolProfile> findByCategoryId(UUID CategoryId);
 
     @Query("""
-                SELECT k FROM KolProfile k
+                SELECT DISTINCT k FROM KolProfile k
                 LEFT JOIN FETCH k.user u
                 LEFT JOIN k.categories c
                 WHERE k.isAvailable = true
