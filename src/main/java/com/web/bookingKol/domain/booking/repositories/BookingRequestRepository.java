@@ -72,4 +72,6 @@ public interface BookingRequestRepository extends JpaRepository<BookingRequest, 
             """)
     BookingRequest findByIdWithAttachedFiles(@Param("bookingRequestId") UUID bookingRequestId);
 
+    @Query("SELECT CASE WHEN COUNT(br) > 0 THEN TRUE ELSE FALSE END FROM BookingRequest br WHERE br.requestNumber = :requestNumber")
+    boolean existsByRequestNumber(@Param("requestNumber") String requestNumber);
 }

@@ -16,6 +16,7 @@ public class AdminBookingRestController {
 
     @GetMapping("/all")
     public ResponseEntity<?> getAllSingleRequest(@RequestParam(required = false) String status,
+                                                 @RequestParam(required = false) String requestNumber,
                                                  @RequestParam(required = false) LocalDate startAt,
                                                  @RequestParam(required = false) LocalDate endAt,
                                                  @RequestParam(required = false) LocalDate createdAtFrom,
@@ -23,7 +24,7 @@ public class AdminBookingRestController {
                                                  @RequestParam(defaultValue = "0") int page,
                                                  @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(bookingRequestService.getAllSingleRequestAdmin(
-                null, null, status, startAt, endAt, createdAtFrom, createdAtTo, page, size));
+                null, null, status, requestNumber, startAt, endAt, createdAtFrom, createdAtTo, page, size));
     }
 
     @GetMapping("/detail/{requestId}")
@@ -34,6 +35,7 @@ public class AdminBookingRestController {
     @GetMapping("/all/by-user/{userId}")
     public ResponseEntity<?> getAllSingleRequestByUser(@PathVariable("userId") UUID userId,
                                                        @RequestParam(required = false) String status,
+                                                       @RequestParam(required = false) String requestNumber,
                                                        @RequestParam(required = false) LocalDate startAt,
                                                        @RequestParam(required = false) LocalDate endAt,
                                                        @RequestParam(required = false) LocalDate createdAtFrom,
@@ -41,12 +43,13 @@ public class AdminBookingRestController {
                                                        @RequestParam(defaultValue = "0") int page,
                                                        @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(bookingRequestService.getAllSingleRequestAdmin(
-                null, userId, status, startAt, endAt, createdAtFrom, createdAtTo, page, size));
+                null, userId, status, requestNumber, startAt, endAt, createdAtFrom, createdAtTo, page, size));
     }
 
     @GetMapping("/all/by-kol/{kolId}")
     public ResponseEntity<?> getAllSingleRequestByKol(@PathVariable("kolId") UUID kolId,
                                                       @RequestParam(required = false) String status,
+                                                      @RequestParam(required = false) String requestNumber,
                                                       @RequestParam(required = false) LocalDate startAt,
                                                       @RequestParam(required = false) LocalDate endAt,
                                                       @RequestParam(required = false) LocalDate createdAtFrom,
@@ -54,6 +57,6 @@ public class AdminBookingRestController {
                                                       @RequestParam(defaultValue = "0") int page,
                                                       @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(bookingRequestService.getAllSingleRequestAdmin(
-                kolId, null, status, startAt, endAt, createdAtFrom, createdAtTo, page, size));
+                kolId, null, status, requestNumber, startAt, endAt, createdAtFrom, createdAtTo, page, size));
     }
 }

@@ -21,6 +21,7 @@ public interface BookingRequestService {
     ApiResponse<List<BookingSingleResDTO>> getAllSingleRequestAdmin(UUID kolId,
                                                                     UUID userId,
                                                                     String status,
+                                                                    String requestNumber,
                                                                     LocalDate startAt,
                                                                     LocalDate endAt,
                                                                     LocalDate createdAtFrom,
@@ -30,6 +31,7 @@ public interface BookingRequestService {
 
     ApiResponse<List<BookingSingleResDTO>> getAllSingleRequestUser(UUID userId,
                                                                    String status,
+                                                                   String requestNumber,
                                                                    LocalDate startAt,
                                                                    LocalDate endAt,
                                                                    LocalDate createdAtFrom,
@@ -39,6 +41,7 @@ public interface BookingRequestService {
 
     ApiResponse<List<BookingSingleResDTO>> getAllSingleRequestKol(UUID kolId,
                                                                   String status,
+                                                                  String requestNumber,
                                                                   LocalDate startAt,
                                                                   LocalDate endAt,
                                                                   LocalDate createdAtFrom,

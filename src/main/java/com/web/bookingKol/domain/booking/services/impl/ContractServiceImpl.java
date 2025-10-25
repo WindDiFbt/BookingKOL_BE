@@ -1,6 +1,7 @@
 package com.web.bookingKol.domain.booking.services.impl;
 
 import com.web.bookingKol.common.Enums;
+import com.web.bookingKol.common.NumberGenerateUtil;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.booking.models.Contract;
 import com.web.bookingKol.domain.booking.repositories.ContractRepository;
@@ -18,6 +19,11 @@ public class ContractServiceImpl implements ContractService {
     @Override
     public Contract createNewContract(BookingRequest bookingRequest) {
         Contract contract = new Contract();
+        String code;
+        do {
+            code = NumberGenerateUtil.generateSecureRandomContractNumber();
+        } while (contractRepository.existsByContractNumber(code));
+        contract.setContractNumber(code);
         contract.setBookingRequest(bookingRequest);
         contract.setStatus(Enums.ContractStatus.SIGNED.name());
         contract.setCreatedAt(Instant.now());

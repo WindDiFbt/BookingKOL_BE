@@ -1,6 +1,7 @@
 package com.web.bookingKol.domain.booking.services.impl;
 
 import com.web.bookingKol.common.Enums;
+import com.web.bookingKol.common.NumberGenerateUtil;
 import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.domain.booking.dtos.BookingDetailDTO;
 import com.web.bookingKol.domain.booking.dtos.BookingSingleReqDTO;
@@ -102,8 +103,13 @@ public class BookingRequestServiceImpl implements BookingRequestService {
         }
         // --- 3. Create Booking Request ---
         BookingRequest newBookingRequest = new BookingRequest();
+        String requestNumber;
+        do {
+            requestNumber = NumberGenerateUtil.generateSecureRandomRequestNumber();
+        } while (bookingRequestRepository.existsByRequestNumber(requestNumber));
         UUID bookingRequestId = UUID.randomUUID();
         newBookingRequest.setId(bookingRequestId);
+        newBookingRequest.setRequestNumber(requestNumber);
         newBookingRequest.setKol(kol);
         newBookingRequest.setUser(user);
         newBookingRequest.setDescription(bookingRequestDTO.getDescription());
@@ -159,13 +165,14 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     public ApiResponse<List<BookingSingleResDTO>> getAllSingleRequestAdmin(UUID kolId,
                                                                            UUID userId,
                                                                            String status,
+                                                                           String requestNumber,
                                                                            LocalDate startAt,
                                                                            LocalDate endAt,
                                                                            LocalDate createdAtFrom,
                                                                            LocalDate createdAtTo,
                                                                            int page,
                                                                            int size) {
-        List<BookingSingleResDTO> bookingSingleResDTOPage = findAllWithCondition(kolId, userId, status, startAt, endAt, createdAtFrom, createdAtTo, page, size);
+        List<BookingSingleResDTO> bookingSingleResDTOPage = findAllWithCondition(kolId, userId, status, requestNumber, startAt, endAt, createdAtFrom, createdAtTo, page, size);
         return ApiResponse.<List<BookingSingleResDTO>>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("GET All Booking Request successfully!"))
@@ -176,6 +183,7 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     private List<BookingSingleResDTO> findAllWithCondition(UUID kolId,
                                                            UUID userId,
                                                            String status,
+                                                           String requestNumber,
                                                            LocalDate startAt,
                                                            LocalDate endAt,
                                                            LocalDate createdAtFrom,
@@ -192,6 +200,10 @@ public class BookingRequestServiceImpl implements BookingRequestService {
         }
         if (status != null) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
+        }
+        if (requestNumber != null && !requestNumber.isBlank()) {
+            spec = spec.and((root, query, cb) ->
+                    cb.like(cb.lower(root.get("requestNumber")), "%" + requestNumber.toLowerCase() + "%"));
         }
         if (startAt != null) {
             spec = spec.and((root, query, cb) ->
@@ -232,8 +244,16 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     }
 
     @Override
-    public ApiResponse<List<BookingSingleResDTO>> getAllSingleRequestUser(UUID userId, String status, LocalDate startAt, LocalDate endAt, LocalDate createdAtFrom, LocalDate createdAtTo, int page, int size) {
-        List<BookingSingleResDTO> bookingSingleResList = findAllWithCondition(null, userId, status, startAt, endAt, createdAtFrom, createdAtTo, page, size);
+    public ApiResponse<List<BookingSingleResDTO>> getAllSingleRequestUser(UUID userId,
+                                                                          String status,
+                                                                          String requestNumber,
+                                                                          LocalDate startAt,
+                                                                          LocalDate endAt,
+                                                                          LocalDate createdAtFrom,
+                                                                          LocalDate createdAtTo,
+                                                                          int page,
+                                                                          int size) {
+        List<BookingSingleResDTO> bookingSingleResList = findAllWithCondition(null, userId, status, requestNumber, startAt, endAt, createdAtFrom, createdAtTo, page, size);
         return ApiResponse.<List<BookingSingleResDTO>>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("GET All Booking Request successfully, userId: " + userId))
@@ -242,8 +262,16 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     }
 
     @Override
-    public ApiResponse<List<BookingSingleResDTO>> getAllSingleRequestKol(UUID kolId, String status, LocalDate startAt, LocalDate endAt, LocalDate createdAtFrom, LocalDate createdAtTo, int page, int size) {
-        List<BookingSingleResDTO> bookingSingleResList = findAllWithCondition(kolId, null, status, startAt, endAt, createdAtFrom, createdAtTo, page, size);
+    public ApiResponse<List<BookingSingleResDTO>> getAllSingleRequestKol(UUID kolId,
+                                                                         String status,
+                                                                         String requestNumber,
+                                                                         LocalDate startAt,
+                                                                         LocalDate endAt,
+                                                                         LocalDate createdAtFrom,
+                                                                         LocalDate createdAtTo,
+                                                                         int page,
+                                                                         int size) {
+        List<BookingSingleResDTO> bookingSingleResList = findAllWithCondition(kolId, null, status, requestNumber, startAt, endAt, createdAtFrom, createdAtTo, page, size);
         return ApiResponse.<List<BookingSingleResDTO>>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("GET All Booking Request successfully, kolId: " + kolId))

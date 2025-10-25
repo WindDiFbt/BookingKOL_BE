@@ -9,6 +9,7 @@ import java.util.UUID;
 @Data
 public class ContractDTO {
     private UUID id;
+    private String contractNumber;
     private UUID bookingRequestId;
     private String status;
     private String terms;

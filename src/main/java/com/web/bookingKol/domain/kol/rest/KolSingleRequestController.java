@@ -23,6 +23,7 @@ public class KolSingleRequestController {
     @GetMapping("/all")
     public ResponseEntity<?> getAllSingleRequest(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                                  @RequestParam(required = false) String status,
+                                                 @RequestParam(required = false) String requestNumber,
                                                  @RequestParam(required = false) LocalDate startAt,
                                                  @RequestParam(required = false) LocalDate endAt,
                                                  @RequestParam(required = false) LocalDate createdAtFrom,
@@ -31,7 +32,7 @@ public class KolSingleRequestController {
                                                  @RequestParam(defaultValue = "20") int size) {
         UUID userId = userDetails.getId();
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
-        return ResponseEntity.ok(bookingRequestService.getAllSingleRequestKol(user.getKolProfile().getId(), status, startAt, endAt, createdAtFrom, createdAtTo, page, size));
+        return ResponseEntity.ok(bookingRequestService.getAllSingleRequestKol(user.getKolProfile().getId(), status, requestNumber, startAt, endAt, createdAtFrom, createdAtTo, page, size));
     }
 
     @GetMapping("/detail/{requestId}")
