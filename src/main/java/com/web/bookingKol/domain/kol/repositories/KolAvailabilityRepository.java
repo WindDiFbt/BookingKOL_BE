@@ -20,16 +20,17 @@ public interface KolAvailabilityRepository extends JpaRepository<KolAvailability
 //    List<KolAvailability> findByUserAndStartAtBetween(User user, OffsetDateTime start, OffsetDateTime end);
 
     @Query(value = """
-                SELECT * FROM kol_availabilities WHERE kol_id = :kolId
-                  AND (COALESCE(:start, start_at) <= start_at)
-                  AND (COALESCE(:end, end_at) >= end_at)
-                ORDER BY start_at
-            """, nativeQuery = true)
+    SELECT * FROM kol_availabilities
+    WHERE kol_id = :kolId
+      AND NOT (end_at <= :start OR start_at >= :end)
+    ORDER BY start_at
+""", nativeQuery = true)
     List<KolAvailability> findByKolIdAndDateRange(
             @Param("kolId") UUID kolId,
             @Param("start") Instant start,
             @Param("end") Instant end
     );
+
 
     @Query("""
                 SELECT CASE WHEN COUNT(ka) > 0 THEN TRUE ELSE FALSE END
@@ -57,6 +58,22 @@ public interface KolAvailabilityRepository extends JpaRepository<KolAvailability
             @Param("endDate") Instant endDate,
             Pageable pageable
     );
+
+    @Query("""
+    SELECT DISTINCT ka FROM KolAvailability ka
+    LEFT JOIN FETCH ka.workTimes wt
+    WHERE ka.kol.id = :kolId
+      AND ka.endAt >= COALESCE(:startDate, ka.endAt)
+      AND ka.startAt <= COALESCE(:endDate, ka.startAt)
+    ORDER BY ka.startAt DESC
+""")
+    List<KolAvailability> findAllWithWorkTimes(
+            @Param("kolId") UUID kolId,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate
+    );
+
+
 
     @Query("SELECT ka FROM KolAvailability ka WHERE ka.kol.id = :kolId AND ka.startAt <= :startTime AND ka.endAt >= :endTime")
     KolAvailability findAvailability(@Param("kolId") UUID kolId,
