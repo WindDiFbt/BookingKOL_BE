@@ -185,21 +185,20 @@ public class KolAvailabilityServiceImpl implements KolAvailabilityService {
             int page,
             int size
     ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "startAt"));
-        Page<KolAvailability> availabilities =
-                kolAvailabilityRepository.findByKolIdAndDateRangePaged(kolId, startDate, endDate, pageable);
+        List<KolAvailability> availabilities =
+                kolAvailabilityRepository.findAllWithWorkTimes(kolId, startDate, endDate);
 
-        List<KolAvailabilityDTO> dtoList = availabilities.getContent()
-                .stream()
+        List<KolAvailabilityDTO> dtoList = availabilities.stream()
                 .map(KolAvailabilityDTO::new)
                 .toList();
 
         return ApiResponse.<List<KolAvailabilityDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("Lấy danh sách lịch làm việc thành công"))
+                .message(List.of("Lấy danh sách lịch làm việc cùng chi tiết thành công"))
                 .data(dtoList)
                 .build();
     }
+
 
 
     @Override
