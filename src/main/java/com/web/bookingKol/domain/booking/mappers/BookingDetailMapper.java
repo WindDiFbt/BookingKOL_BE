@@ -25,6 +25,7 @@ public class BookingDetailMapper {
         }
         BookingDetailDTO dto = new BookingDetailDTO();
         dto.setId(bookingRequest.getId());
+        dto.setRequestNumber(bookingRequest.getRequestNumber());
         dto.setUser(userMapper.toDto(bookingRequest.getUser()));
         dto.setKol(kolDetailMapper.toDtoBasicInformation(bookingRequest.getKol()));
         dto.setBookingType(bookingRequest.getBookingType());
