@@ -7,6 +7,8 @@ import com.web.bookingKol.domain.booking.dtos.BookingDetailDTO;
 import com.web.bookingKol.domain.booking.dtos.BookingSingleReqDTO;
 import com.web.bookingKol.domain.booking.dtos.BookingSingleResDTO;
 import com.web.bookingKol.domain.booking.dtos.UpdateBookingReqDTO;
+import com.web.bookingKol.domain.booking.jobrunr.BookingRequestJob;
+import com.web.bookingKol.domain.booking.jobrunr.WorkTimeJob;
 import com.web.bookingKol.domain.booking.mappers.BookingDetailMapper;
 import com.web.bookingKol.domain.booking.mappers.BookingSingleResMapper;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
@@ -23,6 +25,7 @@ import com.web.bookingKol.domain.file.models.File;
 import com.web.bookingKol.domain.file.services.FileService;
 import com.web.bookingKol.domain.kol.models.KolAvailability;
 import com.web.bookingKol.domain.kol.models.KolProfile;
+import com.web.bookingKol.domain.kol.models.KolWorkTime;
 import com.web.bookingKol.domain.kol.repositories.KolAvailabilityRepository;
 import com.web.bookingKol.domain.kol.repositories.KolProfileRepository;
 import com.web.bookingKol.domain.kol.services.KolWorkTimeService;
@@ -32,6 +35,7 @@ import com.web.bookingKol.domain.payment.services.SePayService;
 import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.domain.user.repositories.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.jobrunr.scheduling.BackgroundJob;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -48,7 +52,6 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -83,15 +86,19 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     private BookingDetailMapper bookingDetailMapper;
     @Autowired
     private ContractRepository contractRepository;
+    @Autowired
+    private BookingRequestJob bookingRequestJob;
+    @Autowired
+    protected WorkTimeJob workTimeJob;
 
     @Transactional
     @Override
-    public ApiResponse<PaymentReqDTO> createBookingSingleReq(UUID userId, BookingSingleReqDTO bookingRequestDTO, List<MultipartFile> attachedFiles) {
+    public ApiResponse<BookingDetailDTO> createBookingSingleReq(UUID userId, BookingSingleReqDTO bookingRequestDTO, List<MultipartFile> attachedFiles) {
         // --- 1. Fetch main entities ---
         KolProfile kol = kolProfileRepository.findById(bookingRequestDTO.getKolId())
-                .orElseThrow(() -> new EntityNotFoundException("Kol Id Not Found: " + bookingRequestDTO.getKolId()));
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy Kol với ID: " + bookingRequestDTO.getKolId()));
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User Id Not Found: " + userId));
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy người dùng với ID: " + userId));
         // --- 2. Delegate validation ---
         bookingValidationService.validateBookingRequest(bookingRequestDTO, kol);
         //Check hold slot
@@ -99,7 +106,7 @@ public class BookingRequestServiceImpl implements BookingRequestService {
                 bookingRequestDTO.getStartAt(),
                 bookingRequestDTO.getEndAt(),
                 userId.toString())) {
-            throw new IllegalArgumentException("The time slot is no longer held by you, please re-select!");
+            throw new IllegalArgumentException("Khung thời gian này không được bạn giữ, vui lòng chọn lại!");
         }
         // --- 3. Create Booking Request ---
         BookingRequest newBookingRequest = new BookingRequest();
@@ -116,7 +123,7 @@ public class BookingRequestServiceImpl implements BookingRequestService {
         newBookingRequest.setLocation(bookingRequestDTO.getLocation());
         newBookingRequest.setStartAt(bookingRequestDTO.getStartAt());
         newBookingRequest.setEndAt(bookingRequestDTO.getEndAt());
-        newBookingRequest.setStatus(Enums.BookingStatus.REQUESTED.name());
+        newBookingRequest.setStatus(Enums.BookingStatus.DRAFT.name());
         newBookingRequest.setBookingType(Enums.BookingType.SINGLE.name());
         newBookingRequest.setCreatedAt(Instant.now());
         newBookingRequest.setFullName(bookingRequestDTO.getFullName());
@@ -130,35 +137,96 @@ public class BookingRequestServiceImpl implements BookingRequestService {
                 newBookingRequest.getAttachedFiles().add(fileUsageMapper.toEntity(fileUsageDTO));
             }
         }
-        // --- 5. Create Contract ---
-        Contract contract = new Contract();
         bookingRequestRepository.saveAndFlush(newBookingRequest);
-        if (bookingRequestDTO.getIsConfirmWithTerms() == true) {
-            contract = contractService.createNewContract(newBookingRequest);
-            newBookingRequest.getContracts().add(contract);
-        }
-        // --- 6. Initiate Payment ---
+        // --- 5. Create Contract ---
+        Contract contract = contractService.createNewContract(newBookingRequest);
+        newBookingRequest.getContracts().add(contract);
+        // --- 6. Build Job schedule and return response ---
+        BackgroundJob.schedule(
+                bookingRequestId,
+                Instant.now().plus(15, ChronoUnit.MINUTES),
+                () -> bookingRequestJob.closeDraftRequest(newBookingRequest.getId())
+        );
+        return ApiResponse.<BookingDetailDTO>builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Yêu cầu đặt lịch thành công!"))
+                .data(bookingDetailMapper.toDto(newBookingRequest))
+                .build();
+    }
+
+    @Transactional
+    @Override
+    public ApiResponse<PaymentReqDTO> confirmBookingSingleReq(UUID bookingRequestId, UUID userId) {
+        BookingRequest bookingRequest = getAndValidateDraftBooking(bookingRequestId, userId);
+        Contract contract = getFirstContract(bookingRequest);
+        bookingRequest.setStatus(Enums.BookingStatus.REQUESTED.name());
+        bookingRequestRepository.saveAndFlush(bookingRequest);
+        contractService.confirmContract(contract);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy người dùng với ID: " + userId));
+        // --- 1. Initiate Payment ---
         String transferContent = contract.getId().toString();
         PaymentReqDTO paymentReqDTO = paymentService.initiatePayment(
-                newBookingRequest,
+                bookingRequest,
                 contract,
                 sePayService.createQRCode(contract.getAmount(), transferContent),
                 user,
                 contract.getAmount()
         );
         paymentReqDTO.setTransferContent(transferContent);
-        // --- Create KOL work time ---
-        KolAvailability ka = kolAvailabilityRepository.findAvailability(kol.getId(), bookingRequestDTO.getStartAt(),
-                bookingRequestDTO.getEndAt());
-        kolWorkTimeService.createNewKolWorkTime(ka, newBookingRequest, Enums.BookingStatus.REQUESTED.name(),
-                bookingRequestDTO.getStartAt(),
-                bookingRequestDTO.getEndAt());
-        // --- 7. Build and return response ---
+        // --- 2. Create KOL work time ---
+        KolAvailability ka = kolAvailabilityRepository.findAvailability(bookingRequest.getKol().getId(),
+                bookingRequest.getStartAt(), bookingRequest.getEndAt());
+        if (ka == null) {
+            throw new EntityNotFoundException("Không tìm thấy lịch khả dụng (KOL Availability) cho khung thời gian này.");
+        }
+        KolWorkTime kolWorkTime = kolWorkTimeService.createNewKolWorkTime(ka, bookingRequest, Enums.KOLWorkTimeStatus.REQUESTED.name(),
+                bookingRequest.getStartAt(), bookingRequest.getEndAt());
+        // --- 3. Build Job schedule and return response ---
+        BackgroundJob.delete(bookingRequestId);
+        BackgroundJob.schedule(
+                kolWorkTime.getId(),
+                Instant.now().plus(3, ChronoUnit.DAYS),
+                () -> workTimeJob.autoCompleteWorkTime(kolWorkTime.getId())
+        );
         return ApiResponse.<PaymentReqDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("Booking Request successfully!"))
+                .message(List.of("Xác nhận yêu cầu đặt lịch thành công!"))
                 .data(paymentReqDTO)
                 .build();
+    }
+
+    @Transactional
+    @Override
+    public ApiResponse<BookingDetailDTO> cancelBookingSingleReq(UUID bookingRequestId, UUID userId) {
+        BookingRequest bookingRequest = getAndValidateDraftBooking(bookingRequestId, userId);
+        Contract contract = getFirstContract(bookingRequest);
+        bookingRequest.setStatus(Enums.BookingStatus.CANCELLED.name());
+        contractService.cancelContract(contract);
+        bookingRequestRepository.saveAndFlush(bookingRequest);
+        BackgroundJob.delete(bookingRequestId);
+        return ApiResponse.<BookingDetailDTO>builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Hủy yêu cầu đặt lịch thành công!"))
+                .data(bookingDetailMapper.toDto(bookingRequest))
+                .build();
+    }
+
+    private BookingRequest getAndValidateDraftBooking(UUID bookingRequestId, UUID userId) {
+        BookingRequest bookingRequest = bookingRequestRepository.findById(bookingRequestId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy yêu cầu đặt lịch với ID: " + bookingRequestId));
+        if (!bookingRequest.getStatus().equalsIgnoreCase(Enums.BookingStatus.DRAFT.name())) {
+            throw new IllegalArgumentException("Yêu cầu đặt lịch không ở trạng thái DRAFT. Không thể hoàn thành hành động.");
+        }
+        if (!bookingRequest.getUser().getId().equals(userId)) {
+            throw new AuthorizationServiceException("Bạn không được phép thực hiện hành động này đối với yêu cầu đặt lịch này");
+        }
+        return bookingRequest;
+    }
+
+    private Contract getFirstContract(BookingRequest bookingRequest) {
+        return bookingRequest.getContracts().stream().findFirst()
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy hợp đồng với ID yêu cầu đặt lịch: " + bookingRequest.getId()));
     }
 
     @Override
@@ -175,7 +243,7 @@ public class BookingRequestServiceImpl implements BookingRequestService {
         List<BookingSingleResDTO> bookingSingleResDTOPage = findAllWithCondition(kolId, userId, status, requestNumber, startAt, endAt, createdAtFrom, createdAtTo, page, size);
         return ApiResponse.<List<BookingSingleResDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("GET All Booking Request successfully!"))
+                .message(List.of("Lấy tất cả yêu cầu đặt lịch thành công!"))
                 .data(bookingSingleResDTOPage)
                 .build();
     }
@@ -234,11 +302,11 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     public ApiResponse<BookingDetailDTO> getDetailSingleRequestAdmin(UUID bookingRequestId) {
         BookingRequest bookingRequest = bookingRequestRepository.findByIdWithAttachedFiles(bookingRequestId);
         if (bookingRequest == null) {
-            throw new EntityNotFoundException("Booking Request Not Found");
+            throw new EntityNotFoundException("Không tìm thấy yêu cầu đặt lịch");
         }
         return ApiResponse.<BookingDetailDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("Get detail booking request successfully!"))
+                .message(List.of("Lấy chi tiết yêu cầu đặt lịch thành công!"))
                 .data(bookingDetailMapper.toDto(bookingRequest))
                 .build();
     }
@@ -256,7 +324,7 @@ public class BookingRequestServiceImpl implements BookingRequestService {
         List<BookingSingleResDTO> bookingSingleResList = findAllWithCondition(null, userId, status, requestNumber, startAt, endAt, createdAtFrom, createdAtTo, page, size);
         return ApiResponse.<List<BookingSingleResDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("GET All Booking Request successfully, userId: " + userId))
+                .message(List.of("Lấy tất cả yêu cầu đặt lịch thành công, userId: " + userId))
                 .data(bookingSingleResList)
                 .build();
     }
@@ -274,7 +342,7 @@ public class BookingRequestServiceImpl implements BookingRequestService {
         List<BookingSingleResDTO> bookingSingleResList = findAllWithCondition(kolId, null, status, requestNumber, startAt, endAt, createdAtFrom, createdAtTo, page, size);
         return ApiResponse.<List<BookingSingleResDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("GET All Booking Request successfully, kolId: " + kolId))
+                .message(List.of("Lấy tất cả yêu cầu đặt lịch thành công, kolId: " + kolId))
                 .data(bookingSingleResList)
                 .build();
     }
@@ -283,14 +351,14 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     public ApiResponse<BookingDetailDTO> getDetailSingleRequestKol(UUID bookingRequestId, UUID kolId) {
         BookingRequest bookingRequest = bookingRequestRepository.findByIdWithAttachedFiles(bookingRequestId);
         if (bookingRequest == null) {
-            throw new EntityNotFoundException("Booking Request Not Found");
+            throw new EntityNotFoundException("Không tìm thấy yêu cầu đặt lịch");
         }
         if (!bookingRequest.getKol().getId().equals(kolId)) {
-            throw new AuthorizationServiceException("You are not authorized to view this booking request");
+            throw new AuthorizationServiceException("Bạn không được phép xem yêu cầu đặt lịch này");
         }
         return ApiResponse.<BookingDetailDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("Get detail booking request successfully!"))
+                .message(List.of("Lấy chi tiết yêu cầu đặt lịch thành công!"))
                 .data(bookingDetailMapper.toDto(bookingRequest))
                 .build();
     }
@@ -299,14 +367,14 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     public ApiResponse<BookingDetailDTO> getDetailSingleRequestUser(UUID bookingRequestId, UUID userId) {
         BookingRequest bookingRequest = bookingRequestRepository.findByIdWithAttachedFiles(bookingRequestId);
         if (bookingRequest == null) {
-            throw new EntityNotFoundException("Booking Request Not Found");
+            throw new EntityNotFoundException("Không tìm thấy yêu cầu đặt lịch");
         }
         if (!bookingRequest.getUser().getId().equals(userId)) {
-            throw new AuthorizationServiceException("You are not authorized to view this booking request");
+            throw new AuthorizationServiceException("Bạn không được phép xem yêu cầu đặt lịch này");
         }
         return ApiResponse.<BookingDetailDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("Get detail booking request successfully!"))
+                .message(List.of("Lấy chi tiết yêu cầu đặt lịch thành công!"))
                 .data(bookingDetailMapper.toDto(bookingRequest))
                 .build();
     }
@@ -316,16 +384,16 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     public ApiResponse<BookingDetailDTO> updateBookingRequest(UUID userId, UUID bookingRequestId, UpdateBookingReqDTO updateBookingReqDTO, List<MultipartFile> attachedFiles, List<UUID> fileIdsToDelete) {
         BookingRequest bookingRequest = bookingRequestRepository.findByIdWithAttachedFiles(bookingRequestId);
         if (bookingRequest == null) {
-            throw new EntityNotFoundException("Booking Request Not Found: " + bookingRequestId);
+            throw new EntityNotFoundException("Không tìm thấy yêu cầu đặt lịch: " + bookingRequestId);
         }
         if (!bookingRequest.getUser().getId().equals(userId)) {
-            throw new AuthorizationServiceException("You are not authorized to update this booking request");
+            throw new AuthorizationServiceException("Bạn không được phép cập nhật yêu cầu đặt lịch này");
         }
         if (bookingRequest.getUpdatedAt() != null) {
-            throw new IllegalArgumentException("Booking request only can be updated once");
+            throw new IllegalArgumentException("Yêu cầu đặt lịch chỉ có thể được cập nhật một lần");
         }
         if (Instant.now().isAfter(bookingRequest.getStartAt().minus(24, ChronoUnit.HOURS))) {
-            throw new IllegalArgumentException("Booking request only can be updated before 24 hours");
+            throw new IllegalArgumentException("Yêu cầu đặt lịch chỉ có thể được cập nhật trước 24 giờ");
         }
         if (updateBookingReqDTO != null) {
             if (updateBookingReqDTO.getFullName() != null) {
@@ -360,7 +428,7 @@ public class BookingRequestServiceImpl implements BookingRequestService {
         bookingRequestRepository.saveAndFlush(bookingRequest);
         return ApiResponse.<BookingDetailDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("Update booking request successfully"))
+                .message(List.of("Cập nhật yêu cầu đặt lịch thành công"))
                 .data(bookingDetailMapper.toDto(bookingRequest))
                 .build();
     }
@@ -369,13 +437,13 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     public ApiResponse<BookingDetailDTO> cancelBookingRequest(UUID userId, UUID bookingRequestId) {
         BookingRequest bookingRequest = bookingRequestRepository.findByIdWithAttachedFiles(bookingRequestId);
         if (bookingRequest == null) {
-            throw new EntityNotFoundException("Booking Request Not Found: " + bookingRequestId);
+            throw new EntityNotFoundException("Không tìm thấy yêu cầu đặt lịch: " + bookingRequestId);
         }
         if (bookingRequest.getStatus().equalsIgnoreCase(Enums.BookingStatus.CANCELLED.name())) {
-            throw new IllegalArgumentException("Booking request is already cancelled");
+            throw new IllegalArgumentException("Yêu cầu đặt lịch đã bị hủy");
         }
         if (!bookingRequest.getUser().getId().equals(userId)) {
-            throw new AuthorizationServiceException("You are not authorized to cancel this booking request");
+            throw new AuthorizationServiceException("Bạn không được phép hủy yêu cầu đặt lịch này");
         }
         bookingRequest.setStatus(Enums.BookingStatus.CANCELLED.name());
 //        bookingRequest.setUpdatedAt(Instant.now());
@@ -385,22 +453,8 @@ public class BookingRequestServiceImpl implements BookingRequestService {
         contractRepository.saveAndFlush(contract);
         return ApiResponse.<BookingDetailDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("Cancel booking request successfully"))
+                .message(List.of("Hủy yêu cầu đặt lịch thành công"))
                 .data(bookingDetailMapper.toDto(bookingRequest))
                 .build();
-    }
-
-    @Override
-    public void checkAndCompleteBookingRequest(BookingRequest bookingRequest) {
-        Set<String> finishedStatuses = Set.of(
-                Enums.KOLWorkTimeStatus.COMPLETED.name(),
-                Enums.KOLWorkTimeStatus.CANCELLED.name()
-        );
-        boolean allWorkTimesFinished = bookingRequest.getKolWorkTimes().stream()
-                .allMatch(kolWorkTime -> finishedStatuses.contains(kolWorkTime.getStatus()));
-        if (allWorkTimesFinished) {
-            bookingRequest.setStatus(Enums.BookingStatus.COMPLETED.name());
-            bookingRequestRepository.saveAndFlush(bookingRequest);
-        }
     }
 }

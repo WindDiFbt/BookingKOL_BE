@@ -33,6 +33,20 @@ public class BookingRequestRestController {
         return ResponseEntity.ok().body(bookingRequestService.createBookingSingleReq(userId, bookingSingleReqDTO, attachedFiles));
     }
 
+    @PostMapping("/request/single/confirm/{bookingRequestId}")
+    ResponseEntity<?> confirmBookingRequest(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                            @PathVariable UUID bookingRequestId) {
+        UUID userId = userDetails.getId();
+        return ResponseEntity.ok().body(bookingRequestService.confirmBookingSingleReq(bookingRequestId, userId));
+    }
+
+    @PatchMapping("/request/single/cancel/{bookingRequestId}")
+    ResponseEntity<?> cancelBookingRequest(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                           @PathVariable UUID bookingRequestId) {
+        UUID userId = userDetails.getId();
+        return ResponseEntity.ok().body(bookingRequestService.cancelBookingSingleReq(bookingRequestId, userId));
+    }
+
     @PostMapping("/hold-slot")
     ResponseEntity<?> softHoldSlot(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                    @RequestBody SoftHoldSlotDTO softHoldSlotDTO) {

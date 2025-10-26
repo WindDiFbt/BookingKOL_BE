@@ -17,7 +17,7 @@ public class KolWorkTimeServiceImpl implements KolWorkTimeService {
     private KolWorkTimeRepository kolWorkTimeRepository;
 
     @Override
-    public void createNewKolWorkTime(KolAvailability kolAvailability, BookingRequest bookingRequest, String status, Instant startAt, Instant endAt) {
+    public KolWorkTime createNewKolWorkTime(KolAvailability kolAvailability, BookingRequest bookingRequest, String status, Instant startAt, Instant endAt) {
         KolWorkTime kolWorkTime = new KolWorkTime();
         kolWorkTime.setId(UUID.randomUUID());
         kolWorkTime.setAvailability(kolAvailability);
@@ -26,5 +26,6 @@ public class KolWorkTimeServiceImpl implements KolWorkTimeService {
         kolWorkTime.setStatus(status);
         kolWorkTime.setBookingRequest(bookingRequest);
         kolWorkTimeRepository.save(kolWorkTime);
+        return kolWorkTime;
     }
 }

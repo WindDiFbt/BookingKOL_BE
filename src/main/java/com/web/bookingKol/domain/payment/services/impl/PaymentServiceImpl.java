@@ -7,12 +7,14 @@ import com.web.bookingKol.domain.booking.repositories.BookingRequestRepository;
 import com.web.bookingKol.domain.kol.models.KolWorkTime;
 import com.web.bookingKol.domain.payment.dtos.PaymentReqDTO;
 import com.web.bookingKol.domain.payment.dtos.transaction.TransactionDTO;
+import com.web.bookingKol.domain.payment.jobrunr.PaymentJob;
 import com.web.bookingKol.domain.payment.models.Merchant;
 import com.web.bookingKol.domain.payment.models.Payment;
 import com.web.bookingKol.domain.payment.repositories.PaymentRepository;
 import com.web.bookingKol.domain.payment.services.MerchantService;
 import com.web.bookingKol.domain.payment.services.PaymentService;
 import com.web.bookingKol.domain.user.models.User;
+import org.jobrunr.scheduling.BackgroundJob;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,8 +33,10 @@ public class PaymentServiceImpl implements PaymentService {
     private BookingRequestRepository bookingRequestRepository;
     @Autowired
     private MerchantService merchantService;
+    @Autowired
+    private PaymentJob paymentJob;
 
-    private final String VND_CURRENCY = "VND";
+    private final String CURRENCY = "VND";
     private final Integer EXPIRES_TIME = 15;
 
     @Override
@@ -43,7 +47,7 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setContract(contract);
         payment.setUser(user);
         payment.setTotalAmount(amount);
-        payment.setCurrency(VND_CURRENCY);
+        payment.setCurrency(CURRENCY);
         payment.setStatus(Enums.PaymentStatus.PENDING.name());
         payment.setPaidAmount(null);
         payment.setFailureReason(null);
@@ -51,6 +55,11 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setUpdatedAt(null);
         payment.setExpiresAt(Instant.now().plus(EXPIRES_TIME, ChronoUnit.MINUTES));
         paymentRepository.save(payment);
+        BackgroundJob.schedule(
+                payment.getId(),
+                Instant.now().plus(EXPIRES_TIME, ChronoUnit.MINUTES),
+                () -> paymentJob.expirePayment(payment.getId())
+        );
         return PaymentReqDTO.builder()
                 .contractId(contract.getId())
                 .amount(contract.getAmount())
@@ -67,7 +76,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public void updatePaymentAfterTransactionSuccess(TransactionDTO transactionDTO) {
         Payment payment = paymentRepository.findById(transactionDTO.getPaymentId())
-                .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy Payment với ID: " + transactionDTO.getPaymentId()));
 
         BigDecimal currentPaidAmount = payment.getPaidAmount() == null ? BigDecimal.ZERO : payment.getPaidAmount();
         BigDecimal newPaidAmount = currentPaidAmount.add(transactionDTO.getAmountIn());
@@ -101,7 +110,7 @@ public class PaymentServiceImpl implements PaymentService {
     public boolean checkContractPaymentSuccess(UUID contractId) {
         Payment payment = paymentRepository.findByContractId(contractId);
         if (payment == null) {
-            throw new IllegalArgumentException("Payment not found");
+            throw new IllegalArgumentException("Không tìm thấy Payment với Contract ID: " + contractId);
         }
         return payment.getStatus().equals(Enums.PaymentStatus.PAID.name()) || payment.getStatus().equals(Enums.PaymentStatus.OVERPAID.name());
     }

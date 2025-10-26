@@ -25,7 +25,4 @@ public class BookingSingleReqDTO {
     private Instant endAt;
     private String description;
     private String location;
-
-    @AssertTrue(message = "You must agree to the terms before continuing.")
-    private Boolean isConfirmWithTerms;
 }

@@ -38,18 +38,17 @@ public class SoftHoldBookingService {
 
     public ApiResponse<SoftHoldSlotDTO> attemptHoldSlot(UUID kolId, Instant startTime, Instant endTime, String holdingUserId) {
         KolProfile kol = kolProfileRepository.findById(kolId).
-                orElseThrow(() -> new IllegalArgumentException("Kol Not Found"));
+                orElseThrow(() -> new IllegalArgumentException("Không tìm thấy Kol"));
         BookingSingleReqDTO bookingSingleReqDTO = new BookingSingleReqDTO();
         bookingSingleReqDTO.setKolId(UUID.randomUUID());
         bookingSingleReqDTO.setStartAt(startTime);
         bookingSingleReqDTO.setEndAt(endTime);
-        bookingSingleReqDTO.setIsConfirmWithTerms(true);
         bookingValidationService.validateBookingRequest(bookingSingleReqDTO, kol);
         Cache cache = cacheManager.getCache(CacheConfig.SOFT_HOLD_CACHE);
         if (cache == null) {
             return ApiResponse.<SoftHoldSlotDTO>builder()
                     .status(HttpStatus.OK.value())
-                    .message(List.of("Soft Hold Bypassed: Success"))
+                    .message(List.of("Giữ chỗ tạm thời: Thành công"))
                     .data(SoftHoldSlotDTO.builder().kolId(kolId).startTimeIso(startTime).endTimeIso(endTime).build())
                     .build();
         }
@@ -61,7 +60,7 @@ public class SoftHoldBookingService {
                 if (!existingHold.userId().equals(holdingUserId)) {
                     boolean isOverlapping = startTime.isBefore(existingHold.endAt()) && endTime.isAfter(existingHold.startAt());
                     if (isOverlapping) {
-                        throw new IllegalArgumentException("Slot overlaps with another user's soft hold: FAILURE");
+                        throw new IllegalArgumentException("Khung giờ trùng với một người dùng khác đang giữ chỗ: THẤT BẠI");
                     }
                     updatedHoldsMap.put(entry.getKey(), existingHold);
                 }
@@ -73,7 +72,7 @@ public class SoftHoldBookingService {
                 cache.put(kolId, updatedHoldsMap);
                 return ApiResponse.<SoftHoldSlotDTO>builder()
                         .status(HttpStatus.OK.value())
-                        .message(List.of("Slot already held by YOU: SUCCESS (TTL refreshed)"))
+                        .message(List.of("Bạn đã giữ chỗ này: THÀNH CÔNG (TTL đã được làm mới)"))
                         .data(null)
                         .build();
             }
@@ -82,7 +81,7 @@ public class SoftHoldBookingService {
             cache.put(kolId, updatedHoldsMap);
             return ApiResponse.<SoftHoldSlotDTO>builder()
                     .status(HttpStatus.OK.value())
-                    .message(List.of("Hold slot SUCCESSFUL"))
+                    .message(List.of("Giữ chỗ THÀNH CÔNG"))
                     .data(SoftHoldSlotDTO.builder().kolId(kolId).startTimeIso(startTime).endTimeIso(endTime).build())
                     .build();
         }
