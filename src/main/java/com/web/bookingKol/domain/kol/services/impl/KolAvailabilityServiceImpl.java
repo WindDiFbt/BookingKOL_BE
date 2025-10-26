@@ -64,98 +64,97 @@ public class KolAvailabilityServiceImpl implements KolAvailabilityService {
     }
 
     @Override
+    @Transactional
     public ApiResponse<KolAvailabilityDTO> createKolSchedule(UUID userId, KolAvailabilityDTO dto) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy KOL"));
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy người dùng"));
+
         KolProfile kol = user.getKolProfile();
         if (kol == null) {
             return ApiResponse.<KolAvailabilityDTO>builder()
                     .status(HttpStatus.BAD_REQUEST.value())
-                    .message(List.of("Người dùng không phải KOL"))
+                    .message(List.of("Người dùng này không phải là KOL"))
                     .build();
         }
 
-        KolAvailability existing = kolAvailabilityRepository.findByKolIdAndDateRange(
-                kol.getId(), dto.getStartAt(), dto.getEndAt()
-        ).stream().findFirst().orElse(null);
-
-        if (existing != null &&
-                existing.getStartAt().equals(dto.getStartAt()) &&
-                existing.getEndAt().equals(dto.getEndAt())) {
+        if (dto.getStartAt() == null || dto.getEndAt() == null) {
             return ApiResponse.<KolAvailabilityDTO>builder()
                     .status(HttpStatus.BAD_REQUEST.value())
-                    .message(List.of("Khoảng thời gian này đã bị trùng với lịch khác"))
+                    .message(List.of("Thiếu thời gian bắt đầu hoặc kết thúc"))
                     .build();
         }
 
+        if (dto.getEndAt().isBefore(dto.getStartAt())) {
+            return ApiResponse.<KolAvailabilityDTO>builder()
+                    .status(HttpStatus.BAD_REQUEST.value())
+                    .message(List.of("Thời gian kết thúc không thể trước thời gian bắt đầu"))
+                    .build();
+        }
+
+        boolean overlapExists = kolAvailabilityRepository.findByKolIdAndDateRange(
+                kol.getId(), dto.getStartAt(), dto.getEndAt()
+        ).stream().anyMatch(existing ->
+                !(existing.getEndAt().isBefore(dto.getStartAt()) || existing.getStartAt().isAfter(dto.getEndAt()))
+        );
+
+        if (overlapExists) {
+            return ApiResponse.<KolAvailabilityDTO>builder()
+                    .status(HttpStatus.BAD_REQUEST.value())
+                    .message(List.of("Khoảng thời gian này đã bị trùng với lịch làm việc khác"))
+                    .build();
+        }
+
+        KolAvailability availability = new KolAvailability();
+        availability.setId(UUID.randomUUID());
+        availability.setKol(kol);
+        availability.setStartAt(dto.getStartAt());
+        availability.setEndAt(dto.getEndAt());
+        availability.setCreatedAt(Instant.now());
+        availability.setStatus("AVAILABLE");
+
+        kolAvailabilityRepository.save(availability);
+
         try {
-            KolAvailability availability = new KolAvailability();
-            availability.setId(UUID.randomUUID());
-            availability.setKol(kol);
-            availability.setStartAt(dto.getStartAt());
-            availability.setEndAt(dto.getEndAt());
-            availability.setCreatedAt(Instant.now());
-            availability.setStatus("AVAILABLE");
-
-            if (dto.getWorkTimes() != null && !dto.getWorkTimes().isEmpty()) {
-                List<KolWorkTime> workTimes = dto.getWorkTimes().stream().map(wtDto -> {
-                    KolWorkTime wt = new KolWorkTime();
-                    wt.setId(UUID.randomUUID());
-                    wt.setAvailability(availability);
-                    wt.setStartAt(wtDto.getStartAt());
-                    wt.setEndAt(wtDto.getEndAt());
-                    wt.setNote(wtDto.getNote());
-                    wt.setStatus(wtDto.getStatus());
-                    return wt;
-                }).toList();
-                availability.setWorkTimes(workTimes);
-            }
-
-            kolAvailabilityRepository.save(availability);
-
             String kolEmail = user.getEmail();
             if (kolEmail != null && !kolEmail.isEmpty()) {
-                String subject = "Lịch làm việc mới đã được tạo";
+                String subject = "🎉 Lịch làm việc mới đã được tạo thành công";
                 String content = """
-                    <html>
-                    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                        <h2 style="color:#2E86C1;">Xin chào %s 👋</h2>
-                        <p>Lịch làm việc của bạn đã được <strong style="color:green;">tạo thành công</strong> 🎉</p>
+                <html>
+                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <h2 style="color:#2E86C1;">Xin chào %s 👋</h2>
+                    <p>Bạn vừa tạo thành công một lịch làm việc mới trên hệ thống BookingKOL 🎉</p>
                     
-                        <div style="border:1px solid #ccc; padding:15px; border-radius:8px; background-color:#f9f9f9; margin:10px 0;">
-                            <p><strong>🗓️ Thời gian bắt đầu:</strong> %s</p>
-                            <p><strong>⏰ Thời gian kết thúc:</strong> %s</p>
-                            <p><strong>📝 Số khung thời gian con:</strong> %d</p>
-                        </div>
+                    <div style="border:1px solid #ccc; padding:15px; border-radius:8px; background-color:#f9f9f9; margin:10px 0;">
+                        <p><strong>🗓️ Thời gian bắt đầu:</strong> %s</p>
+                        <p><strong>⏰ Thời gian kết thúc:</strong> %s</p>
+                        <p><strong>🔖 Trạng thái:</strong> %s</p>
+                    </div>
                     
-                        <p>💡 Bạn có thể đăng nhập lại hệ thống <a href="#####" style="color:#2E86C1; text-decoration:none;">BookingKOL</a> để xem hoặc cập nhật lịch làm việc của mình.</p>
+                    <p>💡 Bạn có thể đăng nhập vào <a href="#####" style="color:#2E86C1; text-decoration:none;">BookingKOL</a> để xem và cập nhật lịch làm việc của mình.</p>
                     
-                        <p style="margin-top:20px;">Trân trọng,<br><strong>Đội ngũ BookingKOL</strong></p>
-                    </body>
-                    </html>
-                    """.formatted(
+                    <p style="margin-top:20px;">Trân trọng,<br><strong>Đội ngũ BookingKOL</strong></p>
+                </body>
+                </html>
+                """.formatted(
                         user.getFullName() != null ? user.getFullName() : "KOL",
                         dto.getStartAt(),
                         dto.getEndAt(),
-                        dto.getWorkTimes() != null ? dto.getWorkTimes().size() : 0
+                        "AVAILABLE"
                 );
+
                 emailService.sendHtmlEmail(kolEmail, subject, content);
             }
-
-            return ApiResponse.<KolAvailabilityDTO>builder()
-                    .status(HttpStatus.CREATED.value())
-                    .message(List.of("Tạo lịch thành công"))
-                    .data(new KolAvailabilityDTO(availability))
-                    .build();
-
         } catch (Exception e) {
-            logger.error("Lỗi khi tạo lịch hoặc gửi mail: {}", e.getMessage(), e);
-            return ApiResponse.<KolAvailabilityDTO>builder()
-                    .status(HttpStatus.BAD_REQUEST.value())
-                    .message(List.of("Tạo lịch thất bại: " + e.getMessage()))
-                    .build();
+            logger.warn("Tạo lịch thành công nhưng gửi mail thất bại: {}", e.getMessage());
         }
+
+        return ApiResponse.<KolAvailabilityDTO>builder()
+                .status(HttpStatus.CREATED.value())
+                .message(List.of("Tạo lịch làm việc thành công"))
+                .data(new KolAvailabilityDTO(availability))
+                .build();
     }
+
 
 
     @Override
