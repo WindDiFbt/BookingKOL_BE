@@ -16,6 +16,7 @@ import org.springframework.cache.caffeine.CaffeineCache;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -76,7 +77,7 @@ public class SoftHoldBookingService {
                         .data(null)
                         .build();
             }
-            SoftHoldDetails newHold = new SoftHoldDetails(holdingUserId, startTime, endTime);
+            SoftHoldDetails newHold = new SoftHoldDetails(holdingUserId, startTime, endTime.plus(Duration.ofHours(1)));
             updatedHoldsMap.put(newSlotId, newHold);
             cache.put(kolId, updatedHoldsMap);
             return ApiResponse.<SoftHoldSlotDTO>builder()

@@ -120,5 +120,6 @@ public interface KolWorkTimeRepository extends JpaRepository<KolWorkTime, UUID> 
             @Param("endDate") Instant endDate
     );
 
-
+    @Query("SELECT kt FROM KolWorkTime kt WHERE kt.status = 'IN_PROGRESS' AND kt.endAt < :cutoffTime")
+    List<KolWorkTime> findAllKolWorkTimeExpired(@Param("cutoffTime") Instant cutoffTime);
 }

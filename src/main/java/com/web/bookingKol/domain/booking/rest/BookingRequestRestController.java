@@ -13,7 +13,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,12 +39,12 @@ public class BookingRequestRestController {
         UUID userId = userDetails.getId();
         return ResponseEntity.ok().body(softHoldBookingService.attemptHoldSlot(softHoldSlotDTO.getKolId(),
                 softHoldSlotDTO.getStartTimeIso(),
-                softHoldSlotDTO.getEndTimeIso().plus(Duration.ofHours(1)),
+                softHoldSlotDTO.getEndTimeIso(),
                 userId.toString()));
     }
 
     @GetMapping("/listAll")
-    ResponseEntity<?> getAll(){
+    ResponseEntity<?> getAll() {
         softHoldBookingService.logAllSoftHoldKeys();
         return ResponseEntity.ok().body("ok");
     }

@@ -24,14 +24,17 @@ public interface KolProfileService {
                                                Double minRating,
                                                int page,
                                                int size,
-                                               Enums.Roles role);
+                                               Enums.Roles role,
+                                               String nameKeyword
+    );
 
     ApiResponse<Page<KolProfileDTO>> getAllKolAvailable(Double minRating,
                                                         UUID categoryId,
                                                         BigDecimal minPrice,
                                                         int page,
                                                         int size,
-                                                        Enums.Roles role
+                                                        Enums.Roles role,
+                                                        String nameKeyword
     );
 
     ApiResponse<List<KolProfileDTO>> getAllKolProfilesByCategoryId(UUID categoryId);

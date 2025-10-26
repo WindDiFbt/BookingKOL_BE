@@ -31,10 +31,11 @@ public class KolProfileRestController {
             @RequestParam(required = false) UUID categoryId,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) Enums.Roles role,
+            @RequestParam(required = false) String nameKeyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(
-                kolProfileService.getAllKolAvailable(minRating, categoryId, minPrice, page, size, role)
+                kolProfileService.getAllKolAvailable(minRating, categoryId, minPrice, page, size, role, nameKeyword)
         );
     }
 

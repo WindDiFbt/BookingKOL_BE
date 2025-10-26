@@ -111,4 +111,7 @@ public class BookingRequest {
     @Column(name = "email")
     private String email;
 
+    @Size(max = 20)
+    @Column(name = "request_number", unique = true, nullable = false)
+    private String requestNumber;
 }

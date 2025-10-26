@@ -23,6 +23,7 @@ public class UserSingleRequestController {
     @GetMapping("/all")
     public ResponseEntity<?> getAllSingleRequest(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                                  @RequestParam(required = false) String status,
+                                                 @RequestParam(required = false) String requestNumber,
                                                  @RequestParam(required = false) LocalDate startAt,
                                                  @RequestParam(required = false) LocalDate endAt,
                                                  @RequestParam(required = false) LocalDate createdAtFrom,
@@ -30,7 +31,7 @@ public class UserSingleRequestController {
                                                  @RequestParam(defaultValue = "0") int page,
                                                  @RequestParam(defaultValue = "20") int size) {
         UUID userId = userDetails.getId();
-        return ResponseEntity.ok(bookingRequestService.getAllSingleRequestUser(userId, status, startAt, endAt, createdAtFrom, createdAtTo, page, size));
+        return ResponseEntity.ok(bookingRequestService.getAllSingleRequestUser(userId, status, requestNumber, startAt, endAt, createdAtFrom, createdAtTo, page, size));
     }
 
     @GetMapping("/detail/{requestId}")

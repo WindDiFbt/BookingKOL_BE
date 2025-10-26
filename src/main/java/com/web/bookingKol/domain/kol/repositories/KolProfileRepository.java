@@ -38,7 +38,7 @@ public interface KolProfileRepository extends JpaRepository<KolProfile, UUID> {
     List<KolProfile> findByCategoryId(UUID CategoryId);
 
     @Query("""
-                SELECT k FROM KolProfile k
+                SELECT DISTINCT k FROM KolProfile k
                 LEFT JOIN FETCH k.user u
                 LEFT JOIN k.categories c
                 WHERE k.isAvailable = true
@@ -46,6 +46,7 @@ public interface KolProfileRepository extends JpaRepository<KolProfile, UUID> {
                   AND (:minRating IS NULL OR k.overallRating >= :minRating)
                   AND (:categoryId IS NULL OR c.id = :categoryId)
                   AND (:minPrice IS NULL OR k.minBookingPrice >= :minPrice)
+                  AND (:nameKeyword IS NULL OR LOWER(k.displayName) LIKE %:nameKeyword%)
                   AND (:role IS NULL OR k.role = :role)
             """)
     Page<KolProfile> findAllKolAvailableWithFilter(
@@ -54,6 +55,7 @@ public interface KolProfileRepository extends JpaRepository<KolProfile, UUID> {
             @Param("categoryId") UUID categoryId,
             @Param("minPrice") BigDecimal minPrice,
             @Param("role") Enums.Roles role,
+            @Param("nameKeyword") String nameKeyword,
             Pageable pageable
     );
 
@@ -65,12 +67,14 @@ public interface KolProfileRepository extends JpaRepository<KolProfile, UUID> {
                   AND (:isAvailable IS NULL OR k.isAvailable = :isAvailable)
                   AND (:minRating IS NULL OR k.overallRating >= :minRating)
                   AND (:role IS NULL OR k.role = :role)
+                  AND (:nameKeyword IS NULL OR LOWER(k.displayName) LIKE %:nameKeyword%)
             """)
     Page<KolProfile> findAllFiltered(
             @Param("minBookingPrice") BigDecimal minBookingPrice,
             @Param("isAvailable") Boolean isAvailable,
             @Param("minRating") Double minRating,
             @Param("role") Enums.Roles role,
+            @Param("nameKeyword") String nameKeyword,
             Pageable pageable
     );
 

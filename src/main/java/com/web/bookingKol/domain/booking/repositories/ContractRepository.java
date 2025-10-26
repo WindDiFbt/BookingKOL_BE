@@ -12,4 +12,7 @@ import java.util.UUID;
 public interface ContractRepository extends JpaRepository<Contract, UUID> {
     @Query("SELECT c FROM Contract c WHERE c.bookingRequest.id = :requestId")
     Contract findByRequestId(@Param("requestId") UUID requestId);
+
+    @Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM Contract c WHERE c.contractNumber = :contractNumber")
+    boolean existsByContractNumber(String contractNumber);
 }

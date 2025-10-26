@@ -121,6 +121,7 @@ public class Enums {
     public enum KOLWorkTimeStatus {
         REQUESTED,
         ACCEPTED,
+        IN_PROGRESS,
         CANCELLED,
         COMPLETED
     }

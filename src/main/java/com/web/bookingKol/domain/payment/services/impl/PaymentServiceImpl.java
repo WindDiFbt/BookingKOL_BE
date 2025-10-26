@@ -83,12 +83,12 @@ public class PaymentServiceImpl implements PaymentService {
         };
         if (status.equals(Enums.PaymentStatus.PAID.name()) || status.equals(Enums.PaymentStatus.OVERPAID.name())) {
             BookingRequest bookingRequest = payment.getContract().getBookingRequest();
-            bookingRequest.setStatus(Enums.BookingStatus.ACCEPTED.name());
+            bookingRequest.setStatus(Enums.BookingStatus.IN_PROGRESS.name());
             bookingRequestRepository.save(bookingRequest);
             Set<KolWorkTime> kolWorkTime = bookingRequest.getKolWorkTimes();
             for (KolWorkTime workTime : kolWorkTime) {
                 if (workTime.getStatus().equals(Enums.BookingStatus.REQUESTED.name())) {
-                    workTime.setStatus(Enums.KOLWorkTimeStatus.COMPLETED.name());
+                    workTime.setStatus(Enums.KOLWorkTimeStatus.IN_PROGRESS.name());
                     bookingRequestRepository.save(bookingRequest);
                 }
             }

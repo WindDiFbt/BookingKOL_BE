@@ -1,6 +1,7 @@
 package com.web.bookingKol.domain.kol.models;
 
 import com.web.bookingKol.domain.booking.models.BookingRequest;
+import com.web.bookingKol.domain.booking.models.LivestreamMetric;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -43,4 +44,8 @@ public class KolWorkTime {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_request_id")
     private BookingRequest bookingRequest;
+
+    @OneToOne(mappedBy = "kolWorkTime")
+    private LivestreamMetric livestreamMetrics;
+
 }

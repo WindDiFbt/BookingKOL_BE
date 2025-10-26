@@ -5,6 +5,7 @@ import com.web.bookingKol.domain.booking.dtos.BookingDetailDTO;
 import com.web.bookingKol.domain.booking.dtos.BookingSingleReqDTO;
 import com.web.bookingKol.domain.booking.dtos.BookingSingleResDTO;
 import com.web.bookingKol.domain.booking.dtos.UpdateBookingReqDTO;
+import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.payment.dtos.PaymentReqDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,6 +21,7 @@ public interface BookingRequestService {
     ApiResponse<List<BookingSingleResDTO>> getAllSingleRequestAdmin(UUID kolId,
                                                                     UUID userId,
                                                                     String status,
+                                                                    String requestNumber,
                                                                     LocalDate startAt,
                                                                     LocalDate endAt,
                                                                     LocalDate createdAtFrom,
@@ -29,6 +31,7 @@ public interface BookingRequestService {
 
     ApiResponse<List<BookingSingleResDTO>> getAllSingleRequestUser(UUID userId,
                                                                    String status,
+                                                                   String requestNumber,
                                                                    LocalDate startAt,
                                                                    LocalDate endAt,
                                                                    LocalDate createdAtFrom,
@@ -38,6 +41,7 @@ public interface BookingRequestService {
 
     ApiResponse<List<BookingSingleResDTO>> getAllSingleRequestKol(UUID kolId,
                                                                   String status,
+                                                                  String requestNumber,
                                                                   LocalDate startAt,
                                                                   LocalDate endAt,
                                                                   LocalDate createdAtFrom,
@@ -54,4 +58,6 @@ public interface BookingRequestService {
     ApiResponse<BookingDetailDTO> updateBookingRequest(UUID userId, UUID bookingRequestId, UpdateBookingReqDTO updateBookingReqDTO, List<MultipartFile> attachedFiles, List<UUID> fileIdsToDelete);
 
     ApiResponse<BookingDetailDTO> cancelBookingRequest(UUID userId, UUID bookingRequestId);
+
+    void checkAndCompleteBookingRequest(BookingRequest bookingRequest);
 }
