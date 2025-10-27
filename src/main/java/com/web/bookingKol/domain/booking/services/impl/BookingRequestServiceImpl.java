@@ -186,7 +186,7 @@ public class BookingRequestServiceImpl implements BookingRequestService {
         BackgroundJob.delete(bookingRequestId);
         BackgroundJob.schedule(
                 kolWorkTime.getId(),
-                Instant.now().plus(3, ChronoUnit.DAYS),
+                kolWorkTime.getEndAt().plus(3, ChronoUnit.DAYS),
                 () -> workTimeJob.autoCompleteWorkTime(kolWorkTime.getId())
         );
         return ApiResponse.<PaymentReqDTO>builder()

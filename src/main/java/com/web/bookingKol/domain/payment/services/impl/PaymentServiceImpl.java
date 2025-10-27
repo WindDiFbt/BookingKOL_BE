@@ -1,10 +1,12 @@
 package com.web.bookingKol.domain.payment.services.impl;
 
 import com.web.bookingKol.common.Enums;
+import com.web.bookingKol.domain.booking.jobrunr.ReminderEmailJob;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.booking.models.Contract;
 import com.web.bookingKol.domain.booking.repositories.BookingRequestRepository;
 import com.web.bookingKol.domain.kol.models.KolWorkTime;
+import com.web.bookingKol.domain.kol.repositories.KolWorkTimeRepository;
 import com.web.bookingKol.domain.payment.dtos.PaymentReqDTO;
 import com.web.bookingKol.domain.payment.dtos.transaction.TransactionDTO;
 import com.web.bookingKol.domain.payment.jobrunr.PaymentJob;
@@ -32,9 +34,13 @@ public class PaymentServiceImpl implements PaymentService {
     @Autowired
     private BookingRequestRepository bookingRequestRepository;
     @Autowired
+    private KolWorkTimeRepository kolWorkTimeRepository;
+    @Autowired
     private MerchantService merchantService;
     @Autowired
     private PaymentJob paymentJob;
+    @Autowired
+    private ReminderEmailJob reminderEmailJob;
 
     private final String CURRENCY = "VND";
     private final Integer EXPIRES_TIME = 15;
@@ -96,11 +102,15 @@ public class PaymentServiceImpl implements PaymentService {
             bookingRequestRepository.save(bookingRequest);
             Set<KolWorkTime> kolWorkTime = bookingRequest.getKolWorkTimes();
             for (KolWorkTime workTime : kolWorkTime) {
-                if (workTime.getStatus().equals(Enums.BookingStatus.REQUESTED.name())) {
+                if (workTime.getStatus().equals(Enums.KOLWorkTimeStatus.REQUESTED.name())) {
                     workTime.setStatus(Enums.KOLWorkTimeStatus.IN_PROGRESS.name());
-                    bookingRequestRepository.save(bookingRequest);
+                    BackgroundJob.schedule(
+                            workTime.getStartAt().minus(24, ChronoUnit.HOURS),
+                            () -> reminderEmailJob.sendWorkStartReminder(workTime.getId())
+                    );
                 }
             }
+            kolWorkTimeRepository.saveAll(kolWorkTime);
         }
         payment.setStatus(status);
         paymentRepository.save(payment);

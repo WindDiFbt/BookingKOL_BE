@@ -77,7 +77,7 @@ public class SePayService {
             logger.log(Level.WARNING, e.getMessage());
             return ApiResponse.<TransactionResult>builder()
                     .status(HttpStatus.OK.value())
-                    .message(List.of("Webhook received but request body was unreadable."))
+                    .message(List.of("Webhook đã nhận nhưng nội dung yêu cầu không thể đọc được."))
                     .build();
         }
         LocalDateTime transactionDate = null;
@@ -109,10 +109,10 @@ public class SePayService {
             if (receivedApiKey != null && receivedApiKey.startsWith("Apikey ")) {
                 String key = receivedApiKey.substring(7);
                 if (!passwordEncoder.matches(key, merchant.getApiKey())) {
-                    throw new IllegalArgumentException("Invalid API key");
+                    throw new IllegalArgumentException("Khóa API không hợp lệ");
                 }
             } else {
-                throw new IllegalArgumentException("Invalid API key format");
+                throw new IllegalArgumentException("Định dạng khóa API không hợp lệ");
             }
             String content = request.getContent();
             if (content != null && !content.isEmpty()) {
@@ -156,7 +156,7 @@ public class SePayService {
                     .build();
             return ApiResponse.<TransactionResult>builder()
                     .status(HttpStatus.OK.value())
-                    .message(List.of("Transaction successfully!"))
+                    .message(List.of("Giao dịch thành công!"))
                     .data(tr)
                     .build();
 
@@ -171,7 +171,7 @@ public class SePayService {
                     .build();
             return ApiResponse.<TransactionResult>builder()
                     .status(HttpStatus.OK.value())
-                    .message(List.of("Error processing transaction: " + e.getMessage()))
+                    .message(List.of("Lỗi xử lý giao dịch: " + e.getMessage()))
                     .data(tr)
                     .build();
         }
@@ -179,16 +179,16 @@ public class SePayService {
 
     private void sendEmailNotification(User user, Contract contract) {
         if (user == null || user.getEmail() == null) {
-            logger.log(Level.WARNING, "Cannot send email: User information or email is missing for Contract ID: " + contract.getId());
+            logger.log(Level.WARNING, "Không thể gửi email: Thiếu thông tin người dùng hoặc email cho ID hợp đồng: " + contract.getId());
             return;
         }
-        String subject = "🔔 Xác nhận Thanh toán Thành công cho Hợp đồng " + contract.getId();
+        String subject = "🔔 Xác nhận Thanh toán Thành công (Hợp đồng " + contract.getContractNumber() + ")";
         String htmlContent = generatePaymentSuccessHtml(user, contract);
         try {
             emailService.sendHtmlEmail(user.getEmail(), subject, htmlContent);
-            logger.log(Level.INFO, "Payment success confirmation email sent to:" + user.getEmail());
+            logger.log(Level.INFO, "Email xác nhận thanh toán thành công đã được gửi tới:" + user.getEmail());
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error sending payment confirmation email:" + e.getMessage());
+            logger.log(Level.SEVERE, "Lỗi gửi email xác nhận thanh toán:" + e.getMessage());
         }
     }
 
@@ -224,12 +224,17 @@ public class SePayService {
                 <table class="details-table">
                     <tr>
                         <th>Mã Hợp đồng</th>
-                        <td>""" + contract.getId() + """
+                        <td>""" + contract.getContractNumber() + """
                     </td>
                 </tr>
                 <tr>
+                    <th>Mã Yêu cầu</th>
+                        <td>""" + contract.getBookingRequest().getRequestNumber() + """
+                        </td>
+                    </tr>
+                <tr>
                     <th>Dịch vụ</th>
-                    <td>""" + ("Dịch vụ booking KOL lẻ.") + """
+                    <td>""" + ("Dịch vụ booking KOL/KOC.") + """
                     </td>
                 </tr>
                 <tr>
