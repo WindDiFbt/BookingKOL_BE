@@ -12,6 +12,7 @@ import java.util.UUID;
 @Data
 public class BookingDetailDTO {
     private UUID id;
+    private String requestNumber;
     private UUID campaignId;
     private KolDetailDTO kol;
     private UserDTO user;

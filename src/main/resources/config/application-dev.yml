@@ -29,6 +29,16 @@ logging:
     org.springframework.security.web.access: DEBUG
     org.springframework.security.web.authentication: DEBUG
 
+org:
+  jobrunr:
+    background-job-server:
+      enabled: true
+      worker-count: 4
+    dashboard:
+      enabled: true
+      port: 8000
+    storage-provider:
+      type: sql
 
 server:
   servlet:
