@@ -9,6 +9,8 @@ import com.web.bookingKol.domain.booking.services.ContractService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 
 @Service
@@ -27,7 +29,11 @@ public class ContractServiceImpl implements ContractService {
         contract.setBookingRequest(bookingRequest);
         contract.setStatus(Enums.ContractStatus.DRAFT.name());
         contract.setCreatedAt(Instant.now());
-        contract.setAmount(bookingRequest.getKol().getMinBookingPrice());
+        BigDecimal durationBig = BigDecimal.valueOf(
+                Duration.between(bookingRequest.getStartAt(), bookingRequest.getEndAt()).toMinutes() / 60.0
+        );
+        BigDecimal totalAmount = bookingRequest.getKol().getMinBookingPrice().multiply(durationBig);
+        contract.setAmount(totalAmount);
         contractRepository.save(contract);
         return contract;
     }
