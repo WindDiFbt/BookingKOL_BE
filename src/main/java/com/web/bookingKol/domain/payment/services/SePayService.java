@@ -6,6 +6,7 @@ import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.common.services.EmailService;
 import com.web.bookingKol.domain.booking.models.Contract;
 import com.web.bookingKol.domain.booking.repositories.ContractRepository;
+import com.web.bookingKol.domain.course.models.PurchasedCoursePackage;
 import com.web.bookingKol.domain.payment.dtos.SePayWebhookRequest;
 import com.web.bookingKol.domain.payment.dtos.transaction.TransactionResult;
 import com.web.bookingKol.domain.payment.mappers.TransactionMapper;
@@ -13,6 +14,7 @@ import com.web.bookingKol.domain.payment.models.Merchant;
 import com.web.bookingKol.domain.payment.models.Transaction;
 import com.web.bookingKol.domain.payment.repositories.TransactionRepository;
 import com.web.bookingKol.domain.user.models.User;
+import com.web.bookingKol.domain.user.repositories.PurchasedCoursePackageRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -49,6 +51,8 @@ public class SePayService {
     private TransactionRepository transactionRepository;
     @Autowired
     private EmailService emailService;
+    @Autowired
+    private PurchasedCoursePackageRepository purchasedCoursePackageRepository;
 
     private final String SEPAY_API_URL = "https://qr.sepay.vn/img?";
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -135,6 +139,7 @@ public class SePayService {
             }
             if (contractId != null) {
                 Optional<Contract> optionalContract = contractRepository.findById(contractId);
+                Optional<PurchasedCoursePackage> purchasedCoursePackageOptional = purchasedCoursePackageRepository.findById(contractId);
                 if (optionalContract.isPresent()) {
                     Contract contract = optionalContract.get();
                     tx.setPayment(contract.getPayment());
@@ -142,6 +147,13 @@ public class SePayService {
                     transactionRepository.save(tx);
                     paymentService.updatePaymentAfterTransactionSuccess(transactionMapper.toDto(tx));
                     sendEmailNotification(contract.getPayment().getUser(), contract);
+                } else if (purchasedCoursePackageOptional.isPresent()) {
+                    PurchasedCoursePackage purchasedCoursePackage = purchasedCoursePackageOptional.get();
+                    tx.setPayment(purchasedCoursePackageOptional.get().getPayment());
+                    tx.setStatus(Enums.TransactionStatus.COMPLETED.name());
+                    paymentService.updateCoursePaymentAfterTransactionSuccess(transactionMapper.toDto(tx));
+                    sendEmailNotification(purchasedCoursePackage.getPayment().getUser(), purchasedCoursePackage);
+                    transactionRepository.save(tx);
                 } else {
                     transactionRepository.save(tx);
                 }
@@ -235,6 +247,83 @@ public class SePayService {
                 <tr>
                     <th>Dịch vụ</th>
                     <td>""" + ("Dịch vụ booking KOL/KOC.") + """
+                    </td>
+                </tr>
+                <tr>
+                    <th>Số tiền đã thanh toán</th>
+                    <td><strong>""" + formattedAmount + """
+                    </strong></td>
+                </tr>
+                <tr>
+                    <th>Thời gian thanh toán</th>
+                    <td>""" + Instant.now().atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy")) + """
+                                    </td>
+                                </tr>
+                            </table>
+                
+                            <p style="margin-top: 25px;">Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi! Mọi thắc mắc, vui lòng liên hệ bộ phận hỗ trợ.</p>
+                        </div>
+                        <div class="footer">
+                            <p>Đây là email được gửi tự động. Vui lòng không trả lời email này.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """;
+    }
+
+    private void sendEmailNotification(User user, PurchasedCoursePackage purchasedCoursePackage) {
+        if (user == null || user.getEmail() == null) {
+            logger.log(Level.WARNING, "Không thể gửi email: Thiếu thông tin người dùng hoặc email cho ID hợp đồng: " + purchasedCoursePackage.getId());
+            return;
+        }
+        String subject = "🔔 Xác nhận Thanh toán Thành công (Khóa học livestream " + purchasedCoursePackage.getPurchasedCourseNumber() + ")";
+        String htmlContent = generatePaymentSuccessHtml(user, purchasedCoursePackage);
+        try {
+            emailService.sendHtmlEmail(user.getEmail(), subject, htmlContent);
+            logger.log(Level.INFO, "Email xác nhận thanh toán thành công đã được gửi tới:" + user.getEmail());
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Lỗi gửi email xác nhận thanh toán:" + e.getMessage());
+        }
+    }
+
+    private String generatePaymentSuccessHtml(User user, PurchasedCoursePackage purchasedCoursePackage) {
+        String formattedAmount = String.format("%,d VNĐ", purchasedCoursePackage.getCurrentPrice());
+        String userName = user.getFullName() != null ? user.getFullName() : user.getEmail();
+        return """
+                <!DOCTYPE html>
+                <html lang="vi">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Xác nhận Thanh toán Thành công</title>
+                    <style>
+                        body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; }
+                        .container { width: 80%; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+                        .header { background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+                        .content { padding: 20px; }
+                        .details-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                        .details-table th, .details-table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+                        .footer { margin-top: 30px; font-size: 0.9em; color: #777; text-align: center; border-top: 1px solid #eee; padding-top: 15px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h2>Thanh Toán Thành Công! 🎉</h2>
+                        </div>
+                        <div class="content">
+                            <p>Xin chào <strong>""" + userName + """
+                </strong>,</p>
+                <p>Chúng tôi xác nhận đã nhận được thanh toán của bạn cho khóa học sau:</p>
+                
+                <table class="details-table">
+                    <tr>
+                        <th>Mã yêu cầu khóa học</th>
+                        <td>""" + purchasedCoursePackage.getPurchasedCourseNumber() + """
+                    </td>
+                </tr>
+                    <th>Dịch vụ</th>
+                    <td>""" + ("Dịch vụ khóa học Livestream") + """
                     </td>
                 </tr>
                 <tr>

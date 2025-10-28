@@ -8,7 +8,7 @@ import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.domain.user.repositories.PurchasedCoursePackageRepository;
 import com.web.bookingKol.domain.user.repositories.UserRepository;
 import com.web.bookingKol.domain.user.services.CoursePurchaseService;
-import com.web.bookingKol.temp_models.PurchasedCoursePackage;
+import com.web.bookingKol.domain.course.models.PurchasedCoursePackage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,9 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor

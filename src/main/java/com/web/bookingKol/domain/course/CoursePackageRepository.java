@@ -1,5 +1,6 @@
 package com.web.bookingKol.domain.course;
 
+import com.web.bookingKol.domain.course.models.CoursePackage;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

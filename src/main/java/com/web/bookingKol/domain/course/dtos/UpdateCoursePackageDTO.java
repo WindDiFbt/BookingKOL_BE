@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class UpdateCoursePackageDTO {
     private String name;
-    private Integer price;
+    private Long price;
     private Integer discount;
     private String description;
     private Boolean isAvailable;

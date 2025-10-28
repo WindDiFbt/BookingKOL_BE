@@ -13,7 +13,8 @@ public class CoursePackageDTO {
     @NotNull
     private String name;
     @NotNull
-    private Integer price;
+    private Long price;
+    private Long currentPrice;
     private Integer discount;
     private String description;
     private Boolean isAvailable;
