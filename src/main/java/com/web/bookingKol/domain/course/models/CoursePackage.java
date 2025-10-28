@@ -1,7 +1,6 @@
-package com.web.bookingKol.domain.course;
+package com.web.bookingKol.domain.course.models;
 
 import com.web.bookingKol.domain.file.models.FileUsage;
-import com.web.bookingKol.temp_models.PurchasedCoursePackage;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -27,10 +26,13 @@ public class CoursePackage {
     private String name;
 
     @Column(name = "price")
-    private Integer price;
+    private Long price;
 
     @Column(name = "discount")
     private Integer discount;
+
+    @Column(name = "current_price")
+    private Long currentPrice;
 
     @Column(name = "description", length = Integer.MAX_VALUE)
     private String description;
