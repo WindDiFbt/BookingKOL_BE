@@ -2,8 +2,10 @@ package com.web.bookingKol.domain.course;
 
 import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.domain.course.services.CoursePackageService;
+import com.web.bookingKol.domain.user.models.UserDetailsImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -31,5 +33,26 @@ public class CoursePackageRestController {
     @GetMapping("/{coursePackageId}")
     ResponseEntity<ApiResponse<?>> getCourseById(@PathVariable UUID coursePackageId) {
         return ResponseEntity.ok().body(coursePackageService.getCoursePackageById(coursePackageId));
+    }
+
+    @PostMapping("/purchase")
+    ResponseEntity<ApiResponse<?>> purchaseCoursePackage(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                                         @RequestParam UUID coursePackageId) {
+        UUID userId = userDetails.getId();
+        return ResponseEntity.ok().body(coursePackageService.purchaseCoursePackage(userId, coursePackageId));
+    }
+
+    @PostMapping("/purchase/confirm/{purchasedId}")
+    ResponseEntity<ApiResponse<?>> confirmPurchaseCoursePackage(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                                                @PathVariable UUID purchasedId) {
+        UUID userId = userDetails.getId();
+        return ResponseEntity.ok().body(coursePackageService.confirmPurchaseCoursePackage(userId, purchasedId));
+    }
+
+    @PatchMapping("/purchase/cancel/{purchasedId}")
+    ResponseEntity<ApiResponse<?>> cancelPurchaseCoursePackage(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                                               @PathVariable UUID purchasedId) {
+        UUID userId = userDetails.getId();
+        return ResponseEntity.ok().body(coursePackageService.cancelPurchaseCoursePackage(userId, purchasedId));
     }
 }

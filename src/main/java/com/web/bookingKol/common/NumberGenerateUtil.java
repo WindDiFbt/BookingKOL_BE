@@ -11,10 +11,14 @@ public class NumberGenerateUtil {
     }
 
     public static String generateSecureRandomRequestNumber() {
-        return generate("REQ");
+        return generate("RQ");
     }
 
     public static String generateSecureRandomContractNumber() {
-        return generate("CON");
+        return generate("CT");
+    }
+
+    public static String generateSecureRandomPurchasedCourseNumber() {
+        return generate("PC");
     }
 }

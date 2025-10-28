@@ -2,8 +2,10 @@ package com.web.bookingKol.domain.payment.services;
 
 import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.booking.models.Contract;
+import com.web.bookingKol.domain.course.models.PurchasedCoursePackage;
 import com.web.bookingKol.domain.payment.dtos.PaymentReqDTO;
 import com.web.bookingKol.domain.payment.dtos.transaction.TransactionDTO;
+import com.web.bookingKol.domain.payment.models.Payment;
 import com.web.bookingKol.domain.user.models.User;
 import org.springframework.stereotype.Service;
 
@@ -16,5 +18,11 @@ public interface PaymentService {
 
     void updatePaymentAfterTransactionSuccess(TransactionDTO transactionDTO);
 
+    void updateCoursePaymentAfterTransactionSuccess(TransactionDTO transactionDTO);
+
     boolean checkContractPaymentSuccess(UUID contractId);
+
+    Payment initiateCoursePayment(PurchasedCoursePackage purchasedCoursePackage, User user, Long currentPrice);
+
+    PaymentReqDTO createCoursePaymentRequest(PurchasedCoursePackage purchasedCoursePackage, Payment payment, String qrUrl);
 }
