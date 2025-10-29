@@ -1,5 +1,6 @@
 package com.web.bookingKol.domain.payment.services;
 
+import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.booking.models.Contract;
 import com.web.bookingKol.domain.course.models.PurchasedCoursePackage;
@@ -25,4 +26,6 @@ public interface PaymentService {
     Payment initiateCoursePayment(PurchasedCoursePackage purchasedCoursePackage, User user, Long currentPrice);
 
     PaymentReqDTO createCoursePaymentRequest(PurchasedCoursePackage purchasedCoursePackage, Payment payment, String qrUrl);
+
+    ApiResponse<?> cancelPaymentBookingRequest(UUID userId, UUID bookingRequestID);
 }

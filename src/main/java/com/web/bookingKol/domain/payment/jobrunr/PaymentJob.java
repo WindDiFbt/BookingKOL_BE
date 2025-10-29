@@ -53,7 +53,7 @@ public class PaymentJob {
         //KolWorkTime
         Set<KolWorkTime> kolWorkTime = bookingRequest.getKolWorkTimes();
         for (KolWorkTime workTime : kolWorkTime) {
-            if (workTime.getStatus().equals(Enums.BookingStatus.REQUESTED.name())) {
+            if (workTime.getStatus().equals(Enums.KOLWorkTimeStatus.REQUESTED.name())) {
                 workTime.setStatus(Enums.KOLWorkTimeStatus.CANCELLED.name());
             }
         }
