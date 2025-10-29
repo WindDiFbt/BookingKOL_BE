@@ -65,10 +65,10 @@ public interface BookingRequestRepository extends JpaRepository<BookingRequest, 
     );
 
     @Query("""
-            SELECT br FROM BookingRequest br
+            SELECT DISTINCT br FROM BookingRequest br
             LEFT JOIN FETCH br.attachedFiles fu
             LEFT JOIN FETCH fu.file f
-            WHERE br.id = :bookingRequestId AND f.status = 'ACTIVE'
+            WHERE br.id = :bookingRequestId
             """)
     BookingRequest findByIdWithAttachedFiles(@Param("bookingRequestId") UUID bookingRequestId);
 
