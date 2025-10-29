@@ -8,6 +8,8 @@ import com.web.bookingKol.domain.user.mappers.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.stream.Collectors;
+
 @Component
 public class BookingDetailMapper {
     @Autowired
@@ -40,7 +42,13 @@ public class BookingDetailMapper {
         dto.setPhone(bookingRequest.getPhone());
         dto.setEmail(bookingRequest.getEmail());
         if (bookingRequest.getAttachedFiles() != null) {
-            dto.setAttachedFiles(fileUsageMapper.toDtoSet(bookingRequest.getAttachedFiles()));
+            dto.setAttachedFiles(
+                    fileUsageMapper.toDtoSet(
+                            bookingRequest.getAttachedFiles().stream()
+                                    .filter(fu -> fu.getFile() != null && "ACTIVE".equalsIgnoreCase(fu.getFile().getStatus()))
+                                    .collect(Collectors.toSet())
+                    )
+            );
         }
         if (bookingRequest.getContracts() != null) {
             dto.setContracts(contractMapper.toDtoSet(bookingRequest.getContracts()));
