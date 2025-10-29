@@ -1,10 +1,13 @@
 package com.web.bookingKol.domain.payment.services.impl;
 
 import com.web.bookingKol.common.Enums;
+import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.domain.booking.jobrunr.ReminderEmailJob;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.booking.models.Contract;
 import com.web.bookingKol.domain.booking.repositories.BookingRequestRepository;
+import com.web.bookingKol.domain.booking.services.ContractService;
+import com.web.bookingKol.domain.booking.services.SoftHoldBookingService;
 import com.web.bookingKol.domain.course.models.PurchasedCoursePackage;
 import com.web.bookingKol.domain.kol.models.KolWorkTime;
 import com.web.bookingKol.domain.kol.repositories.KolWorkTimeRepository;
@@ -18,14 +21,18 @@ import com.web.bookingKol.domain.payment.services.MerchantService;
 import com.web.bookingKol.domain.payment.services.PaymentService;
 import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.domain.user.repositories.PurchasedCoursePackageRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.jobrunr.scheduling.BackgroundJob;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AuthorizationServiceException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -45,9 +52,13 @@ public class PaymentServiceImpl implements PaymentService {
     private ReminderEmailJob reminderEmailJob;
     @Autowired
     private PurchasedCoursePackageRepository purchasedCoursePackageRepository;
+    @Autowired
+    private ContractService contractService;
+    @Autowired
+    private SoftHoldBookingService softHoldBookingService;
 
     private final String CURRENCY = "VND";
-    private final Integer EXPIRES_TIME = 2;
+    private final Integer EXPIRES_TIME = 15;
 
     @Override
     public PaymentReqDTO initiatePayment(BookingRequest bookingRequest, Contract contract, String qrUrl, User user, BigDecimal amount) {
@@ -195,6 +206,40 @@ public class PaymentServiceImpl implements PaymentService {
                 .name(merchant.getName())
                 .bank(merchant.getBank())
                 .accountNumber(merchant.getAccountNumber())
+                .build();
+    }
+
+    @Override
+    public ApiResponse<?> cancelPaymentBookingRequest(UUID userId, UUID bookingRequestId) {
+        BookingRequest bookingRequest = bookingRequestRepository.findById(bookingRequestId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy yêu cầu đặt lịch với ID: " + bookingRequestId));
+        if (!bookingRequest.getUser().getId().equals(userId)) {
+            throw new AuthorizationServiceException("Bạn không được phép thực hiện hành động này đối với yêu cầu đặt lịch này");
+        }
+        Contract contract = bookingRequest.getContracts().stream().findFirst()
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy hợp đồng với ID yêu cầu đặt lịch: " + bookingRequest.getId()));
+        Payment payment = contract.getPayment();
+        if (payment == null) {
+            throw new EntityNotFoundException("Không tìm thấy thanh toán với ID hợp đồng: " + contract.getId());
+        }
+        if (!Enums.PaymentStatus.PENDING.name().equals(payment.getStatus())) {
+            throw new IllegalArgumentException("Không thể hủy khi trạng thái thanh toán không là PENDING");
+        }
+        bookingRequest.setStatus(Enums.BookingStatus.CANCELLED.name());
+        contractService.cancelContract(contract);
+        bookingRequestRepository.saveAndFlush(bookingRequest);
+        softHoldBookingService.releaseSlot(
+                bookingRequest.getKol().getId(),
+                bookingRequest.getStartAt(),
+                bookingRequest.getEndAt()
+        );
+        BackgroundJob.delete(payment.getId());
+        payment.setStatus(Enums.PaymentStatus.CANCELLED.name());
+        paymentRepository.saveAndFlush(payment);
+        return ApiResponse.<String>builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Hủy thanh toán thành công!"))
+                .data(null)
                 .build();
     }
 }
