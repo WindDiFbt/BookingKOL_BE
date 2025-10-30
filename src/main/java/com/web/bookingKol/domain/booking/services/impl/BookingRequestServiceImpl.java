@@ -40,6 +40,7 @@ import com.web.bookingKol.domain.user.repositories.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.jobrunr.scheduling.BackgroundJob;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -241,7 +242,7 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     }
 
     @Override
-    public ApiResponse<List<BookingSingleResDTO>> getAllSingleRequestAdmin(UUID kolId,
+    public ApiResponse<Page<BookingSingleResDTO>> getAllSingleRequestAdmin(UUID kolId,
                                                                            UUID userId,
                                                                            String status,
                                                                            String requestNumber,
@@ -251,15 +252,15 @@ public class BookingRequestServiceImpl implements BookingRequestService {
                                                                            LocalDate createdAtTo,
                                                                            int page,
                                                                            int size) {
-        List<BookingSingleResDTO> bookingSingleResDTOPage = findAllWithCondition(kolId, userId, status, requestNumber, startAt, endAt, createdAtFrom, createdAtTo, page, size);
-        return ApiResponse.<List<BookingSingleResDTO>>builder()
+        Page<BookingSingleResDTO> bookingSingleResDTOPage = findAllWithCondition(kolId, userId, status, requestNumber, startAt, endAt, createdAtFrom, createdAtTo, page, size);
+        return ApiResponse.<Page<BookingSingleResDTO>>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Lấy tất cả yêu cầu đặt lịch thành công!"))
                 .data(bookingSingleResDTOPage)
                 .build();
     }
 
-    private List<BookingSingleResDTO> findAllWithCondition(UUID kolId,
+    private Page<BookingSingleResDTO> findAllWithCondition(UUID kolId,
                                                            UUID userId,
                                                            String status,
                                                            String requestNumber,
@@ -306,7 +307,7 @@ public class BookingRequestServiceImpl implements BookingRequestService {
         }
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return bookingRequestRepository.findAll(spec, pageable)
-                .map(bookingRequest -> bookingSingleResMapper.toDto(bookingRequest)).stream().toList();
+                .map(bookingRequest -> bookingSingleResMapper.toDto(bookingRequest));
     }
 
     @Override
@@ -323,7 +324,7 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     }
 
     @Override
-    public ApiResponse<List<BookingSingleResDTO>> getAllSingleRequestUser(UUID userId,
+    public ApiResponse<Page<BookingSingleResDTO>> getAllSingleRequestUser(UUID userId,
                                                                           String status,
                                                                           String requestNumber,
                                                                           LocalDate startAt,
@@ -332,8 +333,8 @@ public class BookingRequestServiceImpl implements BookingRequestService {
                                                                           LocalDate createdAtTo,
                                                                           int page,
                                                                           int size) {
-        List<BookingSingleResDTO> bookingSingleResList = findAllWithCondition(null, userId, status, requestNumber, startAt, endAt, createdAtFrom, createdAtTo, page, size);
-        return ApiResponse.<List<BookingSingleResDTO>>builder()
+        Page<BookingSingleResDTO> bookingSingleResList = findAllWithCondition(null, userId, status, requestNumber, startAt, endAt, createdAtFrom, createdAtTo, page, size);
+        return ApiResponse.<Page<BookingSingleResDTO>>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Lấy tất cả yêu cầu đặt lịch thành công, userId: " + userId))
                 .data(bookingSingleResList)
@@ -341,7 +342,7 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     }
 
     @Override
-    public ApiResponse<List<BookingSingleResDTO>> getAllSingleRequestKol(UUID kolId,
+    public ApiResponse<Page<BookingSingleResDTO>> getAllSingleRequestKol(UUID kolId,
                                                                          String status,
                                                                          String requestNumber,
                                                                          LocalDate startAt,
@@ -350,8 +351,8 @@ public class BookingRequestServiceImpl implements BookingRequestService {
                                                                          LocalDate createdAtTo,
                                                                          int page,
                                                                          int size) {
-        List<BookingSingleResDTO> bookingSingleResList = findAllWithCondition(kolId, null, status, requestNumber, startAt, endAt, createdAtFrom, createdAtTo, page, size);
-        return ApiResponse.<List<BookingSingleResDTO>>builder()
+        Page<BookingSingleResDTO> bookingSingleResList = findAllWithCondition(kolId, null, status, requestNumber, startAt, endAt, createdAtFrom, createdAtTo, page, size);
+        return ApiResponse.<Page<BookingSingleResDTO>>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Lấy tất cả yêu cầu đặt lịch thành công, kolId: " + kolId))
                 .data(bookingSingleResList)

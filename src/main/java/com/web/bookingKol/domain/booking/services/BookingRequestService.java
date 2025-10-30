@@ -6,6 +6,7 @@ import com.web.bookingKol.domain.booking.dtos.BookingSingleReqDTO;
 import com.web.bookingKol.domain.booking.dtos.BookingSingleResDTO;
 import com.web.bookingKol.domain.booking.dtos.UpdateBookingReqDTO;
 import com.web.bookingKol.domain.payment.dtos.PaymentReqDTO;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,7 +22,7 @@ public interface BookingRequestService {
 
     ApiResponse<BookingDetailDTO> cancelBookingSingleReq(UUID bookingRequestId, UUID userId);
 
-    ApiResponse<List<BookingSingleResDTO>> getAllSingleRequestAdmin(UUID kolId,
+    ApiResponse<Page<BookingSingleResDTO>> getAllSingleRequestAdmin(UUID kolId,
                                                                     UUID userId,
                                                                     String status,
                                                                     String requestNumber,
@@ -32,7 +33,7 @@ public interface BookingRequestService {
                                                                     int page,
                                                                     int size);
 
-    ApiResponse<List<BookingSingleResDTO>> getAllSingleRequestUser(UUID userId,
+    ApiResponse<Page<BookingSingleResDTO>> getAllSingleRequestUser(UUID userId,
                                                                    String status,
                                                                    String requestNumber,
                                                                    LocalDate startAt,
@@ -42,7 +43,7 @@ public interface BookingRequestService {
                                                                    int page,
                                                                    int size);
 
-    ApiResponse<List<BookingSingleResDTO>> getAllSingleRequestKol(UUID kolId,
+    ApiResponse<Page<BookingSingleResDTO>> getAllSingleRequestKol(UUID kolId,
                                                                   String status,
                                                                   String requestNumber,
                                                                   LocalDate startAt,
