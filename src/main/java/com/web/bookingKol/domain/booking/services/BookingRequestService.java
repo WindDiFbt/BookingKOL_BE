@@ -61,4 +61,6 @@ public interface BookingRequestService {
     ApiResponse<BookingDetailDTO> updateBookingRequest(UUID userId, UUID bookingRequestId, UpdateBookingReqDTO updateBookingReqDTO, List<MultipartFile> attachedFiles, List<UUID> fileIdsToDelete);
 
     ApiResponse<BookingDetailDTO> cancelBookingRequest(UUID userId, UUID bookingRequestId);
+
+    ApiResponse<PaymentReqDTO> continueBookingRequestPayment(UUID bookingRequestId, UUID userId);
 }

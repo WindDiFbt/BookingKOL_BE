@@ -4,6 +4,7 @@ import com.web.bookingKol.domain.booking.dtos.BookingSingleReqDTO;
 import com.web.bookingKol.domain.booking.dtos.SoftHoldSlotDTO;
 import com.web.bookingKol.domain.booking.services.BookingRequestService;
 import com.web.bookingKol.domain.booking.services.SoftHoldBookingService;
+import com.web.bookingKol.domain.payment.services.PaymentService;
 import com.web.bookingKol.domain.user.models.UserDetailsImpl;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,8 @@ public class BookingRequestRestController {
     private BookingRequestService bookingRequestService;
     @Autowired
     private SoftHoldBookingService softHoldBookingService;
+    @Autowired
+    private PaymentService paymentService;
 
     @PostMapping("/request/single")
     ResponseEntity<?> newBookingRequest(@AuthenticationPrincipal UserDetailsImpl userDetails,
@@ -63,4 +66,17 @@ public class BookingRequestRestController {
         return ResponseEntity.ok().body("ok");
     }
 
+    @PatchMapping("/request/single/payment/cancel/{requestId}")
+    ResponseEntity<?> cancelPayment(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                    @PathVariable UUID requestId) {
+        UUID userId = userDetails.getId();
+        return ResponseEntity.ok().body(paymentService.cancelPaymentBookingRequest(userId, requestId));
+    }
+
+    @PostMapping("/request/single/payment/continue/{requestId}")
+    ResponseEntity<?> continuePayment(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                      @PathVariable UUID requestId) {
+        UUID userId = userDetails.getId();
+        return ResponseEntity.ok().body(bookingRequestService.continueBookingRequestPayment(requestId, userId));
+    }
 }
