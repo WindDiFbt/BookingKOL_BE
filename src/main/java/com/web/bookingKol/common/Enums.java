@@ -97,7 +97,9 @@ public class Enums {
         SIGNED,
         COMPLETED,
         CANCELLED,
-        EXPIRED
+        EXPIRED,
+        WAIT_FOR_REFUND,
+        REFUNDED
     }
 
     @Getter
@@ -166,6 +168,12 @@ public class Enums {
         FAILED,
         CANCELLED,
         ORPHANED
+    }
+
+    @Getter
+    public enum RefundStatus {
+        PENDING,
+        REFUNDED
     }
 
     // ---------------- PLATFORM ----------------

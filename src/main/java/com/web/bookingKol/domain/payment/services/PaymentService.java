@@ -23,6 +23,8 @@ public interface PaymentService {
 
     boolean checkContractPaymentSuccess(UUID contractId);
 
+    boolean checkPurchasedCoursePackagePaymentSuccess(UUID purchasedCoursePackageId);
+
     Payment initiateCoursePayment(PurchasedCoursePackage purchasedCoursePackage, User user, Long currentPrice);
 
     PaymentReqDTO createCoursePaymentRequest(PurchasedCoursePackage purchasedCoursePackage, Payment payment, String qrUrl);

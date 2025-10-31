@@ -56,4 +56,6 @@ public interface CoursePackageService {
     ApiResponse<PaymentReqDTO> confirmPurchaseCoursePackage(UUID userId, UUID purchasedCoursePackageId);
 
     ApiResponse<CoursePaymentDTO> cancelPurchaseCoursePackage(UUID userId, UUID purchasedCoursePackageId);
+
+
 }
