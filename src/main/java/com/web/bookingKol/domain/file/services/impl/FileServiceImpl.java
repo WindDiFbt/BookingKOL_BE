@@ -15,7 +15,6 @@ import com.web.bookingKol.domain.file.services.FileService;
 import com.web.bookingKol.domain.file.services.SupabaseStorageService;
 import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.domain.user.repositories.UserRepository;
-import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -72,13 +71,10 @@ public class FileServiceImpl implements FileService {
         fileUploading.setUploader(uploader);
         fileUploading.setStatus(Enums.FileStatus.ACTIVE.name());
 
-        String extension = FilenameUtils.getExtension(file.getOriginalFilename());
-        String fileName = extension == null || extension.isEmpty()
-                ? fileId.toString()
-                : fileId + "." + extension.toLowerCase();
-        fileUploading.setFileName(fileName);
+        String originalFileName = file.getOriginalFilename();
+        fileUploading.setFileName(originalFileName);
 
-        String fileUrl = supabaseStorageService.uploadFile(file, fileName, file.getContentType());
+        String fileUrl = supabaseStorageService.uploadFile(file, originalFileName, file.getContentType());
         fileUploading.setFileUrl(fileUrl);
 
         fileUploading.setSizeBytes(file.getSize());
