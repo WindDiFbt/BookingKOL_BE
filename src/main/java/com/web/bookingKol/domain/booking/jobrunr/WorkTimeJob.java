@@ -2,7 +2,9 @@ package com.web.bookingKol.domain.booking.jobrunr;
 
 import com.web.bookingKol.common.Enums;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
+import com.web.bookingKol.domain.booking.models.Contract;
 import com.web.bookingKol.domain.booking.repositories.BookingRequestRepository;
+import com.web.bookingKol.domain.booking.repositories.ContractRepository;
 import com.web.bookingKol.domain.kol.repositories.KolWorkTimeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,8 @@ public class WorkTimeJob {
     @Autowired
     private BookingRequestRepository bookingRequestRepository;
     private final Logger logger = Logger.getLogger("AUTO_COMPLETE_WORK_TIME_JOB");
+    @Autowired
+    private ContractRepository contractRepository;
 
     @Transactional
     public void autoCompleteWorkTime(UUID workTimeId) {
@@ -38,14 +42,18 @@ public class WorkTimeJob {
 
     private void checkAndCompleteBookingRequest(BookingRequest bookingRequest) {
         Set<String> finishedStatuses = Set.of(
-                Enums.KOLWorkTimeStatus.COMPLETED.name(),
-                Enums.KOLWorkTimeStatus.CANCELLED.name()
+                Enums.KOLWorkTimeStatus.COMPLETED.name()
         );
         boolean allWorkTimesFinished = bookingRequest.getKolWorkTimes().stream()
                 .allMatch(kolWorkTime -> finishedStatuses.contains(kolWorkTime.getStatus()));
         if (allWorkTimesFinished) {
             bookingRequest.setStatus(Enums.BookingStatus.COMPLETED.name());
             bookingRequestRepository.saveAndFlush(bookingRequest);
+            Contract contract = bookingRequest.getContracts().stream().findFirst().orElse(null);
+            if (contract != null) {
+                contract.setStatus(Enums.ContractStatus.COMPLETED.name());
+                contractRepository.save(contract);
+            }
         }
     }
 }
