@@ -2,8 +2,11 @@ package com.web.bookingKol.domain.booking.mappers;
 
 import com.web.bookingKol.domain.booking.dtos.BookingDetailDTO;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
+import com.web.bookingKol.domain.booking.models.Contract;
 import com.web.bookingKol.domain.file.mappers.FileUsageMapper;
 import com.web.bookingKol.domain.kol.mappers.KolDetailMapper;
+import com.web.bookingKol.domain.kol.mappers.KolWorkTimeMapper;
+import com.web.bookingKol.domain.payment.mappers.RefundMapper;
 import com.web.bookingKol.domain.user.mappers.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -20,6 +23,10 @@ public class BookingDetailMapper {
     private UserMapper userMapper;
     @Autowired
     private KolDetailMapper kolDetailMapper;
+    @Autowired
+    private KolWorkTimeMapper kolWorkTimeMapper;
+    @Autowired
+    private RefundMapper refundMapper;
 
     public BookingDetailDTO toDto(BookingRequest bookingRequest) {
         if (bookingRequest == null) {
@@ -50,8 +57,15 @@ public class BookingDetailMapper {
                     )
             );
         }
-        if (bookingRequest.getContracts() != null) {
+        Contract contract = bookingRequest.getContracts().stream().findFirst().orElse(null);
+        if (contract != null) {
             dto.setContracts(contractMapper.toDtoSet(bookingRequest.getContracts()));
+            if (contract.getRefund() != null) {
+                dto.setRefundDTO(refundMapper.toDtoLighter(contract.getRefund()));
+            }
+        }
+        if (bookingRequest.getKolWorkTimes() != null) {
+            dto.setKolWorkTimes(kolWorkTimeMapper.toDtoSet(bookingRequest.getKolWorkTimes()));
         }
         return dto;
     }

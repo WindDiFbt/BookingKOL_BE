@@ -11,7 +11,7 @@ public class CoursePaymentMapper {
         dto.setId(purchasedCoursePackage.getId());
         dto.setUserId(purchasedCoursePackage.getUser().getId());
         dto.setCoursePackageId(purchasedCoursePackage.getCoursePackage().getId());
-        dto.setPrice(purchasedCoursePackage.getCurrentPrice());
+        dto.setPrice(purchasedCoursePackage.getCoursePackage().getPrice());
         dto.setDiscount(purchasedCoursePackage.getCoursePackage().getDiscount());
         dto.setCurrentPrice(purchasedCoursePackage.getCurrentPrice());
         dto.setEmail(purchasedCoursePackage.getEmail());

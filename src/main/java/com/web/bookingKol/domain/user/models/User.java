@@ -1,5 +1,6 @@
 package com.web.bookingKol.domain.user.models;
 
+import com.web.bookingKol.domain.blog.Blog;
 import com.web.bookingKol.domain.booking.models.Campaign;
 import com.web.bookingKol.domain.booking.models.Dispute;
 import com.web.bookingKol.domain.booking.models.Offer;
@@ -134,4 +135,7 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new LinkedHashSet<>();
 
+    @OneToMany
+    @JoinColumn(name = "user_id")
+    private Set<Blog> blogs = new LinkedHashSet<>();
 }

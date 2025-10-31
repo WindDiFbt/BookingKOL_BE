@@ -2,6 +2,8 @@ package com.web.bookingKol.domain.booking.dtos;
 
 import com.web.bookingKol.domain.file.dtos.FileUsageDTO;
 import com.web.bookingKol.domain.kol.dtos.KolDetailDTO;
+import com.web.bookingKol.domain.kol.models.KolWorkTimeDTO;
+import com.web.bookingKol.domain.payment.dtos.refund.RefundDTO;
 import com.web.bookingKol.domain.user.dtos.UserDTO;
 import lombok.Data;
 
@@ -33,4 +35,6 @@ public class BookingDetailDTO {
 
     private Set<FileUsageDTO> attachedFiles;
     private Set<ContractDTO> contracts;
+    private Set<KolWorkTimeDTO> kolWorkTimes;
+    private RefundDTO refundDTO;
 }

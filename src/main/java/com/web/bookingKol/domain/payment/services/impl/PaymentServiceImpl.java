@@ -171,6 +171,13 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    public boolean checkPurchasedCoursePackagePaymentSuccess(UUID purchasedCoursePackageId) {
+        PurchasedCoursePackage purchasedCoursePackage = purchasedCoursePackageRepository.findById(purchasedCoursePackageId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy PurchasedCoursePackage với ID: " + purchasedCoursePackageId));
+        return purchasedCoursePackage.getIsPaid();
+    }
+
+    @Override
     public Payment initiateCoursePayment(PurchasedCoursePackage purchasedCoursePackage, User user, Long currentPrice) {
         Payment payment = new Payment();
         payment.setId(UUID.randomUUID());

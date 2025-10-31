@@ -28,12 +28,15 @@ import com.web.bookingKol.domain.kol.models.KolProfile;
 import com.web.bookingKol.domain.kol.models.KolWorkTime;
 import com.web.bookingKol.domain.kol.repositories.KolAvailabilityRepository;
 import com.web.bookingKol.domain.kol.repositories.KolProfileRepository;
+import com.web.bookingKol.domain.kol.repositories.KolWorkTimeRepository;
 import com.web.bookingKol.domain.kol.services.KolWorkTimeService;
 import com.web.bookingKol.domain.payment.dtos.PaymentReqDTO;
+import com.web.bookingKol.domain.payment.dtos.refund.RefundDTO;
 import com.web.bookingKol.domain.payment.models.Merchant;
 import com.web.bookingKol.domain.payment.models.Payment;
 import com.web.bookingKol.domain.payment.services.MerchantService;
 import com.web.bookingKol.domain.payment.services.PaymentService;
+import com.web.bookingKol.domain.payment.services.RefundService;
 import com.web.bookingKol.domain.payment.services.SePayService;
 import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.domain.user.repositories.UserRepository;
@@ -55,6 +58,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -96,6 +100,10 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     @Autowired
     private MerchantService merchantService;
     public static final String PAYMENT_TRANSFER_CONTENT_FORMAT = "Thanh toan cho ";
+    @Autowired
+    private RefundService refundService;
+    @Autowired
+    private KolWorkTimeRepository kolWorkTimeRepository;
 
     @Transactional
     @Override
@@ -444,8 +452,9 @@ public class BookingRequestServiceImpl implements BookingRequestService {
                 .build();
     }
 
+    @Transactional
     @Override
-    public ApiResponse<BookingDetailDTO> cancelBookingRequest(UUID userId, UUID bookingRequestId) {
+    public ApiResponse<?> cancelBookingRequest(UUID userId, UUID bookingRequestId, String bankNumber, String bankName) {
         BookingRequest bookingRequest = bookingRequestRepository.findByIdWithAttachedFiles(bookingRequestId);
         if (bookingRequest == null) {
             throw new EntityNotFoundException("Không tìm thấy yêu cầu đặt lịch: " + bookingRequestId);
@@ -459,13 +468,19 @@ public class BookingRequestServiceImpl implements BookingRequestService {
         bookingRequest.setStatus(Enums.BookingStatus.CANCELLED.name());
 //        bookingRequest.setUpdatedAt(Instant.now());
         bookingRequestRepository.saveAndFlush(bookingRequest);
+        Set<KolWorkTime> kolWorkTimes = bookingRequest.getKolWorkTimes();
+        for (KolWorkTime kolWorkTime : kolWorkTimes) {
+            kolWorkTime.setStatus(Enums.KOLWorkTimeStatus.CANCELLED.name());
+        }
+        kolWorkTimeRepository.saveAll(kolWorkTimes);
         Contract contract = contractRepository.findByRequestId(bookingRequestId);
-        contract.setStatus(Enums.ContractStatus.CANCELLED.name());
-        contractRepository.saveAndFlush(contract);
-        return ApiResponse.<BookingDetailDTO>builder()
+        RefundDTO refundDTO = refundService.createRefundRequest(contract, bankNumber, bankName);
+        contract.setStatus(Enums.ContractStatus.WAIT_FOR_REFUND.name());
+        contractRepository.save(contract);
+        return ApiResponse.builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Hủy yêu cầu đặt lịch thành công"))
-                .data(bookingDetailMapper.toDto(bookingRequest))
+                .data(refundDTO)
                 .build();
     }
 

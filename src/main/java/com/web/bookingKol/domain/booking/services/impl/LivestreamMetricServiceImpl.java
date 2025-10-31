@@ -6,8 +6,10 @@ import com.web.bookingKol.domain.booking.dtos.livestreamMetric.LivestreamMetricD
 import com.web.bookingKol.domain.booking.dtos.livestreamMetric.LivestreamMetricReqDTO;
 import com.web.bookingKol.domain.booking.mappers.LivestreamMetricMapper;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
+import com.web.bookingKol.domain.booking.models.Contract;
 import com.web.bookingKol.domain.booking.models.LivestreamMetric;
 import com.web.bookingKol.domain.booking.repositories.BookingRequestRepository;
+import com.web.bookingKol.domain.booking.repositories.ContractRepository;
 import com.web.bookingKol.domain.booking.repositories.LivestreamMetricRepository;
 import com.web.bookingKol.domain.booking.services.LivestreamMetricService;
 import com.web.bookingKol.domain.kol.models.KolWorkTime;
@@ -36,6 +38,8 @@ public class LivestreamMetricServiceImpl implements LivestreamMetricService {
     private UserRepository userRepository;
     @Autowired
     private BookingRequestRepository bookingRequestRepository;
+    @Autowired
+    private ContractRepository contractRepository;
 
     @Override
     public ApiResponse<LivestreamMetricDTO> createLivestreamMetric(UUID kolId, UUID workTimeId, LivestreamMetricReqDTO livestreamMetricReqDTO) {
@@ -172,6 +176,11 @@ public class LivestreamMetricServiceImpl implements LivestreamMetricService {
         if (allWorkTimesCompleted) {
             bookingRequest.setStatus(Enums.BookingStatus.COMPLETED.name());
             bookingRequestRepository.save(bookingRequest);
+            Contract contract = bookingRequest.getContracts().stream().findFirst().orElse(null);
+            if (contract != null) {
+                contract.setStatus(Enums.ContractStatus.COMPLETED.name());
+                contractRepository.save(contract);
+            }
         }
     }
 }
