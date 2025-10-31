@@ -85,6 +85,6 @@ public class Contract {
     @Column(name = "signed_at_kol")
     private Instant signedAtKol;
 
-    @OneToMany(mappedBy = "contract")
-    private Set<Refund> refunds = new LinkedHashSet<>();
+    @OneToOne(mappedBy = "contract")
+    private Refund refund;
 }
