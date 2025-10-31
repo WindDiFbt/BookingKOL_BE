@@ -15,7 +15,7 @@ public interface FileUsageRepository extends JpaRepository<FileUsage, UUID> {
             SELECT fu FROM FileUsage fu
             LEFT JOIN FETCH fu.file f
             WHERE f.fileType IN ('IMAGE', 'VIDEO') AND f.status = 'ACTIVE'
-            AND fu.targetId = :kolId ORDER BY f.fileType DESC, fu.createdAt DESC
+            AND fu.targetType = 'PORTFOLIO' AND fu.isActive = true AND fu.targetId = :kolId ORDER BY f.fileType DESC, fu.createdAt DESC
             """)
     List<FileUsage> findAllImageAndVideoActiveByKolId(@Param("kolId") UUID kolId);
 
