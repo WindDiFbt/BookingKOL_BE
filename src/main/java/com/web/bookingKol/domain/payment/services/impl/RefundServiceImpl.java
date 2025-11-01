@@ -36,7 +36,7 @@ public class RefundServiceImpl implements RefundService {
     @Override
     public RefundDTO createRefundRequest(Contract contract, String bankNumber, String bankName) {
         BookingRequest bookingRequest = contract.getBookingRequest();
-        if (!contract.getStatus().equals(Enums.ContractStatus.SIGNED.name())) {
+        if (!contract.getStatus().equals(Enums.ContractStatus.PAID.name())) {
             throw new IllegalArgumentException("Hợp đồng đã hủy hoặc đã hoàn thành. Không thể tạo yêu cầu hoàn tiền.");
         }
         Instant cancellationTime = Instant.now();
@@ -74,7 +74,7 @@ public class RefundServiceImpl implements RefundService {
     @Override
     public ApiResponse<RefundDTO> confirmRefunded(UUID refundId) {
         Refund refund = refundRepository.findById(refundId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy yêu cầu hoàn tiền với ID: " + refundId));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy yêu cầu hoàn tiền với ID: " + refundId));
         if (!refund.getStatus().equals(Enums.RefundStatus.PENDING.name())) {
             throw new IllegalArgumentException("Yêu cầu hoàn tiền đã được xác nhận trước đó.");
         }

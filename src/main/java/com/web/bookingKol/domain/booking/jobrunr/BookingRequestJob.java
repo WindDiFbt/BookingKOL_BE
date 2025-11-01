@@ -38,4 +38,16 @@ public class BookingRequestJob {
         }
         logger.info("[JOBRUNR] Closed Draft Request " + bookingRequest.getId());
     }
+
+    @Transactional
+    public void autoSetInProgressStatus(UUID bookingRequestId) {
+        BookingRequest bookingRequest = bookingRequestRepository.findById(bookingRequestId).orElse(null);
+        if (bookingRequest == null) {
+            logger.warning("Booking request not found: " + bookingRequestId);
+            return;
+        }
+        bookingRequest.setStatus(Enums.BookingStatus.IN_PROGRESS.name());
+        bookingRequest.setUpdatedAt(Instant.now());
+        bookingRequestRepository.save(bookingRequest);
+    }
 }
