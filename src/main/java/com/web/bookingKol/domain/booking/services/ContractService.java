@@ -11,4 +11,7 @@ public interface ContractService {
     void confirmContract(Contract contract);
 
     void cancelContract(Contract contract);
+
+    void paidContract(Contract contract);
+
 }

@@ -51,4 +51,11 @@ public class ContractServiceImpl implements ContractService {
         contract.setUpdatedAt(Instant.now());
         contractRepository.save(contract);
     }
+
+    @Override
+    public void paidContract(Contract contract) {
+        contract.setStatus(Enums.ContractStatus.PAID.name());
+        contract.setUpdatedAt(Instant.now());
+        contractRepository.save(contract);
+    }
 }

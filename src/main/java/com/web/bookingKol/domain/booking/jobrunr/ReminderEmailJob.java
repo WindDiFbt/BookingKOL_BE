@@ -2,11 +2,11 @@ package com.web.bookingKol.domain.booking.jobrunr;
 
 import com.web.bookingKol.common.services.EmailService;
 import com.web.bookingKol.domain.booking.models.Contract;
+import com.web.bookingKol.domain.booking.repositories.ContractRepository;
 import com.web.bookingKol.domain.kol.models.KolWorkTime;
 import com.web.bookingKol.domain.kol.repositories.KolWorkTimeRepository;
 import com.web.bookingKol.domain.user.models.User;
 import jakarta.persistence.EntityNotFoundException;
-import org.jobrunr.jobs.annotations.Job;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,18 +23,21 @@ public class ReminderEmailJob {
     private EmailService emailService;
     @Autowired
     private KolWorkTimeRepository kolWorkTimeRepository;
+    @Autowired
+    private ContractRepository contractRepository;
 
     private static final DateTimeFormatter VIETNAM_FORMATTER = DateTimeFormatter
             .ofPattern("HH:mm 'ngày' dd/MM/yyyy")
             .withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
 
-    @Job(name = "Gửi email nhắc nhở 24h cho hợp đồng %0")
     public void sendWorkStartReminder(UUID workTimeId) {
         KolWorkTime workTime = kolWorkTimeRepository.findById(workTimeId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy thời gian làm việc với ID: " + workTimeId));
         User user = workTime.getBookingRequest().getUser();
-        Contract contract = workTime.getBookingRequest().getContracts().stream().findFirst().
-                orElseThrow(() -> new EntityNotFoundException("Không tìm thấy hợp đồng cho thời gian làm việc: " + workTime.getId()));
+        Contract contract = contractRepository.findByWorkTimeId(workTimeId);
+        if (contract == null) {
+            throw new EntityNotFoundException("Không tìm thấy hợp đồng cho thời gian làm việc: " + workTime.getId());
+        }
         String subject = "🔔 Nhắc nhở: Lịch làm việc sắp bắt đầu (Hợp đồng " + contract.getContractNumber() + ")";
         String htmlContent = generateWorkStartReminderHtml(user, contract);
         try {

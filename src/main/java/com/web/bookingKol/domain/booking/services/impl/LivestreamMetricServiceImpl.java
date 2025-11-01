@@ -51,12 +51,12 @@ public class LivestreamMetricServiceImpl implements LivestreamMetricService {
         if (kolWorkTime.getStatus().equals(Enums.KOLWorkTimeStatus.COMPLETED.name())) {
             throw new IllegalArgumentException("Ca làm việc " + workTimeId + " đã hoàn thành.");
         }
-        if (kolWorkTime.getStartAt().isAfter(Instant.now())) {
-            throw new IllegalArgumentException("Ca làm việc " + workTimeId + " chưa bắt đầu.");
-        }
-        if (kolWorkTime.getEndAt().isAfter(Instant.now())) {
-            throw new IllegalArgumentException("Ca làm việc " + workTimeId + " chưa kết thúc.");
-        }
+//        if (kolWorkTime.getStartAt().isAfter(Instant.now())) {
+//            throw new IllegalArgumentException("Ca làm việc " + workTimeId + " chưa bắt đầu.");
+//        }
+//        if (kolWorkTime.getEndAt().isAfter(Instant.now())) {
+//            throw new IllegalArgumentException("Ca làm việc " + workTimeId + " chưa kết thúc.");
+//        }
         Instant metricDeadline = kolWorkTime.getEndAt().plus(3, ChronoUnit.DAYS);
         if (Instant.now().isAfter(metricDeadline)) {
             throw new IllegalArgumentException("Đã quá thời hạn 3 ngày kể từ khi ca làm việc " + workTimeId + " kết thúc. Không thể tạo Livestream Metric.");
