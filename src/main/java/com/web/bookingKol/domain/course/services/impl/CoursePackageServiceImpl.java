@@ -7,6 +7,7 @@ import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.domain.course.CoursePackageRepository;
 import com.web.bookingKol.domain.course.dtos.CoursePackageDTO;
 import com.web.bookingKol.domain.course.dtos.CoursePaymentDTO;
+import com.web.bookingKol.domain.course.dtos.PurchaseCourseReqDTO;
 import com.web.bookingKol.domain.course.dtos.UpdateCoursePackageDTO;
 import com.web.bookingKol.domain.course.mappers.CoursePackageMapper;
 import com.web.bookingKol.domain.course.mappers.CoursePaymentMapper;
@@ -302,7 +303,7 @@ public class CoursePackageServiceImpl implements CoursePackageService {
     }
 
     @Override
-    public ApiResponse<CoursePaymentDTO> purchaseCoursePackage(UUID userId, UUID coursePackageId) {
+    public ApiResponse<CoursePaymentDTO> purchaseCoursePackage(UUID userId, UUID coursePackageId, PurchaseCourseReqDTO purchaseCourseReqDTO) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng id: " + userId));
         CoursePackage coursePackage = coursePackageRepository.findById(coursePackageId)
@@ -317,7 +318,8 @@ public class CoursePackageServiceImpl implements CoursePackageService {
         purchased.setCurrentPrice(coursePackage.getCurrentPrice());
         purchased.setStatus(Enums.PurchasedCourse.NOTASSIGNED.name());
         purchased.setIsPaid(false);
-        purchased.setEmail(user.getEmail());
+        purchased.setEmail(purchaseCourseReqDTO.getEmail());
+        purchased.setPhoneNumber(purchaseCourseReqDTO.getPhone());
         purchased.setStartDate(Instant.now());
         String purchasedCourseNumber;
         do {
