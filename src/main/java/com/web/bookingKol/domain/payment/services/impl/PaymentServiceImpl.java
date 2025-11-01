@@ -2,6 +2,7 @@ package com.web.bookingKol.domain.payment.services.impl;
 
 import com.web.bookingKol.common.Enums;
 import com.web.bookingKol.common.payload.ApiResponse;
+import com.web.bookingKol.domain.booking.jobrunr.BookingRequestJob;
 import com.web.bookingKol.domain.booking.jobrunr.ReminderEmailJob;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.booking.models.Contract;
@@ -59,6 +60,8 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final String CURRENCY = "VND";
     private final Integer EXPIRES_TIME = 15;
+    @Autowired
+    private BookingRequestJob bookingRequestJob;
 
     @Override
     public PaymentReqDTO initiatePayment(BookingRequest bookingRequest, Contract contract, String qrUrl, User user, BigDecimal amount) {
@@ -112,9 +115,18 @@ public class PaymentServiceImpl implements PaymentService {
             default -> Enums.PaymentStatus.OVERPAID.name();
         };
         if (status.equals(Enums.PaymentStatus.PAID.name()) || status.equals(Enums.PaymentStatus.OVERPAID.name())) {
+            //Booking Request
             BookingRequest bookingRequest = payment.getContract().getBookingRequest();
-            bookingRequest.setStatus(Enums.BookingStatus.IN_PROGRESS.name());
+            bookingRequest.setStatus(Enums.BookingStatus.PAID.name());
             bookingRequestRepository.save(bookingRequest);
+            BackgroundJob.schedule(
+                    bookingRequest.getStartAt(),
+                    () -> bookingRequestJob.autoSetInProgressStatus(bookingRequest.getId())
+            );
+            //Contract
+            Contract contract = bookingRequest.getContracts().stream().findFirst().orElse(null);
+            contractService.paidContract(contract);
+            //Kol worktime
             Set<KolWorkTime> kolWorkTime = bookingRequest.getKolWorkTimes();
             for (KolWorkTime workTime : kolWorkTime) {
                 if (workTime.getStatus().equals(Enums.KOLWorkTimeStatus.REQUESTED.name())) {
