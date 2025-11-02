@@ -27,4 +27,9 @@ public class SePayRestController {
     public ResponseEntity<?> checkContractPaymentSuccess(@PathVariable UUID contractId) {
         return ResponseEntity.ok().body(paymentService.checkContractPaymentSuccess(contractId));
     }
+
+    @GetMapping("/check/course/{purchaseId}")
+    public ResponseEntity<?> checkCoursePaymentSuccess(@PathVariable UUID purchaseId) {
+        return ResponseEntity.ok().body(paymentService.checkPurchasedCoursePackagePaymentSuccess(purchaseId));
+    }
 }

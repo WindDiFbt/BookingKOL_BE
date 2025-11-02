@@ -1,8 +1,10 @@
 package com.web.bookingKol.domain.course;
 
 import com.web.bookingKol.common.payload.ApiResponse;
+import com.web.bookingKol.domain.course.dtos.PurchaseCourseReqDTO;
 import com.web.bookingKol.domain.course.services.CoursePackageService;
 import com.web.bookingKol.domain.user.models.UserDetailsImpl;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -35,11 +37,12 @@ public class CoursePackageRestController {
         return ResponseEntity.ok().body(coursePackageService.getCoursePackageById(coursePackageId));
     }
 
-    @PostMapping("/purchase")
+    @PostMapping("/purchase/{coursePackageId}")
     ResponseEntity<ApiResponse<?>> purchaseCoursePackage(@AuthenticationPrincipal UserDetailsImpl userDetails,
-                                                         @RequestParam UUID coursePackageId) {
+                                                         @PathVariable UUID coursePackageId,
+                                                         @RequestBody @Valid PurchaseCourseReqDTO purchaseCourseReqDTO) {
         UUID userId = userDetails.getId();
-        return ResponseEntity.ok().body(coursePackageService.purchaseCoursePackage(userId, coursePackageId));
+        return ResponseEntity.ok().body(coursePackageService.purchaseCoursePackage(userId, coursePackageId, purchaseCourseReqDTO));
     }
 
     @PostMapping("/purchase/confirm/{purchasedId}")

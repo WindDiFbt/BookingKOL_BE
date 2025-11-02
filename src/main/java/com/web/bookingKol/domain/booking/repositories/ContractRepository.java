@@ -15,4 +15,12 @@ public interface ContractRepository extends JpaRepository<Contract, UUID> {
 
     @Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM Contract c WHERE c.contractNumber = :contractNumber")
     boolean existsByContractNumber(String contractNumber);
+
+    @Query("""
+            SELECT DISTINCT c FROM Contract c
+            LEFT JOIN FETCH c.bookingRequest br
+            LEFT JOIN FETCH br.kolWorkTimes kwt
+            WHERE kwt.id = :workTimeId
+            """)
+    Contract findByWorkTimeId(@Param("workTimeId") UUID workTimeId);
 }

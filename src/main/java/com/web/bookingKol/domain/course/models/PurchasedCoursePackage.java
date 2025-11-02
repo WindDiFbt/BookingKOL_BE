@@ -56,4 +56,9 @@ public class PurchasedCoursePackage {
 
     @Column(name = "purchased_course_number")
     private String purchasedCourseNumber;
+
+    @Size(max = 20)
+    @Column(name = "phone_number", length = 20)
+    private String phoneNumber;
+
 }

@@ -3,7 +3,7 @@ package com.web.bookingKol.domain.course.services;
 import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.domain.course.dtos.CoursePackageDTO;
 import com.web.bookingKol.domain.course.dtos.CoursePaymentDTO;
-import com.web.bookingKol.domain.course.dtos.PurchasedCoursePackageDTO;
+import com.web.bookingKol.domain.course.dtos.PurchaseCourseReqDTO;
 import com.web.bookingKol.domain.course.dtos.UpdateCoursePackageDTO;
 import com.web.bookingKol.domain.file.dtos.FileUsageDTO;
 import com.web.bookingKol.domain.payment.dtos.PaymentReqDTO;
@@ -51,9 +51,11 @@ public interface CoursePackageService {
 
     ApiResponse<?> deleteCoursePackage(UUID courseId);
 
-    ApiResponse<CoursePaymentDTO> purchaseCoursePackage(UUID userId, UUID coursePackageId);
+    ApiResponse<CoursePaymentDTO> purchaseCoursePackage(UUID userId, UUID coursePackageId, PurchaseCourseReqDTO purchaseCourseReqDTO);
 
     ApiResponse<PaymentReqDTO> confirmPurchaseCoursePackage(UUID userId, UUID purchasedCoursePackageId);
 
     ApiResponse<CoursePaymentDTO> cancelPurchaseCoursePackage(UUID userId, UUID purchasedCoursePackageId);
+
+
 }

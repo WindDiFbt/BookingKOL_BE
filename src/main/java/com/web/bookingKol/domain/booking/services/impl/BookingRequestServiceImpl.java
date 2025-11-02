@@ -28,9 +28,15 @@ import com.web.bookingKol.domain.kol.models.KolProfile;
 import com.web.bookingKol.domain.kol.models.KolWorkTime;
 import com.web.bookingKol.domain.kol.repositories.KolAvailabilityRepository;
 import com.web.bookingKol.domain.kol.repositories.KolProfileRepository;
+import com.web.bookingKol.domain.kol.repositories.KolWorkTimeRepository;
 import com.web.bookingKol.domain.kol.services.KolWorkTimeService;
 import com.web.bookingKol.domain.payment.dtos.PaymentReqDTO;
+import com.web.bookingKol.domain.payment.dtos.refund.RefundDTO;
+import com.web.bookingKol.domain.payment.models.Merchant;
+import com.web.bookingKol.domain.payment.models.Payment;
+import com.web.bookingKol.domain.payment.services.MerchantService;
 import com.web.bookingKol.domain.payment.services.PaymentService;
+import com.web.bookingKol.domain.payment.services.RefundService;
 import com.web.bookingKol.domain.payment.services.SePayService;
 import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.domain.user.repositories.UserRepository;
@@ -52,6 +58,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -90,6 +97,13 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     private BookingRequestJob bookingRequestJob;
     @Autowired
     protected WorkTimeJob workTimeJob;
+    @Autowired
+    private MerchantService merchantService;
+    public static final String PAYMENT_TRANSFER_CONTENT_FORMAT = "Thanh toan cho ";
+    @Autowired
+    private RefundService refundService;
+    @Autowired
+    private KolWorkTimeRepository kolWorkTimeRepository;
 
     @Transactional
     @Override
@@ -165,7 +179,7 @@ public class BookingRequestServiceImpl implements BookingRequestService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy người dùng với ID: " + userId));
         // --- 1. Initiate Payment ---
-        String transferContent = contract.getId().toString();
+        String transferContent = PAYMENT_TRANSFER_CONTENT_FORMAT + contract.getContractNumber() + " " + contract.getId().toString();
         PaymentReqDTO paymentReqDTO = paymentService.initiatePayment(
                 bookingRequest,
                 contract,
@@ -205,6 +219,11 @@ public class BookingRequestServiceImpl implements BookingRequestService {
         contractService.cancelContract(contract);
         bookingRequestRepository.saveAndFlush(bookingRequest);
         BackgroundJob.delete(bookingRequestId);
+        softHoldBookingService.releaseSlot(
+                bookingRequest.getKol().getId(),
+                bookingRequest.getStartAt(),
+                bookingRequest.getEndAt()
+        );
         return ApiResponse.<BookingDetailDTO>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Hủy yêu cầu đặt lịch thành công!"))
@@ -433,8 +452,9 @@ public class BookingRequestServiceImpl implements BookingRequestService {
                 .build();
     }
 
+    @Transactional
     @Override
-    public ApiResponse<BookingDetailDTO> cancelBookingRequest(UUID userId, UUID bookingRequestId) {
+    public ApiResponse<?> cancelBookingRequest(UUID userId, UUID bookingRequestId, String bankNumber, String bankName) {
         BookingRequest bookingRequest = bookingRequestRepository.findByIdWithAttachedFiles(bookingRequestId);
         if (bookingRequest == null) {
             throw new EntityNotFoundException("Không tìm thấy yêu cầu đặt lịch: " + bookingRequestId);
@@ -448,13 +468,55 @@ public class BookingRequestServiceImpl implements BookingRequestService {
         bookingRequest.setStatus(Enums.BookingStatus.CANCELLED.name());
 //        bookingRequest.setUpdatedAt(Instant.now());
         bookingRequestRepository.saveAndFlush(bookingRequest);
+        Set<KolWorkTime> kolWorkTimes = bookingRequest.getKolWorkTimes();
+        for (KolWorkTime kolWorkTime : kolWorkTimes) {
+            kolWorkTime.setStatus(Enums.KOLWorkTimeStatus.CANCELLED.name());
+        }
+        kolWorkTimeRepository.saveAll(kolWorkTimes);
         Contract contract = contractRepository.findByRequestId(bookingRequestId);
-        contract.setStatus(Enums.ContractStatus.CANCELLED.name());
-        contractRepository.saveAndFlush(contract);
-        return ApiResponse.<BookingDetailDTO>builder()
+        RefundDTO refundDTO = refundService.createRefundRequest(contract, bankNumber, bankName);
+        contract.setStatus(Enums.ContractStatus.WAIT_FOR_REFUND.name());
+        contractRepository.save(contract);
+        return ApiResponse.builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Hủy yêu cầu đặt lịch thành công"))
-                .data(bookingDetailMapper.toDto(bookingRequest))
+                .data(refundDTO)
+                .build();
+    }
+
+    @Override
+    public ApiResponse<PaymentReqDTO> continueBookingRequestPayment(UUID bookingRequestId, UUID userId) {
+        Merchant merchant = merchantService.getMerchantIsActive();
+        BookingRequest bookingRequest = bookingRequestRepository.findById(bookingRequestId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy yêu cầu đặt lịch với ID: " + bookingRequestId));
+        if (!bookingRequest.getUser().getId().equals(userId)) {
+            throw new AuthorizationServiceException("Bạn không được phép thực hiện hành động này đối với yêu cầu đặt lịch này");
+        }
+        if (bookingRequest.getStatus().equals(Enums.BookingStatus.DRAFT.name())) {
+            throw new IllegalArgumentException("Yêu cầu đặt lịch chưa được xác nhận!");
+        }
+        Contract contract = bookingRequest.getContracts().stream().findFirst()
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy hợp đồng với ID yêu cầu đặt lịch: " + bookingRequest.getId()));
+        Payment payment = contract.getPayment();
+        if (!payment.getStatus().equals(Enums.PaymentStatus.PENDING.name())) {
+            throw new IllegalArgumentException("Đã quá thời gian thực hiện thanh toán cho yêu cầu đặt lịch này!");
+        }
+        String transferContent = PAYMENT_TRANSFER_CONTENT_FORMAT + contract.getContractNumber() + " " + contract.getId().toString();
+        String qrUrl = sePayService.createQRCode(contract.getAmount(), transferContent);
+        PaymentReqDTO paymentReqDTO = PaymentReqDTO.builder()
+                .contractId(contract.getId())
+                .amount(contract.getAmount())
+                .qrUrl(qrUrl)
+                .userId(bookingRequest.getUser().getId())
+                .expiresAt(payment.getExpiresAt())
+                .name(merchant.getName())
+                .bank(merchant.getBank())
+                .accountNumber(merchant.getAccountNumber())
+                .build();
+        return ApiResponse.<PaymentReqDTO>builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Tiếp tục thanh toán yêu cầu đặt lịch thành công!"))
+                .data(paymentReqDTO)
                 .build();
     }
 }
