@@ -15,6 +15,7 @@ public class CoursePaymentDTO {
     private Integer discount;
     private Long currentPrice;
     private String email;
+    private String phoneNumber;
 
     private Instant startDate;
     private Instant endDate;
