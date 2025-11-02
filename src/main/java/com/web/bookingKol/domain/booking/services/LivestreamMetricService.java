@@ -3,9 +3,10 @@ package com.web.bookingKol.domain.booking.services;
 import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.domain.booking.dtos.livestreamMetric.LivestreamMetricDTO;
 import com.web.bookingKol.domain.booking.dtos.livestreamMetric.LivestreamMetricReqDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -18,5 +19,5 @@ public interface LivestreamMetricService {
 
     ApiResponse<LivestreamMetricDTO> getDetailLivestreamMetricByKolWorkTimeId(UUID userId, UUID workTimeId);
 
-    ApiResponse<List<LivestreamMetricDTO>> getLivestreamMetricOfKol(UUID kolId);
+    ApiResponse<Page<LivestreamMetricDTO>> getLivestreamMetricOfKol(UUID kolId, Pageable pageable);
 }
