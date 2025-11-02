@@ -87,6 +87,7 @@ public class AuthServiceImpl implements AuthService {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new UserAlreadyExistsException("Email này đã được sử dụng");
         }
+
         User user = new User();
         user.setEmail(request.getEmail());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
@@ -96,12 +97,22 @@ public class AuthServiceImpl implements AuthService {
         userRepository.save(user);
 
         Role defaultRole = roleRepository.findByKey(Enums.Roles.USER.name())
-                .orElseThrow(() -> new RuntimeException("Role USER not found !!"));
+                .orElseThrow(() -> new RuntimeException("Role USER không tìm thấy!"));
 
         UserRole userRole = new UserRole();
         userRole.setUser(user);
         userRole.setRole(defaultRole);
         userRoleRepository.save(userRole);
+
+        Brand brand = new Brand();
+        brand.setUser(user);
+
+        brand.setBrandName(
+                (request.getBrandName() != null && !request.getBrandName().isBlank())
+                        ? request.getBrandName()
+                        : request.getFullName()
+        );
+        brandRepository.save(brand);
 
         String code = UUID.randomUUID().toString();
         EmailVerification ev = EmailVerification.builder()
@@ -120,6 +131,7 @@ public class AuthServiceImpl implements AuthService {
                         .build()
         );
     }
+
 
 
 

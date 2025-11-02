@@ -1,6 +1,8 @@
 package com.web.bookingKol.domain.booking.repositories;
 
 import com.web.bookingKol.domain.booking.models.BookingRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -74,4 +76,7 @@ public interface BookingRequestRepository extends JpaRepository<BookingRequest, 
 
     @Query("SELECT CASE WHEN COUNT(br) > 0 THEN TRUE ELSE FALSE END FROM BookingRequest br WHERE br.requestNumber = :requestNumber")
     boolean existsByRequestNumber(@Param("requestNumber") String requestNumber);
+
+    Page<BookingRequest> findByUser_Id(UUID userId, Pageable pageable);
+
 }

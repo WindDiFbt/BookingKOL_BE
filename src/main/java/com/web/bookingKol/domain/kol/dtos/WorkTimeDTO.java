@@ -18,6 +18,7 @@ public class WorkTimeDTO {
     private Instant endAt;
     private String note;
     private String status;
+    private UUID bookingRequestId;
 
     public WorkTimeDTO(KolWorkTime entity) {
         this.id = entity.getId();
@@ -25,5 +26,8 @@ public class WorkTimeDTO {
         this.endAt = entity.getEndAt();
         this.note = entity.getNote();
         this.status = entity.getStatus();
+        this.bookingRequestId = entity.getBookingRequest() != null
+                ? entity.getBookingRequest().getId()
+                : null;
     }
 }

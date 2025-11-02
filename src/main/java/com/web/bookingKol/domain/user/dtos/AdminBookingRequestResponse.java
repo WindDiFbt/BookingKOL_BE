@@ -28,8 +28,8 @@ public class AdminBookingRequestResponse {
     private String campaignObjective;
     private BigDecimal budgetMin;
     private BigDecimal budgetMax;
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private Instant startDate;
+    private Instant endDate;
     private String createdByEmail;
 
     private List<KolInfo> kols;

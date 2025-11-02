@@ -17,8 +17,8 @@ public class BookedPackageResponse {
     private String objective;
     private BigDecimal budgetMin;
     private BigDecimal budgetMax;
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private Instant startDate;
+    private Instant endDate;
     private String recurrencePattern;
 
     private String packageName;

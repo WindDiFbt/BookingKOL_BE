@@ -42,5 +42,8 @@ public interface KolAvailabilityService {
 
     ApiResponse<KolAvailabilityDTO> createKolScheduleByAdmin(KolAvailabilityDTO dto);
 
+    ApiResponse<String> deleteKolAvailabilityByAdmin(UUID availabilityId);
+
+
 
 }
