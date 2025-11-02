@@ -94,7 +94,7 @@ public class KolAvailabilityController {
     }
 
 
-    @PreAuthorize("hasAnyAuthority('ADMIN','SUPER_ADMIN','KOL')")
+    @PreAuthorize("hasAnyAuthority('ADMIN','SUPER_ADMIN')")
     @PutMapping("/schedule/{workTimeId}")
     public ResponseEntity<ApiResponse<KolWorkTimeDTO>> updateKolWorkTime(
             @PathVariable UUID workTimeId,
@@ -112,6 +112,15 @@ public class KolAvailabilityController {
         return ResponseEntity.ok(availabilityService.createKolScheduleByAdmin(dto));
     }
 
+
+    // admin xóa lịch rảnh của kol
+    @PreAuthorize("hasAnyAuthority('ADMIN','SUPER_ADMIN')")
+    @DeleteMapping("/admin/schedule/{availabilityId}")
+    public ResponseEntity<ApiResponse<String>> deleteKolAvailabilityByAdmin(
+            @PathVariable UUID availabilityId
+    ) {
+        return ResponseEntity.ok(availabilityService.deleteKolAvailabilityByAdmin(availabilityId));
+    }
 
 
 

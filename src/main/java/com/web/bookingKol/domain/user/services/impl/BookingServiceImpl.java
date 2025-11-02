@@ -85,7 +85,7 @@ public class BookingServiceImpl implements BookingService {
         purchased.setStatus(Enums.BookingStatus.REQUESTED.name());
         purchased.setStartDate(Instant.now());
         if (req.getEndDate() != null) {
-            purchased.setEndDate(req.getEndDate().atStartOfDay().toInstant(java.time.ZoneOffset.UTC));
+            purchased.setEndDate(req.getEndDate());
         }
         purchased.setRecurrencePattern(req.getRecurrencePattern());
         purchased.setCreatedAt(Instant.now());

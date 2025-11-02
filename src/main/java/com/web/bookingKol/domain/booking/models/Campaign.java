@@ -48,10 +48,10 @@ public class Campaign {
     private BigDecimal budgetMax;
 
     @Column(name = "start_date")
-    private LocalDate startDate;
+    private Instant startDate;
 
     @Column(name = "end_date")
-    private LocalDate endDate;
+    private Instant endDate;
 
     @Size(max = 50)
     @Column(name = "status", length = 50)

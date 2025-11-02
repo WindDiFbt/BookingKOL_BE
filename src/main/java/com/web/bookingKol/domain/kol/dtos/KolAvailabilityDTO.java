@@ -5,7 +5,6 @@ import com.web.bookingKol.domain.kol.models.KolAvailability;
 import com.web.bookingKol.domain.user.models.User;
 
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -13,10 +12,11 @@ import java.util.UUID;
 public class KolAvailabilityDTO {
 
     private UUID id;
+    private UUID availabilityId;
+
     private Instant startAt;
     private Instant endAt;
     private String status;
-
     private String note;
 
     private List<WorkTimeDTO> workTimes = new ArrayList<>();
@@ -32,6 +32,7 @@ public class KolAvailabilityDTO {
 
     public KolAvailabilityDTO(KolAvailability availability) {
         this.id = availability.getId();
+        this.availabilityId = availability.getId();
         this.startAt = availability.getStartAt();
         this.endAt = availability.getEndAt();
         this.status = availability.getStatus();
@@ -59,6 +60,14 @@ public class KolAvailabilityDTO {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public UUID getAvailabilityId() {
+        return availabilityId;
+    }
+
+    public void setAvailabilityId(UUID availabilityId) {
+        this.availabilityId = availabilityId;
     }
 
     public Instant getStartAt() {
