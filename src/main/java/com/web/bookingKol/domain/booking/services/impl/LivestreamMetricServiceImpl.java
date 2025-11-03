@@ -12,6 +12,7 @@ import com.web.bookingKol.domain.booking.repositories.BookingRequestRepository;
 import com.web.bookingKol.domain.booking.repositories.ContractRepository;
 import com.web.bookingKol.domain.booking.repositories.LivestreamMetricRepository;
 import com.web.bookingKol.domain.booking.services.LivestreamMetricService;
+import com.web.bookingKol.domain.kol.models.KolProfile;
 import com.web.bookingKol.domain.kol.models.KolWorkTime;
 import com.web.bookingKol.domain.kol.repositories.KolWorkTimeRepository;
 import com.web.bookingKol.domain.user.models.User;
@@ -130,7 +131,7 @@ public class LivestreamMetricServiceImpl implements LivestreamMetricService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng: " + userId));
         UUID bookingUserId = livestreamMetric.getKolWorkTime().getBookingRequest().getUser().getId();
-        boolean isAdmin = user.getRoles().stream().anyMatch(role -> role.getName().equals(Enums.Roles.ADMIN.name()));
+        boolean isAdmin = user.getRoles().stream().anyMatch(role -> role.getKey().equals(Enums.Roles.ADMIN.name()));
         if (!isAdmin && !bookingUserId.equals(userId)) {
             throw new AuthorizationServiceException("Bạn không có quyền xem Livestream Metric của ca làm này.");
         }
@@ -150,7 +151,7 @@ public class LivestreamMetricServiceImpl implements LivestreamMetricService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng: " + userId));
         UUID bookingUserId = livestreamMetric.getKolWorkTime().getBookingRequest().getUser().getId();
-        boolean isAdmin = user.getRoles().stream().anyMatch(role -> role.getName().equals(Enums.Roles.ADMIN.name()));
+        boolean isAdmin = user.getRoles().stream().anyMatch(role -> role.getKey().equals(Enums.Roles.ADMIN.name()));
         if (!isAdmin && !bookingUserId.equals(userId)) {
             throw new AuthorizationServiceException("Bạn không có quyền xem Livestream Metric của ca làm này.");
         }
@@ -185,5 +186,24 @@ public class LivestreamMetricServiceImpl implements LivestreamMetricService {
                 contractRepository.save(contract);
             }
         }
+    }
+
+    @Override
+    public ApiResponse<LivestreamMetricDTO> KolGetDetailLivestreamMetricByKolWorkTimeId(UUID userId, UUID workTimeId) {
+        LivestreamMetric livestreamMetric = livestreamMetricRepository.findByWorkTimeId(workTimeId);
+        if (livestreamMetric == null) {
+            throw new IllegalArgumentException("Không tìm thấy Livestream Metric của ca làm việc: " + workTimeId);
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng: " + userId));
+        KolProfile kolProfile = user.getKolProfile();
+        if (kolProfile.getId() != livestreamMetric.getKolWorkTime().getAvailability().getKol().getId()) {
+            throw new AuthorizationServiceException("Bạn không có quyền xem Livestream Metric của ca làm này.");
+        }
+        return ApiResponse.<LivestreamMetricDTO>builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Lấy dữ liệu của phiên live thành công: " + workTimeId))
+                .data(livestreamMetricMapper.toDto(livestreamMetric))
+                .build();
     }
 }

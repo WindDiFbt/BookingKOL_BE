@@ -72,6 +72,7 @@ public class CoursePackageServiceImpl implements CoursePackageService {
     private PaymentService paymentService;
     @Autowired
     private SePayService sePayService;
+    public static final String PAYMENT_TRANSFER_CONTENT_FORMAT = "Thanh toan cho ";
 
     @Override
     public ApiResponse<CoursePackageDTO> getCoursePackageById(UUID coursePackageId) {
@@ -342,7 +343,7 @@ public class CoursePackageServiceImpl implements CoursePackageService {
         if (!purchasedCoursePackage.getUser().getId().equals(userId)) {
             throw new IllegalArgumentException("Bạn không có quyền xác nhận yêu cầu mua khóa học này");
         }
-        String transferContent = purchasedCoursePackage.getId().toString();
+        String transferContent = PAYMENT_TRANSFER_CONTENT_FORMAT + purchasedCoursePackage.getPurchasedCourseNumber() + " " + purchasedCoursePackage.getId().toString();
         Payment payment = paymentService.initiateCoursePayment(
                 purchasedCoursePackage,
                 purchasedCoursePackage.getUser(),

@@ -143,6 +143,7 @@ public class BookingRequestServiceImpl implements BookingRequestService {
         newBookingRequest.setFullName(bookingRequestDTO.getFullName());
         newBookingRequest.setEmail(bookingRequestDTO.getEmail());
         newBookingRequest.setPhone(bookingRequestDTO.getPhone());
+        newBookingRequest.setPlatform(bookingRequestDTO.getPlatform());
         // --- 4. Handle File Attachments ---
         if (attachedFiles != null && !attachedFiles.isEmpty()) {
             for (MultipartFile file : attachedFiles) {
@@ -429,6 +430,9 @@ public class BookingRequestServiceImpl implements BookingRequestService {
             }
             if (updateBookingReqDTO.getDescription() != null) {
                 bookingRequest.setDescription(updateBookingReqDTO.getDescription());
+            }
+            if (updateBookingReqDTO.getPlatform() != null) {
+                bookingRequest.setPlatform(updateBookingReqDTO.getPlatform());
             }
         }
         if (attachedFiles != null && !attachedFiles.isEmpty()) {
