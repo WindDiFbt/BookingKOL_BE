@@ -20,4 +20,7 @@ public interface LivestreamMetricService {
     ApiResponse<LivestreamMetricDTO> getDetailLivestreamMetricByKolWorkTimeId(UUID userId, UUID workTimeId);
 
     ApiResponse<Page<LivestreamMetricDTO>> getLivestreamMetricOfKol(UUID kolId, Pageable pageable);
+
+    ApiResponse<LivestreamMetricDTO> KolGetDetailLivestreamMetricByKolWorkTimeId(UUID userId, UUID workTimeId);
+
 }

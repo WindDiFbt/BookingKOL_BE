@@ -48,6 +48,7 @@ public class BookingDetailMapper {
         dto.setFullName(bookingRequest.getFullName());
         dto.setPhone(bookingRequest.getPhone());
         dto.setEmail(bookingRequest.getEmail());
+        dto.setPlatform(bookingRequest.getPlatform());
         if (bookingRequest.getAttachedFiles() != null) {
             dto.setAttachedFiles(
                     fileUsageMapper.toDtoSet(
