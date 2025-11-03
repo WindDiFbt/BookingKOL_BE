@@ -23,6 +23,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.text.Normalizer;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -138,6 +141,11 @@ public class FileServiceImpl implements FileService {
         }
         int lastDot = originalFilename.lastIndexOf('.');
         String nameWithoutExt = (lastDot > 0) ? originalFilename.substring(0, lastDot) : originalFilename;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
+        String formattedTime = LocalDateTime
+                .ofInstant(Instant.now(), ZoneId.of("UTC"))
+                .format(formatter);
+        String time = "_" + formattedTime;
         String extension = (lastDot > 0) ? originalFilename.substring(lastDot) : "";
         String normalized = Normalizer.normalize(nameWithoutExt, Normalizer.Form.NFD);
         Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
@@ -147,8 +155,8 @@ public class FileServiceImpl implements FileService {
                 .replaceAll("[\\s\\-]+", "-")
                 .replaceAll("^-+|-+$", "");
         if (safeName.isEmpty()) {
-            return "file" + extension;
+            return "file" + time + extension;
         }
-        return safeName + extension;
+        return safeName + time + extension;
     }
 }

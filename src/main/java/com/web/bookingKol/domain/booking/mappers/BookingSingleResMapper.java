@@ -38,6 +38,7 @@ public class BookingSingleResMapper {
         dto.setEndAt(bookingRequest.getEndAt());
         dto.setCreatedAt(bookingRequest.getCreatedAt());
         dto.setUpdatedAt(bookingRequest.getUpdatedAt());
+        dto.setPlatform(bookingRequest.getPlatform());
         if (bookingRequest.getAttachedFiles() != null) {
             Set<FileUsage> activeAttachedFiles = bookingRequest.getAttachedFiles().stream()
                     .filter(attachedFile ->
