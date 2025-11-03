@@ -17,6 +17,8 @@ import com.web.bookingKol.domain.kol.repositories.KolWorkTimeRepository;
 import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.domain.user.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AuthorizationServiceException;
 import org.springframework.stereotype.Service;
@@ -160,12 +162,13 @@ public class LivestreamMetricServiceImpl implements LivestreamMetricService {
     }
 
     @Override
-    public ApiResponse<List<LivestreamMetricDTO>> getLivestreamMetricOfKol(UUID kolId) {
-        List<LivestreamMetric> livestreamMetrics = livestreamMetricRepository.findAllByKolId(kolId);
-        return ApiResponse.<List<LivestreamMetricDTO>>builder()
+    public ApiResponse<Page<LivestreamMetricDTO>> getLivestreamMetricOfKol(UUID kolId, Pageable pageable) {
+        Page<LivestreamMetricDTO> livestreamMetrics = livestreamMetricRepository.findAllByKolId(kolId, pageable)
+                .map(livestreamMetricMapper::toDto);
+        return ApiResponse.<Page<LivestreamMetricDTO>>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Lấy dữ liệu livestream của Kol thành công:" + kolId))
-                .data(livestreamMetricMapper.toDtoList(livestreamMetrics))
+                .data(livestreamMetrics)
                 .build();
     }
 
