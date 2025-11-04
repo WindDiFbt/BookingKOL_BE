@@ -1,6 +1,7 @@
 package com.web.bookingKol.domain.booking.repositories;
 
 import com.web.bookingKol.domain.booking.models.BookingRequest;
+import com.web.bookingKol.domain.booking.models.Campaign;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -78,5 +79,30 @@ public interface BookingRequestRepository extends JpaRepository<BookingRequest, 
     boolean existsByRequestNumber(@Param("requestNumber") String requestNumber);
 
     Page<BookingRequest> findByUser_Id(UUID userId, Pageable pageable);
+
+    Page<BookingRequest> findByUser_IdAndCampaignIsNotNull(UUID userId, Pageable pageable);
+
+
+    Page<BookingRequest> findByCampaignIsNotNull(Pageable pageable);
+
+    @Query("""
+        SELECT br FROM BookingRequest br
+        WHERE br.user.id = :userId
+          AND br.campaign IS NOT NULL
+          AND (
+              LOWER(br.status) LIKE LOWER(CONCAT('%', :keyword, '%'))
+              OR LOWER(br.description) LIKE LOWER(CONCAT('%', :keyword, '%'))
+              OR EXISTS (
+                  SELECT c FROM Contract c
+                  WHERE c.bookingRequest.id = br.id
+                    AND LOWER(c.contractNumber) LIKE LOWER(CONCAT('%', :keyword, '%'))
+              )
+          )
+        """)
+    Page<BookingRequest> searchByUserAndKeyword(@Param("userId") UUID userId,
+                                                @Param("keyword") String keyword,
+                                                Pageable pageable);
+
+
 
 }

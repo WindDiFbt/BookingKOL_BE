@@ -1,13 +1,14 @@
 package com.web.bookingKol.domain.user.services.impl;
 
+import com.web.bookingKol.common.Enums;
 import com.web.bookingKol.common.PagedResponse;
 import com.web.bookingKol.common.payload.ApiResponse;
-import com.web.bookingKol.domain.booking.models.BookingPackageKol;
-import com.web.bookingKol.domain.booking.models.BookingRequest;
-import com.web.bookingKol.domain.booking.models.Campaign;
-import com.web.bookingKol.domain.booking.models.Contract;
+import com.web.bookingKol.domain.booking.models.*;
+import com.web.bookingKol.domain.booking.repositories.BookingRequestParticipantRepository;
 import com.web.bookingKol.domain.booking.repositories.BookingRequestRepository;
 import com.web.bookingKol.domain.booking.repositories.ContractRepository;
+import com.web.bookingKol.domain.kol.models.KolProfile;
+import com.web.bookingKol.domain.kol.repositories.KolProfileRepository;
 import com.web.bookingKol.domain.user.dtos.AdminBookingRequestResponse;
 import com.web.bookingKol.domain.user.dtos.AdminCreateBookingRequestDTO;
 import com.web.bookingKol.domain.user.dtos.KolInfo;
@@ -33,6 +34,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -48,6 +50,8 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
     private final ContractRepository contractRepository;
     private final ContractGeneratorService contractGeneratorService;
     private final BookingPackageKolRepository bookingPackageKolRepository;
+    private final KolProfileRepository kolProfileRepository;
+    private final BookingRequestParticipantRepository bookingRequestParticipantRepository;
 
     @Override
     @Transactional
@@ -69,15 +73,19 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
         booking.setRepeatUntil(dto.getRepeatUntil());
         booking.setCreatedAt(Instant.now());
         booking.setUpdatedAt(Instant.now());
-        if (dto.getContractAmount() != null) {
-            booking.setContractAmount(dto.getContractAmount());
-        } else {
-            booking.setContractAmount(BigDecimal.ZERO);
-        }
+        booking.setContractAmount(dto.getContractAmount() != null ? dto.getContractAmount() : BigDecimal.ZERO);
         bookingRequestRepository.saveAndFlush(booking);
 
         String savedContractPath = null;
         MultipartFile contractFile = dto.getContractFile();
+
+        Contract contract = new Contract();
+        contract.setBookingRequest(booking);
+        contract.setContractNumber("CT-" + System.currentTimeMillis());
+        contract.setStatus(Enums.ContractStatus.DRAFT.name());
+        contract.setCreatedAt(Instant.now());
+        contract.setUpdatedAt(Instant.now());
+        contractRepository.saveAndFlush(contract);
 
         if (contractFile != null && !contractFile.isEmpty()) {
             try {
@@ -93,14 +101,6 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
                 throw new RuntimeException("Lỗi khi lưu file hợp đồng", e);
             }
         } else {
-            Contract contract = new Contract();
-            contract.setBookingRequest(booking);
-            contract.setContractNumber("CT-" + System.currentTimeMillis());
-            contract.setStatus("DRAFT");
-            contract.setCreatedAt(Instant.now());
-            contract.setUpdatedAt(Instant.now());
-            contractRepository.saveAndFlush(contract);
-
             var placeholders = Map.of(
                     "brand_name", campaign.getCreatedBy().getFullName(),
                     "kol_name", booking.getUser().getFullName(),
@@ -111,71 +111,103 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
             );
 
             var fileUsage = contractGeneratorService.generateAndSaveContract(placeholders, admin.getId(), contract.getId());
-
-            contract.setTerms("File hợp đồng: " + fileUsage.getFile().getFileUrl());
-            contractRepository.save(contract);
-
             savedContractPath = fileUsage.getFile().getFileUrl();
         }
 
-
-        Contract contract = new Contract();
-        contract.setBookingRequest(booking);
-        contract.setContractNumber("CT-" + System.currentTimeMillis());
-        contract.setStatus("DRAFT");
         contract.setTerms(savedContractPath != null
                 ? "File hợp đồng: " + savedContractPath
                 : "Chưa có file hợp đồng");
-        contract.setCreatedAt(Instant.now());
-        contract.setUpdatedAt(Instant.now());
         contractRepository.save(contract);
 
+        int inserted = 0;
+
+        if (dto.getKolIds() != null && !dto.getKolIds().isEmpty()) {
+            for (UUID kolId : dto.getKolIds()) {
+                KolProfile kol = kolProfileRepository.findById(kolId)
+                        .orElseThrow(() -> new RuntimeException("KOL không tồn tại: " + kolId));
+
+                if (!bookingRequestParticipantRepository.existsByBookingRequest_IdAndKol_IdAndRole(
+                        booking.getId(), kol.getId(), Enums.BookingParticipantRole.KOL)) {
+
+                    BookingRequestParticipant p = new BookingRequestParticipant();
+                    p.setBookingRequest(booking);
+                    p.setKol(kol);
+                    p.setRole(Enums.BookingParticipantRole.KOL);
+                    p.setCreatedAt(Instant.now());
+                    p.setUpdatedAt(Instant.now());
+                    bookingRequestParticipantRepository.save(p);
+                    inserted++;
+                }
+            }
+        }
+
+        if (dto.getLiveIds() != null && !dto.getLiveIds().isEmpty()) {
+            for (UUID liveId : dto.getLiveIds()) {
+                KolProfile live = kolProfileRepository.findById(liveId)
+                        .orElseThrow(() -> new RuntimeException("Trợ LIVE không tồn tại: " + liveId));
+
+                if (!bookingRequestParticipantRepository.existsByBookingRequest_IdAndKol_IdAndRole(
+                        booking.getId(), live.getId(), Enums.BookingParticipantRole.LIVE)) {
+
+                    BookingRequestParticipant p = new BookingRequestParticipant();
+                    p.setBookingRequest(booking);
+                    p.setKol(live);
+                    p.setRole(Enums.BookingParticipantRole.LIVE);
+                    p.setCreatedAt(Instant.now());
+                    p.setUpdatedAt(Instant.now());
+                    bookingRequestParticipantRepository.save(p);
+                    inserted++;
+                }
+            }
+        }
 
         final String savedContractPathFinal = savedContractPath;
+        final int participantCount = inserted;
 
         return ApiResponse.builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("Tạo booking request và hợp đồng thành công"))
-                .data(
-                        new Object() {
-                            public final UUID bookingRequestId = booking.getId();
-                            public final UUID contractId = contract.getId();
-                            public final String contractPath = savedContractPathFinal;
-                            public final String contractStatus = contract.getStatus();
-                        }
-                )
+                .message(List.of("Tạo booking request + hợp đồng + participants thành công"))
+                .data(new Object() {
+                    public final UUID bookingRequestId = booking.getId();
+                    public final UUID contractId = contract.getId();
+                    public final String contractPath = savedContractPathFinal;
+                    public final String contractStatus = contract.getStatus();
+                    public final int participants = participantCount;
+                })
                 .build();
     }
+
 
 
     @Override
     public ApiResponse<PagedResponse<AdminBookingRequestResponse>> getAllBookingRequests(Pageable pageable) {
 
-        Page<BookingRequest> page = bookingRequestRepository.findAll(pageable);
+        Page<BookingRequest> page = bookingRequestRepository.findByCampaignIsNotNull(pageable);
 
         Page<AdminBookingRequestResponse> mapped = page.map(br -> {
             var campaign = br.getCampaign();
 
-            List<BookingPackageKol> links = bookingPackageKolRepository.findByPurchasedPackage_Campaign_Id(campaign.getId());
-            List<KolInfo> kols = links.stream()
-                    .filter(b -> "KOL".equalsIgnoreCase(b.getRoleInBooking()))
-                    .map(b -> KolInfo.builder()
-                            .id(b.getKol().getId())
-                            .displayName(b.getKol().getDisplayName())
-                            .build())
-                    .collect(Collectors.toList());
+            List<BookingRequestParticipant> participants =
+                    bookingRequestParticipantRepository.findByBookingRequest_Id(br.getId());
 
-            List<KolInfo> lives = links.stream()
-                    .filter(b -> "LIVE".equalsIgnoreCase(b.getRoleInBooking()))
-                    .map(b -> KolInfo.builder()
-                            .id(b.getKol().getId())
-                            .displayName(b.getKol().getDisplayName())
+            List<KolInfo> kols = participants.stream()
+                    .filter(p -> p.getRole() == Enums.BookingParticipantRole.KOL)
+                    .map(p -> KolInfo.builder()
+                            .id(p.getKol().getId())
+                            .displayName(p.getKol().getDisplayName())
                             .build())
-                    .collect(Collectors.toList());
+                    .toList();
+
+            List<KolInfo> lives = participants.stream()
+                    .filter(p -> p.getRole() == Enums.BookingParticipantRole.LIVE)
+                    .map(p -> KolInfo.builder()
+                            .id(p.getKol().getId())
+                            .displayName(p.getKol().getDisplayName())
+                            .build())
+                    .toList();
 
             Contract contract = br.getContracts().stream()
-                    .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
-                    .findFirst()
+                    .max(Comparator.comparing(Contract::getCreatedAt))
                     .orElse(null);
 
             return AdminBookingRequestResponse.builder()
@@ -189,14 +221,15 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
                     .createdAt(br.getCreatedAt())
                     .updatedAt(br.getUpdatedAt())
 
-                    .campaignId(campaign.getId())
-                    .campaignName(campaign.getName())
-                    .campaignObjective(campaign.getObjective())
-                    .budgetMin(campaign.getBudgetMin())
-                    .budgetMax(campaign.getBudgetMax())
-                    .startDate(campaign.getStartDate())
-                    .endDate(campaign.getEndDate())
-                    .createdByEmail(campaign.getCreatedBy().getEmail())
+                    .campaignId(campaign != null ? campaign.getId() : null)
+                    .campaignName(campaign != null ? campaign.getName() : null)
+                    .campaignObjective(campaign != null ? campaign.getObjective() : null)
+                    .budgetMin(campaign != null ? campaign.getBudgetMin() : null)
+                    .budgetMax(campaign != null ? campaign.getBudgetMax() : null)
+                    .startDate(campaign != null ? campaign.getStartDate() : null)
+                    .endDate(campaign != null ? campaign.getEndDate() : null)
+                    .createdByEmail(campaign != null && campaign.getCreatedBy() != null
+                            ? campaign.getCreatedBy().getEmail() : null)
 
                     .kols(kols)
                     .lives(lives)
@@ -215,6 +248,7 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
                 .data(PagedResponse.fromPage(mapped))
                 .build();
     }
+
 
     private String extractFileUrl(String terms) {
         if (terms == null) return null;
@@ -245,6 +279,76 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
                 })
                 .build();
     }
+
+
+    @Override
+    public ApiResponse<AdminBookingRequestResponse> getBookingRequestDetail(UUID bookingRequestId) {
+        BookingRequest br = bookingRequestRepository.findById(bookingRequestId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy booking request: " + bookingRequestId));
+
+        var campaign = br.getCampaign();
+
+        List<BookingRequestParticipant> participants =
+                bookingRequestParticipantRepository.findByBookingRequest_Id(br.getId());
+
+        List<KolInfo> kols = participants.stream()
+                .filter(p -> p.getRole() == Enums.BookingParticipantRole.KOL)
+                .map(p -> KolInfo.builder()
+                        .id(p.getKol().getId())
+                        .displayName(p.getKol().getDisplayName())
+                        .build())
+                .toList();
+
+        List<KolInfo> lives = participants.stream()
+                .filter(p -> p.getRole() == Enums.BookingParticipantRole.LIVE)
+                .map(p -> KolInfo.builder()
+                        .id(p.getKol().getId())
+                        .displayName(p.getKol().getDisplayName())
+                        .build())
+                .toList();
+
+        Contract contract = br.getContracts().stream()
+                .max(Comparator.comparing(Contract::getCreatedAt))
+                .orElse(null);
+
+        AdminBookingRequestResponse detail = AdminBookingRequestResponse.builder()
+                .bookingRequestId(br.getId())
+                .description(br.getDescription())
+                .status(br.getStatus())
+                .repeatType(br.getRepeatType())
+                .dayOfWeek(br.getDayOfWeek())
+                .repeatUntil(br.getRepeatUntil())
+                .contractAmount(br.getContractAmount())
+                .createdAt(br.getCreatedAt())
+                .updatedAt(br.getUpdatedAt())
+
+                .campaignId(campaign != null ? campaign.getId() : null)
+                .campaignName(campaign != null ? campaign.getName() : null)
+                .campaignObjective(campaign != null ? campaign.getObjective() : null)
+                .budgetMin(campaign != null ? campaign.getBudgetMin() : null)
+                .budgetMax(campaign != null ? campaign.getBudgetMax() : null)
+                .startDate(campaign != null ? campaign.getStartDate() : null)
+                .endDate(campaign != null ? campaign.getEndDate() : null)
+                .createdByEmail(campaign != null && campaign.getCreatedBy() != null
+                        ? campaign.getCreatedBy().getEmail() : null)
+
+                .kols(kols)
+                .lives(lives)
+
+                .contractId(contract != null ? contract.getId() : null)
+                .contractNumber(contract != null ? contract.getContractNumber() : null)
+                .contractStatus(contract != null ? contract.getStatus() : null)
+                .contractTerms(contract != null ? contract.getTerms() : null)
+                .contractFileUrl(contract != null ? extractFileUrl(contract.getTerms()) : null)
+                .build();
+
+        return ApiResponse.<AdminBookingRequestResponse>builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Lấy chi tiết booking request thành công"))
+                .data(detail)
+                .build();
+    }
+
 
 }
 

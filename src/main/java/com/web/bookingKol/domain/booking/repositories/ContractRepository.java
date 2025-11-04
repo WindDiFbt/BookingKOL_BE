@@ -1,6 +1,8 @@
 package com.web.bookingKol.domain.booking.repositories;
 
 import com.web.bookingKol.domain.booking.models.Contract;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,4 +25,15 @@ public interface ContractRepository extends JpaRepository<Contract, UUID> {
             WHERE kwt.id = :workTimeId
             """)
     Contract findByWorkTimeId(@Param("workTimeId") UUID workTimeId);
+
+    @Query("""
+        SELECT c FROM Contract c
+        LEFT JOIN c.bookingRequest br
+        LEFT JOIN br.campaign camp
+        WHERE LOWER(c.contractNumber) LIKE LOWER(CONCAT('%', :keyword, '%'))
+           OR LOWER(c.status) LIKE LOWER(CONCAT('%', :keyword, '%'))
+           OR LOWER(camp.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+           OR LOWER(br.description) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    """)
+    Page<Contract> searchContractsByKeyword(@Param("keyword") String keyword, Pageable pageable);
 }
