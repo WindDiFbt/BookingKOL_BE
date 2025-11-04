@@ -101,7 +101,8 @@ public class Enums {
         CANCELLED,
         EXPIRED,
         WAIT_FOR_REFUND,
-        REFUNDED
+        REFUNDED,
+        REJECT
     }
 
     @Getter
@@ -114,6 +115,21 @@ public class Enums {
         private BookingRules(Integer value) {
             this.value = value;
         }
+    }
+
+    @Getter
+    public enum BookingParticipantRole {
+        KOL,
+        LIVE
+    }
+
+
+    @Getter
+    public enum PaymentScheduleStatus {
+        PENDING,
+        PAID,
+        OVERDUE,
+        CANCELLED
     }
 
     @Getter

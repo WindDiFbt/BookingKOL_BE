@@ -37,6 +37,10 @@ public class Contract {
     @Column(name = "status", length = 50)
     private String status;
 
+    @Size(max = 500)
+    @Column(name = "reason", length = 500)
+    private String reason;
+
     @Column(name = "terms", length = Integer.MAX_VALUE)
     private String terms;
 

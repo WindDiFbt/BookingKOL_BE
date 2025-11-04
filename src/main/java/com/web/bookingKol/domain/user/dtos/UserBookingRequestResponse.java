@@ -1,5 +1,6 @@
 package com.web.bookingKol.domain.user.dtos;
 
+import com.web.bookingKol.domain.booking.dtos.KolParticipantResponse;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.booking.models.Contract;
 import lombok.Builder;
@@ -8,10 +9,11 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Data
-@Builder
+@Builder(toBuilder = true)
 public class UserBookingRequestResponse {
     private UUID bookingRequestId;
     private String requestNumber;
@@ -35,6 +37,9 @@ public class UserBookingRequestResponse {
     private String contractTerms;
     private String contractFileUrl;
 
+    private List<KolParticipantResponse> kolParticipants;
+    private List<KolParticipantResponse> liveParticipants;
+
     public static UserBookingRequestResponse from(BookingRequest br, Contract contract) {
         var campaign = br.getCampaign();
 
@@ -50,18 +55,28 @@ public class UserBookingRequestResponse {
                 .createdAt(br.getCreatedAt())
                 .updatedAt(br.getUpdatedAt())
 
-
                 .campaignId(campaign != null ? campaign.getId() : null)
                 .campaignName(campaign != null ? campaign.getName() : null)
                 .campaignStartDate(campaign != null ? campaign.getStartDate() : null)
                 .campaignEndDate(campaign != null ? campaign.getEndDate() : null)
-
 
                 .contractId(contract != null ? contract.getId() : null)
                 .contractNumber(contract != null ? contract.getContractNumber() : null)
                 .contractStatus(contract != null ? contract.getStatus() : null)
                 .contractTerms(contract != null ? contract.getTerms() : null)
                 .contractFileUrl(contract != null ? extractFileUrl(contract.getTerms()) : null)
+                .build();
+    }
+
+    public static UserBookingRequestResponse from(
+            BookingRequest br,
+            Contract contract,
+            List<KolParticipantResponse> kolParticipants,
+            List<KolParticipantResponse> liveParticipants
+    ) {
+        return from(br, contract).toBuilder()
+                .kolParticipants(kolParticipants)
+                .liveParticipants(liveParticipants)
                 .build();
     }
 
