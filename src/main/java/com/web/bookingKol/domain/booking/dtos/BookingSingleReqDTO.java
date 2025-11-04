@@ -10,19 +10,20 @@ import java.util.UUID;
 public class BookingSingleReqDTO {
     @NotNull
     private UUID kolId;
-    @NotBlank(message = "Full name cannot be empty.")
-    @Size(max = 255, message = "Full name must be less than 255 characters.")
+    @NotBlank(message = "Họ và tên không được để trống.")
+    @Size(max = 255, message = "Họ và tên phải ít hơn 255 ký tự.")
     private String fullName;
-    @NotBlank(message = "Phone number cannot be empty.")
-    @Pattern(regexp = "^(0|\\+84)[0-9]{9,10}$", message = "Invalid Vietnamese phone number format.")
+    @NotBlank(message = "Số điện thoại không được để trống.")
+    @Pattern(regexp = "^(0|\\+84)[0-9]{9,10}$", message = "Định dạng số điện thoại Việt Nam không hợp lệ.")
     private String phone;
-    @Email(message = "Invalid email format.")
-    @NotBlank(message = "Email cannot be empty.")
+    @Email(message = "Định dạng email không hợp lệ.")
+    @NotBlank(message = "Email không được để trống.")
     private String email;
     @NotNull
     private Instant startAt;
     @NotNull
     private Instant endAt;
+    private String platform;
     private String description;
     private String location;
 }

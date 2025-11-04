@@ -115,4 +115,9 @@ public class BookingRequest {
     @Size(max = 20)
     @Column(name = "request_number", unique = true, nullable = false)
     private String requestNumber;
+
+    @Size(max = 20)
+    @Column(name = "platform", length = 20)
+    private String platform;
+
 }

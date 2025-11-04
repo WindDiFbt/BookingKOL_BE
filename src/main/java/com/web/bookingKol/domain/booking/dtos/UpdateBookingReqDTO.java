@@ -7,12 +7,13 @@ import lombok.Data;
 
 @Data
 public class UpdateBookingReqDTO {
-    @Size(max = 255, message = "Full name must be less than 255 characters.")
+    @Size(max = 255, message = "Họ và tên phải ít hơn 255 ký tự.")
     private String fullName;
-    @Pattern(regexp = "^(0|\\+84)[0-9]{9,10}$", message = "Invalid Vietnamese phone number format.")
+    @Pattern(regexp = "^(0|\\+84)[0-9]{9,10}$", message = "Định dạng số điện thoại Việt Nam không hợp lệ.")
     private String phone;
-    @NotBlank(message = "Email cannot be empty.")
+    @NotBlank(message = "Email không được để trống.")
     private String email;
     private String description;
     private String location;
+    private String platform;
 }

@@ -29,4 +29,11 @@ public class KolWorkTimeController {
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
         return ResponseEntity.ok(livestreamMetricService.createLivestreamMetric(user.getKolProfile().getId(), workTimeId, livestreamMetricReqDTO));
     }
+
+    @GetMapping("/livestream-metrics/{workTimeId}")
+    public ResponseEntity<?> getLivestreamMetricDetail(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                                       @PathVariable UUID workTimeId) {
+        UUID userId = userDetails.getId();
+        return ResponseEntity.ok(livestreamMetricService.KolGetDetailLivestreamMetricByKolWorkTimeId(userId, workTimeId));
+    }
 }
