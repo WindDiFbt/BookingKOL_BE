@@ -5,6 +5,8 @@ import com.web.bookingKol.common.Enums;
 import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.common.services.EmailService;
 import com.web.bookingKol.domain.booking.models.Contract;
+import com.web.bookingKol.domain.booking.models.ContractPaymentSchedule;
+import com.web.bookingKol.domain.booking.repositories.ContractPaymentScheduleRepository;
 import com.web.bookingKol.domain.booking.repositories.ContractRepository;
 import com.web.bookingKol.domain.course.models.PurchasedCoursePackage;
 import com.web.bookingKol.domain.payment.dtos.SePayWebhookRequest;
@@ -20,7 +22,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -54,21 +55,10 @@ public class SePayService {
     @Autowired
     private PurchasedCoursePackageRepository purchasedCoursePackageRepository;
 
-    private final String SEPAY_API_URL = "https://qr.sepay.vn/img?";
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Logger logger = Logger.getLogger("TRANSACTION_LOGGER");
-
-    public String createQRCode(BigDecimal amount, String transferContent) {
-        Merchant merchant = merchantService.getMerchantIsActive();
-        String accountNumber = merchant.getVaNumber() != null ? merchant.getVaNumber() : merchant.getAccountNumber();
-        String bank = merchant.getBank();
-        return UriComponentsBuilder.fromUriString(SEPAY_API_URL)
-                .queryParam("acc", accountNumber)
-                .queryParam("bank", bank)
-                .queryParam("amount", amount != null ? amount : "")
-                .queryParam("des", transferContent)
-                .toUriString();
-    }
+    @Autowired
+    private ContractPaymentScheduleRepository contractPaymentScheduleRepository;
 
     public ApiResponse<TransactionResult> handleWebhook(String receivedApiKey, SePayWebhookRequest request) {
         Transaction tx;
@@ -140,6 +130,7 @@ public class SePayService {
             if (contractId != null) {
                 Optional<Contract> optionalContract = contractRepository.findById(contractId);
                 Optional<PurchasedCoursePackage> purchasedCoursePackageOptional = purchasedCoursePackageRepository.findById(contractId);
+                Optional<ContractPaymentSchedule> contractPaymentScheduleOptional = contractPaymentScheduleRepository.findById(contractId);
                 if (optionalContract.isPresent()) {
                     Contract contract = optionalContract.get();
                     tx.setPayment(contract.getPayment());
@@ -153,6 +144,13 @@ public class SePayService {
                     tx.setStatus(Enums.TransactionStatus.COMPLETED.name());
                     paymentService.updateCoursePaymentAfterTransactionSuccess(transactionMapper.toDto(tx));
                     sendEmailNotification(purchasedCoursePackage.getPayment().getUser(), purchasedCoursePackage);
+                    transactionRepository.save(tx);
+                } else if (contractPaymentScheduleOptional.isPresent()) {
+                    ContractPaymentSchedule contractPaymentSchedule = contractPaymentScheduleOptional.get();
+                    tx.setPaymentSchedule(contractPaymentSchedule);
+                    tx.setStatus(Enums.TransactionStatus.COMPLETED.name());
+                    paymentService.updatePaymentForCampaignAfterTransactionSuccess(contractPaymentSchedule.getId());
+                    sendEmailNotification(contractPaymentSchedule.getContract().getBookingRequest().getUser(), contractPaymentSchedule);
                     transactionRepository.save(tx);
                 } else {
                     transactionRepository.save(tx);
@@ -339,6 +337,98 @@ public class SePayService {
                             </table>
                 
                             <p style="margin-top: 25px;">Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi! Mọi thắc mắc, vui lòng liên hệ bộ phận hỗ trợ.</p>
+                        </div>
+                        <div class="footer">
+                            <p>Đây là email được gửi tự động. Vui lòng không trả lời email này.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """;
+    }
+
+    private void sendEmailNotification(User user, ContractPaymentSchedule contractPaymentSchedule) {
+        if (user == null || user.getEmail() == null) {
+            logger.log(Level.WARNING, "Không thể gửi email: Thiếu thông tin người dùng hoặc email cho ID hợp đồng: " + contractPaymentSchedule.getId());
+            return;
+        }
+        String subject = "🔔 Xác nhận Thanh toán Thành công đợt " + contractPaymentSchedule.getInstallmentNumber() +
+                " (Hợp đồng " + contractPaymentSchedule.getContract().getContractNumber() + ")";
+        String htmlContent = generatePaymentSuccessHtml(user, contractPaymentSchedule);
+        try {
+            emailService.sendHtmlEmail(user.getEmail(), subject, htmlContent);
+            logger.log(Level.INFO, "Email xác nhận thanh toán thành công đã được gửi tới:" + user.getEmail());
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Lỗi gửi email xác nhận thanh toán:" + e.getMessage());
+        }
+    }
+
+    private String generatePaymentSuccessHtml(User user, ContractPaymentSchedule contractPaymentSchedule) {
+        String formattedAmount = String.format("%,.0f VNĐ", contractPaymentSchedule.getAmount());
+        String userName = user.getFullName() != null ? user.getFullName() : user.getEmail();
+        String paymentTime = Instant.now()
+                .atZone(ZoneId.systemDefault())
+                .format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"));
+        int installmentNumber = contractPaymentSchedule.getInstallmentNumber();
+        return """
+                <!DOCTYPE html>
+                <html lang="vi">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Xác nhận Thanh Toán Đợt\s""" + installmentNumber + """
+                Thành Công! Hợp đồng\s""" + contractPaymentSchedule.getContract().getContractNumber() + """
+                     Thành công</title>
+                    <style>
+                        body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; }
+                        .container { width: 80%; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+                        .header { background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+                        .content { padding: 20px; }
+                        .details-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                        .details-table th, .details-table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+                        .footer { margin-top: 30px; font-size: 0.9em; color: #777; text-align: center; border-top: 1px solid #eee; padding-top: 15px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                <div class="header">
+                                        <h2>Thanh Toán Đợt\s""" + installmentNumber + """
+                                  Thành Công!</h2>
+                            </div>
+                <div class="content">
+                    <p>Xin chào <strong class="highlight">""" + userName + """
+                </strong>,</p>
+                <p>Chúng tôi xác nhận đã nhận được khoản thanh toán đợt <strong class="highlight">""" + installmentNumber + """
+                </strong> cho hợp đồng của bạn.</p>
+                
+                <table class="details-table">
+                    <tr>
+                        <th>Mã Hợp đồng</th>
+                        <td><span class="highlight">""" + contractPaymentSchedule.getContract().getContractNumber() + """
+                    </span></td>
+                </tr>
+                <tr>
+                    <th>Đợt Thanh toán</th>
+                    <td>Đợt <strong>""" + installmentNumber + """
+                    </strong></td>
+                </tr>
+                <tr>
+                    <th>Số Tiền Đã Thanh Toán</th>
+                    <td><strong>""" + formattedAmount + """
+                    </strong></td>
+                </tr>
+                <tr>
+                    <th>Dịch Vụ</th>
+                    <td>Thanh toán đợt theo Hợp đồng</td>
+                </tr>
+                <tr>
+                    <th>Thời Gian Thanh Toán</th>
+                    <td>""" + paymentTime + """
+                                    </td>
+                                </tr>
+                            </table>
+                
+                            <p style="margin-top: 25px;">Cảm ơn bạn đã thực hiện thanh toán đúng hạn! Đây là một phần quan trọng để tiếp tục sử dụng dịch vụ của chúng tôi.</p>
+                            <p>Mọi thắc mắc liên quan đến hợp đồng, vui lòng liên hệ bộ phận hỗ trợ.</p>
                         </div>
                         <div class="footer">
                             <p>Đây là email được gửi tự động. Vui lòng không trả lời email này.</p>

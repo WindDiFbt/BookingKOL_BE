@@ -6,12 +6,15 @@ import com.web.bookingKol.domain.booking.jobrunr.BookingRequestJob;
 import com.web.bookingKol.domain.booking.jobrunr.ReminderEmailJob;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.booking.models.Contract;
+import com.web.bookingKol.domain.booking.models.ContractPaymentSchedule;
 import com.web.bookingKol.domain.booking.repositories.BookingRequestRepository;
+import com.web.bookingKol.domain.booking.repositories.ContractPaymentScheduleRepository;
 import com.web.bookingKol.domain.booking.services.ContractService;
 import com.web.bookingKol.domain.booking.services.SoftHoldBookingService;
 import com.web.bookingKol.domain.course.models.PurchasedCoursePackage;
 import com.web.bookingKol.domain.kol.models.KolWorkTime;
 import com.web.bookingKol.domain.kol.repositories.KolWorkTimeRepository;
+import com.web.bookingKol.domain.payment.dtos.CampaignPaymentDTO;
 import com.web.bookingKol.domain.payment.dtos.PaymentReqDTO;
 import com.web.bookingKol.domain.payment.dtos.transaction.TransactionDTO;
 import com.web.bookingKol.domain.payment.jobrunr.PaymentJob;
@@ -20,6 +23,7 @@ import com.web.bookingKol.domain.payment.models.Payment;
 import com.web.bookingKol.domain.payment.repositories.PaymentRepository;
 import com.web.bookingKol.domain.payment.services.MerchantService;
 import com.web.bookingKol.domain.payment.services.PaymentService;
+import com.web.bookingKol.domain.payment.services.QRGenerateService;
 import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.domain.user.repositories.PurchasedCoursePackageRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -60,8 +64,14 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final String CURRENCY = "VND";
     private final Integer EXPIRES_TIME = 15;
+    public static final String PAYMENT_TRANSFER_CONTENT_FORMAT = "Thanh toan cho ";
+
     @Autowired
     private BookingRequestJob bookingRequestJob;
+    @Autowired
+    private ContractPaymentScheduleRepository contractPaymentScheduleRepository;
+    @Autowired
+    private QRGenerateService qRGenerateService;
 
     @Override
     public PaymentReqDTO initiatePayment(BookingRequest bookingRequest, Contract contract, String qrUrl, User user, BigDecimal amount) {
@@ -260,5 +270,48 @@ public class PaymentServiceImpl implements PaymentService {
                 .message(List.of("Hủy thanh toán thành công!"))
                 .data(null)
                 .build();
+    }
+
+    @Override
+    public ApiResponse<CampaignPaymentDTO> paymentForCampaign(UUID contractPaymentScheduleId) {
+        ContractPaymentSchedule contractPaymentSchedule = contractPaymentScheduleRepository.findById(contractPaymentScheduleId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đợt cần thanh toán theo hợp đồng ID: " + contractPaymentScheduleId));
+        if (!contractPaymentSchedule.getStatus().equals(Enums.PaymentScheduleStatus.PENDING)) {
+            throw new IllegalArgumentException("Thanh toán đã được thực hiện hoặc đã hết hạn!");
+        }
+        Merchant merchant = merchantService.getMerchantIsActive();
+        String transferContent = PAYMENT_TRANSFER_CONTENT_FORMAT + contractPaymentScheduleId;
+        String qrUrl = qRGenerateService.createQRCode(contractPaymentSchedule.getAmount(), transferContent);
+        CampaignPaymentDTO campaignPaymentDTO = CampaignPaymentDTO.builder()
+                .contractId(contractPaymentSchedule.getContract().getId())
+                .contractPaymentScheduleId(contractPaymentSchedule.getId())
+                .installmentNumber(contractPaymentSchedule.getInstallmentNumber())
+                .amount(contractPaymentSchedule.getAmount())
+                .qrUrl(qrUrl)
+                .transferContent(transferContent)
+                .name(merchant.getName())
+                .bank(merchant.getBank())
+                .accountNumber(merchant.getAccountNumber())
+                .build();
+        return ApiResponse.<CampaignPaymentDTO>builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Khởi tạo mã QR thanh toán thành công!"))
+                .data(campaignPaymentDTO)
+                .build();
+    }
+
+    @Override
+    public void updatePaymentForCampaignAfterTransactionSuccess(UUID contractPaymentScheduleId) {
+        ContractPaymentSchedule contractPaymentSchedule = contractPaymentScheduleRepository.findById(contractPaymentScheduleId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đợt cần thanh toán theo hợp đồng ID: " + contractPaymentScheduleId));
+        contractPaymentSchedule.setStatus(Enums.PaymentScheduleStatus.PAID);
+        contractPaymentScheduleRepository.save(contractPaymentSchedule);
+    }
+
+    @Override
+    public boolean checkContractForCampaignPaymentSuccess(UUID contractPaymentScheduleId) {
+        ContractPaymentSchedule contractPaymentSchedule = contractPaymentScheduleRepository.findById(contractPaymentScheduleId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đợt cần thanh toán theo hợp đồng ID: " + contractPaymentScheduleId));
+        return contractPaymentSchedule.getStatus().equals(Enums.PaymentScheduleStatus.PAID);
     }
 }
