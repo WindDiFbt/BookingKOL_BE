@@ -1,5 +1,6 @@
 package com.web.bookingKol.domain.payment.models;
 
+import com.web.bookingKol.domain.booking.models.ContractPaymentSchedule;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -80,4 +81,9 @@ public class Transaction {
 
     @Column(name = "status")
     private String status;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payment_schedule_id")
+    private ContractPaymentSchedule paymentSchedule;
+
 }

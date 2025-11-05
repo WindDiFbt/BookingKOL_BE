@@ -8,8 +8,10 @@ import com.web.bookingKol.domain.booking.dtos.UserContractResponse;
 import com.web.bookingKol.domain.booking.services.UserContractService;
 import com.web.bookingKol.domain.booking.services.impl.ContractPaymentScheduleServiceImpl;
 import com.web.bookingKol.domain.booking.services.impl.UserContractServiceImpl;
+import com.web.bookingKol.domain.payment.services.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -18,7 +20,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -29,6 +30,8 @@ public class UserContractController {
     private final UserContractService userContractService;
     private final ContractPaymentScheduleServiceImpl contractPaymentScheduleServiceImpl;
     private final UserContractServiceImpl userContractServiceImpl;
+    @Autowired
+    private PaymentService paymentService;
 
     @PreAuthorize("hasAnyAuthority('USER')")
     @PutMapping("/sign/{contractId}")
@@ -64,6 +67,12 @@ public class UserContractController {
         return ResponseEntity.ok(userContractServiceImpl.getUserContracts(email, keyword, pageable));
     }
 
-
+    @PreAuthorize("hasAuthority('USER')")
+    @PostMapping("/payment/{paymentScheduleId}")
+    public ResponseEntity<ApiResponse<?>> payContract(
+            @PathVariable UUID paymentScheduleId
+    ) {
+        return ResponseEntity.ok(paymentService.paymentForCampaign(paymentScheduleId));
+    }
 }
 

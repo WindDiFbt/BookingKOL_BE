@@ -36,8 +36,8 @@ import com.web.bookingKol.domain.payment.models.Merchant;
 import com.web.bookingKol.domain.payment.models.Payment;
 import com.web.bookingKol.domain.payment.services.MerchantService;
 import com.web.bookingKol.domain.payment.services.PaymentService;
+import com.web.bookingKol.domain.payment.services.QRGenerateService;
 import com.web.bookingKol.domain.payment.services.RefundService;
-import com.web.bookingKol.domain.payment.services.SePayService;
 import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.domain.user.repositories.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -78,8 +78,6 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     @Autowired
     private ContractService contractService;
     @Autowired
-    private SePayService sePayService;
-    @Autowired
     private PaymentService paymentService;
     @Autowired
     private SoftHoldBookingService softHoldBookingService;
@@ -104,6 +102,8 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     private RefundService refundService;
     @Autowired
     private KolWorkTimeRepository kolWorkTimeRepository;
+    @Autowired
+    private QRGenerateService qRGenerateService;
 
     @Transactional
     @Override
@@ -184,7 +184,7 @@ public class BookingRequestServiceImpl implements BookingRequestService {
         PaymentReqDTO paymentReqDTO = paymentService.initiatePayment(
                 bookingRequest,
                 contract,
-                sePayService.createQRCode(contract.getAmount(), transferContent),
+                qRGenerateService.createQRCode(contract.getAmount(), transferContent),
                 user,
                 contract.getAmount()
         );
@@ -506,7 +506,7 @@ public class BookingRequestServiceImpl implements BookingRequestService {
             throw new IllegalArgumentException("Đã quá thời gian thực hiện thanh toán cho yêu cầu đặt lịch này!");
         }
         String transferContent = PAYMENT_TRANSFER_CONTENT_FORMAT + contract.getContractNumber() + " " + contract.getId().toString();
-        String qrUrl = sePayService.createQRCode(contract.getAmount(), transferContent);
+        String qrUrl = qRGenerateService.createQRCode(contract.getAmount(), transferContent);
         PaymentReqDTO paymentReqDTO = PaymentReqDTO.builder()
                 .contractId(contract.getId())
                 .amount(contract.getAmount())
