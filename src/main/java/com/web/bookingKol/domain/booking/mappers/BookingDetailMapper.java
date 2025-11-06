@@ -4,8 +4,8 @@ import com.web.bookingKol.domain.booking.dtos.BookingDetailDTO;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.booking.models.Contract;
 import com.web.bookingKol.domain.file.mappers.FileUsageMapper;
-import com.web.bookingKol.domain.kol.mappers.FeedbackUserViewMapper;
 import com.web.bookingKol.domain.kol.mappers.KolDetailMapper;
+import com.web.bookingKol.domain.kol.mappers.KolFeedbackMapper;
 import com.web.bookingKol.domain.kol.mappers.KolWorkTimeMapper;
 import com.web.bookingKol.domain.payment.mappers.RefundMapper;
 import com.web.bookingKol.domain.user.mappers.UserMapper;
@@ -29,7 +29,7 @@ public class BookingDetailMapper {
     @Autowired
     private RefundMapper refundMapper;
     @Autowired
-    private FeedbackUserViewMapper feedbackUserViewMapper;
+    private KolFeedbackMapper kolFeedbackMapper;
 
     public BookingDetailDTO toDto(BookingRequest bookingRequest) {
         if (bookingRequest == null) {
@@ -68,7 +68,7 @@ public class BookingDetailMapper {
                 dto.setRefundDTO(refundMapper.toDtoLighter(contract.getRefund()));
             }
             if (contract.getKolFeedbacks() != null) {
-                dto.setFeedbackUserViewDTOs(contract.getKolFeedbacks().stream().map(feedbackUserViewMapper::toDto).collect(Collectors.toSet()));
+                dto.setFeedbackDTOS(contract.getKolFeedbacks().stream().map(kolFeedbackMapper::toDto).collect(Collectors.toSet()));
             }
         }
         if (bookingRequest.getKolWorkTimes() != null) {
