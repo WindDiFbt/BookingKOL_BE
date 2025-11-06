@@ -7,6 +7,7 @@ import com.web.bookingKol.domain.booking.dtos.SignContractRequest;
 import com.web.bookingKol.domain.booking.dtos.UserContractResponse;
 import com.web.bookingKol.domain.booking.services.UserContractService;
 import com.web.bookingKol.domain.booking.services.impl.ContractPaymentScheduleServiceImpl;
+import com.web.bookingKol.domain.booking.services.impl.UserCancelRequestServiceImpl;
 import com.web.bookingKol.domain.booking.services.impl.UserContractServiceImpl;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ public class UserContractController {
     private final UserContractService userContractService;
     private final ContractPaymentScheduleServiceImpl contractPaymentScheduleServiceImpl;
     private final UserContractServiceImpl userContractServiceImpl;
+    private final UserCancelRequestServiceImpl userCancelRequestServiceImpl;
 
     @PreAuthorize("hasAnyAuthority('USER')")
     @PutMapping("/sign/{contractId}")
@@ -63,6 +65,14 @@ public class UserContractController {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return ResponseEntity.ok(userContractServiceImpl.getUserContracts(email, keyword, pageable));
     }
+
+    @PreAuthorize("hasAuthority('USER')")
+    @PostMapping("/cancel/{bookingRequestId}")
+    public ResponseEntity<ApiResponse<?>> cancelBookingRequest(@PathVariable UUID bookingRequestId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(userCancelRequestServiceImpl.cancelBookingRequest(bookingRequestId, email));
+    }
+
 
 
 }
