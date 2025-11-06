@@ -61,4 +61,15 @@ public class PurchasedServicePackage {
     @OneToMany(mappedBy = "purchasedPackage")
     private Set<BookingPackageKol> bookingPackageKols = new LinkedHashSet<>();
 
+    @Column(name = "booking_number", length = 50, unique = true)
+    private String bookingNumber;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.bookingNumber == null || this.bookingNumber.isBlank()) {
+            this.bookingNumber = "BK-" + System.currentTimeMillis();
+        }
+    }
+
+
 }

@@ -90,6 +90,10 @@ public class BookingRequest {
     @Column(name = "end_at")
     private Instant endAt;
 
+    @Column(name = "booking_number", length = 50, unique = true)
+    private String bookingNumber;
+
+
     @OneToMany
     @JoinColumn(name = "target_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Set<FileUsage> attachedFiles = new LinkedHashSet<>();
@@ -119,5 +123,13 @@ public class BookingRequest {
     @Size(max = 20)
     @Column(name = "platform", length = 20)
     private String platform;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.bookingNumber == null || this.bookingNumber.isBlank()) {
+            this.bookingNumber = "BK-" + System.currentTimeMillis();
+        }
+    }
+
 
 }

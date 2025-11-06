@@ -7,6 +7,7 @@ import com.web.bookingKol.domain.booking.dtos.SignContractRequest;
 import com.web.bookingKol.domain.booking.dtos.UserContractResponse;
 import com.web.bookingKol.domain.booking.services.UserContractService;
 import com.web.bookingKol.domain.booking.services.impl.ContractPaymentScheduleServiceImpl;
+import com.web.bookingKol.domain.booking.services.impl.UserCancelRequestServiceImpl;
 import com.web.bookingKol.domain.booking.services.impl.UserContractServiceImpl;
 import com.web.bookingKol.domain.payment.services.PaymentService;
 import jakarta.validation.Valid;
@@ -20,6 +21,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -30,6 +32,7 @@ public class UserContractController {
     private final UserContractService userContractService;
     private final ContractPaymentScheduleServiceImpl contractPaymentScheduleServiceImpl;
     private final UserContractServiceImpl userContractServiceImpl;
+    private final UserCancelRequestServiceImpl userCancelRequestServiceImpl;
     @Autowired
     private PaymentService paymentService;
 
@@ -66,6 +69,15 @@ public class UserContractController {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return ResponseEntity.ok(userContractServiceImpl.getUserContracts(email, keyword, pageable));
     }
+
+    @PreAuthorize("hasAuthority('USER')")
+    @PostMapping("/cancel/{bookingRequestId}")
+    public ResponseEntity<ApiResponse<?>> cancelBookingRequest(@PathVariable UUID bookingRequestId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(userCancelRequestServiceImpl.cancelBookingRequest(bookingRequestId, email));
+    }
+
+
 
     @PreAuthorize("hasAuthority('USER')")
     @PostMapping("/payment/{paymentScheduleId}")

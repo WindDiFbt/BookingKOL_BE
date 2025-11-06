@@ -3,6 +3,7 @@ package com.web.bookingKol.domain.kol.services;
 
 import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.domain.kol.dtos.KolAvailabilityDTO;
+import com.web.bookingKol.domain.kol.dtos.TimeRangeDTO;
 import com.web.bookingKol.domain.kol.dtos.TimeSlotDTO;
 import com.web.bookingKol.domain.kol.models.KolAvailability;
 import com.web.bookingKol.domain.kol.models.KolWorkTimeDTO;
@@ -43,6 +44,9 @@ public interface KolAvailabilityService {
     ApiResponse<KolAvailabilityDTO> createKolScheduleByAdmin(KolAvailabilityDTO dto);
 
     ApiResponse<String> deleteKolAvailabilityByAdmin(UUID availabilityId);
+
+    ApiResponse<String> removeAvailabilityRange(String email, UUID availabilityId, TimeRangeDTO range);
+
 
 
 
