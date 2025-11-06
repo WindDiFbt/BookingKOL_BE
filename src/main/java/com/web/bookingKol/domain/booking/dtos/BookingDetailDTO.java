@@ -2,6 +2,7 @@ package com.web.bookingKol.domain.booking.dtos;
 
 import com.web.bookingKol.domain.file.dtos.FileUsageDTO;
 import com.web.bookingKol.domain.kol.dtos.KolDetailDTO;
+import com.web.bookingKol.domain.kol.dtos.feedbacks.FeedbackUserViewDTO;
 import com.web.bookingKol.domain.kol.models.KolWorkTimeDTO;
 import com.web.bookingKol.domain.payment.dtos.refund.RefundDTO;
 import com.web.bookingKol.domain.user.dtos.UserDTO;
@@ -38,4 +39,5 @@ public class BookingDetailDTO {
     private Set<ContractDTO> contracts;
     private Set<KolWorkTimeDTO> kolWorkTimes;
     private RefundDTO refundDTO;
+    private Set<FeedbackUserViewDTO> feedbackUserViewDTOs;
 }

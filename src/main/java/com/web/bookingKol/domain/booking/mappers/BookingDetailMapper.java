@@ -4,6 +4,7 @@ import com.web.bookingKol.domain.booking.dtos.BookingDetailDTO;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.booking.models.Contract;
 import com.web.bookingKol.domain.file.mappers.FileUsageMapper;
+import com.web.bookingKol.domain.kol.mappers.FeedbackUserViewMapper;
 import com.web.bookingKol.domain.kol.mappers.KolDetailMapper;
 import com.web.bookingKol.domain.kol.mappers.KolWorkTimeMapper;
 import com.web.bookingKol.domain.payment.mappers.RefundMapper;
@@ -27,6 +28,8 @@ public class BookingDetailMapper {
     private KolWorkTimeMapper kolWorkTimeMapper;
     @Autowired
     private RefundMapper refundMapper;
+    @Autowired
+    private FeedbackUserViewMapper feedbackUserViewMapper;
 
     public BookingDetailDTO toDto(BookingRequest bookingRequest) {
         if (bookingRequest == null) {
@@ -63,6 +66,9 @@ public class BookingDetailMapper {
             dto.setContracts(contractMapper.toDtoSet(bookingRequest.getContracts()));
             if (contract.getRefund() != null) {
                 dto.setRefundDTO(refundMapper.toDtoLighter(contract.getRefund()));
+            }
+            if (contract.getKolFeedbacks() != null) {
+                dto.setFeedbackUserViewDTOs(contract.getKolFeedbacks().stream().map(feedbackUserViewMapper::toDto).collect(Collectors.toSet()));
             }
         }
         if (bookingRequest.getKolWorkTimes() != null) {
