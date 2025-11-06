@@ -9,8 +9,10 @@ import com.web.bookingKol.domain.booking.services.UserContractService;
 import com.web.bookingKol.domain.booking.services.impl.ContractPaymentScheduleServiceImpl;
 import com.web.bookingKol.domain.booking.services.impl.UserCancelRequestServiceImpl;
 import com.web.bookingKol.domain.booking.services.impl.UserContractServiceImpl;
+import com.web.bookingKol.domain.payment.services.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -31,6 +33,8 @@ public class UserContractController {
     private final ContractPaymentScheduleServiceImpl contractPaymentScheduleServiceImpl;
     private final UserContractServiceImpl userContractServiceImpl;
     private final UserCancelRequestServiceImpl userCancelRequestServiceImpl;
+    @Autowired
+    private PaymentService paymentService;
 
     @PreAuthorize("hasAnyAuthority('USER')")
     @PutMapping("/sign/{contractId}")
@@ -75,5 +79,12 @@ public class UserContractController {
 
 
 
+    @PreAuthorize("hasAuthority('USER')")
+    @PostMapping("/payment/{paymentScheduleId}")
+    public ResponseEntity<ApiResponse<?>> payContract(
+            @PathVariable UUID paymentScheduleId
+    ) {
+        return ResponseEntity.ok(paymentService.paymentForCampaign(paymentScheduleId));
+    }
 }
 

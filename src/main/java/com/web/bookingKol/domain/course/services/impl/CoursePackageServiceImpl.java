@@ -26,6 +26,7 @@ import com.web.bookingKol.domain.file.services.FileService;
 import com.web.bookingKol.domain.payment.dtos.PaymentReqDTO;
 import com.web.bookingKol.domain.payment.models.Payment;
 import com.web.bookingKol.domain.payment.services.PaymentService;
+import com.web.bookingKol.domain.payment.services.QRGenerateService;
 import com.web.bookingKol.domain.payment.services.SePayService;
 import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.domain.user.repositories.PurchasedCoursePackageRepository;
@@ -73,6 +74,8 @@ public class CoursePackageServiceImpl implements CoursePackageService {
     @Autowired
     private SePayService sePayService;
     public static final String PAYMENT_TRANSFER_CONTENT_FORMAT = "Thanh toan cho ";
+    @Autowired
+    private QRGenerateService qRGenerateService;
 
     @Override
     public ApiResponse<CoursePackageDTO> getCoursePackageById(UUID coursePackageId) {
@@ -352,7 +355,7 @@ public class CoursePackageServiceImpl implements CoursePackageService {
         PaymentReqDTO paymentReqDTO = paymentService.createCoursePaymentRequest(
                 purchasedCoursePackage,
                 payment,
-                sePayService.createQRCode(BigDecimal.valueOf(purchasedCoursePackage.getCurrentPrice()), transferContent)
+                qRGenerateService.createQRCode(BigDecimal.valueOf(purchasedCoursePackage.getCurrentPrice()), transferContent)
         );
         purchasedCoursePackage.setPayment(payment);
         purchasedCoursePackageRepository.save(purchasedCoursePackage);

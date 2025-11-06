@@ -1,6 +1,7 @@
 package com.web.bookingKol.domain.booking.models;
 
 import com.web.bookingKol.common.Enums;
+import com.web.bookingKol.domain.payment.models.Transaction;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -60,5 +61,9 @@ public class ContractPaymentSchedule {
     @ColumnDefault("now()")
     @Column(name = "updated_at")
     private Instant updatedAt;
+
+    @OneToOne(mappedBy = "paymentSchedule")
+    private Transaction transaction;
+
 }
 
