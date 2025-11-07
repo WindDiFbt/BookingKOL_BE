@@ -67,7 +67,7 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
         booking.setCampaign(campaign);
         booking.setUser(campaign.getCreatedBy());
         booking.setDescription(dto.getDescription());
-        booking.setStatus(dto.getStatus());
+        booking.setStatus(Enums.BookingStatus.REQUESTED.name());
         booking.setRepeatType(dto.getRepeatType());
         booking.setDayOfWeek(dto.getDayOfWeek());
         booking.setRepeatUntil(dto.getRepeatUntil());
@@ -169,12 +169,26 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
                 .message(List.of("Tạo booking request + hợp đồng + participants thành công"))
                 .data(new Object() {
                     public final UUID bookingRequestId = booking.getId();
+                    public final String status = booking.getStatus();
+                    public final String description = booking.getDescription();
+                    public final String repeatType = booking.getRepeatType();
+                    public final String dayOfWeek = booking.getDayOfWeek();
+                    public final LocalDate repeatUntil = booking.getRepeatUntil();
+                    public final BigDecimal contractAmount = booking.getContractAmount();
+                    public final String campaignName = campaign.getName();
+                    public final String createdBy = admin.getEmail();
+
                     public final UUID contractId = contract.getId();
+                    public final String contractNumber = contract.getContractNumber();
                     public final String contractPath = savedContractPathFinal;
                     public final String contractStatus = contract.getStatus();
+
                     public final int participants = participantCount;
+                    public final List<UUID> kolIds = dto.getKolIds();
+                    public final List<UUID> liveIds = dto.getLiveIds();
                 })
                 .build();
+
     }
 
 

@@ -3,6 +3,7 @@ package com.web.bookingKol.domain.kol.rest;
 
 import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.domain.kol.dtos.KolAvailabilityDTO;
+import com.web.bookingKol.domain.kol.dtos.TimeRangeDTO;
 import com.web.bookingKol.domain.kol.dtos.TimeSlotDTO;
 import com.web.bookingKol.domain.kol.models.KolAvailability;
 import com.web.bookingKol.domain.kol.models.KolWorkTimeDTO;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -121,6 +123,25 @@ public class KolAvailabilityController {
     ) {
         return ResponseEntity.ok(availabilityService.deleteKolAvailabilityByAdmin(availabilityId));
     }
+
+    @PreAuthorize("hasAuthority('KOL')")
+    @PutMapping("/kol/remove-range")
+    public ResponseEntity<ApiResponse<String>> removeAvailabilityRange(
+            Authentication authentication,
+            @RequestBody TimeRangeDTO request
+    ) {
+        String email = authentication.getName();
+
+        TimeRangeDTO timeRange = new TimeRangeDTO();
+        timeRange.setStartRemove(request.getStartRemove());
+        timeRange.setEndRemove(request.getEndRemove());
+
+        return ResponseEntity.ok(
+                availabilityService.removeAvailabilityRange(email, request.getAvailabilityId(), timeRange)
+        );
+    }
+
+
 
 
 

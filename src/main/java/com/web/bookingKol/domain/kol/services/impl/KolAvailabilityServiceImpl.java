@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.common.services.EmailService;
 import com.web.bookingKol.domain.kol.dtos.KolAvailabilityDTO;
+import com.web.bookingKol.domain.kol.dtos.TimeRangeDTO;
 import com.web.bookingKol.domain.kol.dtos.TimeSlotDTO;
 import com.web.bookingKol.domain.kol.dtos.WorkTimeDTO;
 import com.web.bookingKol.domain.kol.models.KolAvailability;
@@ -236,7 +237,7 @@ public class KolAvailabilityServiceImpl implements KolAvailabilityService {
 
             if (overlaps.isEmpty()) {
                 if (Duration.between(freeStart, freeEnd).toHours() >= 2) {
-                    freeSlots.add(new TimeSlotDTO(freeStart, freeEnd));
+                    freeSlots.add(new TimeSlotDTO(availability.getId(), freeStart, freeEnd));
                 }
                 continue;
             }
@@ -248,7 +249,7 @@ public class KolAvailabilityServiceImpl implements KolAvailabilityService {
                 if (hoursFree >= 2) {
                     Instant adjustedStart = cursor.isBefore(freeStart) ? freeStart : cursor;
                     if (adjustedStart.isBefore(endOfFree)) {
-                        freeSlots.add(new TimeSlotDTO(adjustedStart, endOfFree));
+                        freeSlots.add(new TimeSlotDTO(availability.getId(), adjustedStart, endOfFree));
                     }
                 }
 
@@ -258,10 +259,11 @@ public class KolAvailabilityServiceImpl implements KolAvailabilityService {
             if (cursor.isBefore(freeEnd)) {
                 long hoursRemain = Duration.between(cursor, freeEnd).toHours();
                 if (hoursRemain >= 2) {
-                    freeSlots.add(new TimeSlotDTO(cursor, freeEnd));
+                    freeSlots.add(new TimeSlotDTO(availability.getId(), cursor, freeEnd));
                 }
             }
         }
+
 
         return ApiResponse.<List<TimeSlotDTO>>builder()
                 .status(HttpStatus.OK.value())
@@ -533,6 +535,77 @@ public class KolAvailabilityServiceImpl implements KolAvailabilityService {
                 .build();
     }
 
+
+
+    @Transactional
+    @Override
+    public ApiResponse<String> removeAvailabilityRange(String email, UUID availabilityId, TimeRangeDTO range) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy người dùng"));
+
+        KolProfile kol = user.getKolProfile();
+        if (kol == null)
+            return ApiResponse.<String>builder()
+                    .status(400)
+                    .message(List.of("Tài khoản này không phải là KOL"))
+                    .build();
+
+        KolAvailability availability = kolAvailabilityRepository.findById(availabilityId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy lịch rảnh"));
+
+        if (!availability.getKol().getId().equals(kol.getId()))
+            return ApiResponse.<String>builder()
+                    .status(403)
+                    .message(List.of("Lịch này không thuộc về bạn"))
+                    .build();
+
+        Instant start = availability.getStartAt();
+        Instant end = availability.getEndAt();
+
+        if (!range.getStartRemove().isAfter(start) && !range.getEndRemove().isBefore(end)) {
+            kolAvailabilityRepository.delete(availability);
+            return ApiResponse.<String>builder()
+                    .status(200)
+                    .message(List.of("Đã xóa toàn bộ lịch rảnh"))
+                    .build();
+        }
+
+        if (range.getStartRemove().equals(start)) {
+            availability.setStartAt(range.getEndRemove());
+            kolAvailabilityRepository.save(availability);
+            return ApiResponse.<String>builder()
+                    .status(200)
+                    .message(List.of("Đã cắt bỏ phần đầu lịch rảnh"))
+                    .build();
+        }
+
+        if (range.getEndRemove().equals(end)) {
+            availability.setEndAt(range.getStartRemove());
+            kolAvailabilityRepository.save(availability);
+            return ApiResponse.<String>builder()
+                    .status(200)
+                    .message(List.of("Đã cắt bỏ phần cuối lịch rảnh"))
+                    .build();
+        }
+
+        KolAvailability newBlock = new KolAvailability();
+        newBlock.setId(UUID.randomUUID());
+        newBlock.setKol(kol);
+        newBlock.setStartAt(range.getEndRemove());
+        newBlock.setEndAt(end);
+        newBlock.setCreatedAt(Instant.now());
+        newBlock.setStatus("AVAILABLE");
+
+        availability.setEndAt(range.getStartRemove());
+
+        kolAvailabilityRepository.save(availability);
+        kolAvailabilityRepository.save(newBlock);
+
+        return ApiResponse.<String>builder()
+                .status(200)
+                .message(List.of("Xóa lịch thành công"))
+                .build();
+    }
 
 
 

@@ -40,12 +40,15 @@ public class BookingAdminServiceImpl implements BookingAdminService {
         Specification<PurchasedServicePackage> spec = (root, query, cb) -> cb.conjunction();
 
         if (search != null && !search.isBlank()) {
+            String keyword = "%" + search.toLowerCase() + "%";
             spec = spec.and((root, query, cb) -> cb.or(
-                    cb.like(cb.lower(root.get("campaign").get("name")), "%" + search.toLowerCase() + "%"),
-                    cb.like(cb.lower(root.get("servicePackage").get("name")), "%" + search.toLowerCase() + "%"),
-                    cb.like(cb.lower(root.get("status")), "%" + search.toLowerCase() + "%")
+                    cb.like(cb.lower(root.get("campaign").get("name")), keyword),
+                    cb.like(cb.lower(root.get("servicePackage").get("name")), keyword),
+                    cb.like(cb.lower(root.get("status")), keyword),
+                    cb.like(cb.lower(root.get("bookingRequest").get("bookingNumber")), keyword)
             ));
         }
+
 
         if (startDate != null) {
             spec = spec.and((root, query, cb) ->
@@ -87,6 +90,7 @@ public class BookingAdminServiceImpl implements BookingAdminService {
 
             return BookedPackageResponse.builder()
                     .id(p.getId())
+                    .bookingNumber(p.getBookingNumber())
                     .campaignName(p.getCampaign() != null ? p.getCampaign().getName() : null)
                     .objective(p.getCampaign() != null ? p.getCampaign().getObjective() : null)
                     .budgetMin(p.getCampaign() != null ? p.getCampaign().getBudgetMin() : null)

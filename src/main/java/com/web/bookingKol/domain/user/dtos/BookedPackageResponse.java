@@ -25,6 +25,8 @@ public class BookedPackageResponse {
     private String packageType;
     private Double price;
     private String status;
+    private String bookingNumber;
+
 
     private String buyerEmail;
     private List<KolInfo> kols;
