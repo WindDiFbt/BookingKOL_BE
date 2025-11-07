@@ -237,7 +237,7 @@ public class KolAvailabilityServiceImpl implements KolAvailabilityService {
 
             if (overlaps.isEmpty()) {
                 if (Duration.between(freeStart, freeEnd).toHours() >= 2) {
-                    freeSlots.add(new TimeSlotDTO(freeStart, freeEnd));
+                    freeSlots.add(new TimeSlotDTO(availability.getId(), freeStart, freeEnd));
                 }
                 continue;
             }
@@ -249,7 +249,7 @@ public class KolAvailabilityServiceImpl implements KolAvailabilityService {
                 if (hoursFree >= 2) {
                     Instant adjustedStart = cursor.isBefore(freeStart) ? freeStart : cursor;
                     if (adjustedStart.isBefore(endOfFree)) {
-                        freeSlots.add(new TimeSlotDTO(adjustedStart, endOfFree));
+                        freeSlots.add(new TimeSlotDTO(availability.getId(), adjustedStart, endOfFree));
                     }
                 }
 
@@ -259,10 +259,11 @@ public class KolAvailabilityServiceImpl implements KolAvailabilityService {
             if (cursor.isBefore(freeEnd)) {
                 long hoursRemain = Duration.between(cursor, freeEnd).toHours();
                 if (hoursRemain >= 2) {
-                    freeSlots.add(new TimeSlotDTO(cursor, freeEnd));
+                    freeSlots.add(new TimeSlotDTO(availability.getId(), cursor, freeEnd));
                 }
             }
         }
+
 
         return ApiResponse.<List<TimeSlotDTO>>builder()
                 .status(HttpStatus.OK.value())
