@@ -25,6 +25,8 @@ public class BlogService {
     private UserRepository userRepository;
     @Autowired
     private BlogMapper blogMapper;
+    @Autowired
+    private BlogMapperV2 blogMapperV2;
 
     public ApiResponse<BlogDTO> createBlog(UUID userId, BlogCreateDTO blogCreateDTO) {
         Blog newBlog = new Blog();
@@ -55,7 +57,7 @@ public class BlogService {
         } else {
             blogPage = blogRepository.findAll(pageable);
         }
-        Page<BlogDTO> blogDTOPage = blogPage.map(blogMapper::toDtoWithoutContent);
+        Page<BlogDTO> blogDTOPage = blogPage.map(blogMapperV2::toDtoWithoutContent);
         return ApiResponse.<Page<BlogDTO>>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Lấy danh sách bài viết thành công!"))
