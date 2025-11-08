@@ -293,8 +293,9 @@ public class CoursePackageServiceImpl implements CoursePackageService {
         if (purchasedCoursePackageRepository.existsPurchasedCoursePackageByCoursePackageId(courseId)) {
             throw new IllegalArgumentException("Khóa học đã được mua, không thể xóa vĩnh viễn, courseId: " + courseId);
         }
-        Set<FileUsage> fileUsages = cp.getFileUsages();
+        Set<FileUsage> fileUsages = new HashSet<>(cp.getFileUsages());
         for (FileUsage fileUsage : fileUsages) {
+            cp.getFileUsages().remove(fileUsage);
             fileUsageRepository.delete(fileUsage);
             fileRepository.delete(fileUsage.getFile());
         }

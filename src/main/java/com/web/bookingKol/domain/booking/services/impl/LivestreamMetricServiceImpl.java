@@ -5,6 +5,7 @@ import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.domain.booking.dtos.livestreamMetric.LivestreamMetricDTO;
 import com.web.bookingKol.domain.booking.dtos.livestreamMetric.LivestreamMetricReqDTO;
 import com.web.bookingKol.domain.booking.mappers.LivestreamMetricMapper;
+import com.web.bookingKol.domain.booking.mappers.LivestreamMetricMapperV2;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.booking.models.Contract;
 import com.web.bookingKol.domain.booking.models.LivestreamMetric;
@@ -43,6 +44,8 @@ public class LivestreamMetricServiceImpl implements LivestreamMetricService {
     private BookingRequestRepository bookingRequestRepository;
     @Autowired
     private ContractRepository contractRepository;
+    @Autowired
+    private LivestreamMetricMapperV2 livestreamMetricMapperV2;
 
     @Override
     public ApiResponse<LivestreamMetricDTO> createLivestreamMetric(UUID kolId, UUID workTimeId, LivestreamMetricReqDTO livestreamMetricReqDTO) {
@@ -138,7 +141,7 @@ public class LivestreamMetricServiceImpl implements LivestreamMetricService {
         return ApiResponse.<LivestreamMetricDTO>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Lấy dữ liệu của phiên live thành công: " + livestreamMetricId))
-                .data(livestreamMetricMapper.toDto(livestreamMetric))
+                .data(livestreamMetricMapperV2.toDto(livestreamMetric))
                 .build();
     }
 
@@ -158,14 +161,14 @@ public class LivestreamMetricServiceImpl implements LivestreamMetricService {
         return ApiResponse.<LivestreamMetricDTO>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Lấy dữ liệu của phiên live thành công: " + workTimeId))
-                .data(livestreamMetricMapper.toDto(livestreamMetric))
+                .data(livestreamMetricMapperV2.toDto(livestreamMetric))
                 .build();
     }
 
     @Override
     public ApiResponse<Page<LivestreamMetricDTO>> getLivestreamMetricOfKol(UUID kolId, Pageable pageable) {
         Page<LivestreamMetricDTO> livestreamMetrics = livestreamMetricRepository.findAllByKolId(kolId, pageable)
-                .map(livestreamMetricMapper::toDto);
+                .map(livestreamMetricMapperV2::toDto);
         return ApiResponse.<Page<LivestreamMetricDTO>>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Lấy dữ liệu livestream của Kol thành công:" + kolId))
@@ -203,7 +206,7 @@ public class LivestreamMetricServiceImpl implements LivestreamMetricService {
         return ApiResponse.<LivestreamMetricDTO>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Lấy dữ liệu của phiên live thành công: " + workTimeId))
-                .data(livestreamMetricMapper.toDto(livestreamMetric))
+                .data(livestreamMetricMapperV2.toDto(livestreamMetric))
                 .build();
     }
 }
