@@ -14,22 +14,27 @@ import java.util.UUID;
 public class AdminDashboardDTO {
     private DashboardStatsDTO stats;
     private List<ChartDataPointDTO> revenueChart;
-    private List<ChartDataPointDTO> statusBreakdown;
-    private List<UpcomingBookingDTO> UpcomingWorkTimes;
-    private List<RecentBookingDTO> RecentWorkTimes;
-    private List<RecentBookingDTO> completedRecentWorkTimes;
+    private List<ChartDataPointDTO> statusContractBreakdown;
+    private List<BookingDTO> UpcomingBookingRequests;
+    private List<BookingDTO> RecentBookingRequests;
+
+    private List<KolBookingCountDTO> topKolsByBookings;
+    private List<KolBookingRevenueDTO> topKolsByRevenue;
+    private List<BookingStatusCountDTO> statusDistribution;
+    private List<PlatformCountDTO> platformDistribution;
+    private List<BookingMonthlyTrendDTO> bookingTrend;
 
     @Getter
     @Setter
     @AllArgsConstructor
     public static class DashboardStatsDTO {
+        private long totalBookings;
+        private long completedBookings;
+        private long inProgressBookings;
         private BigDecimal totalRevenue;
         private BigDecimal earnedRevenue;
         private BigDecimal pendingRevenue;
         private BigDecimal cancelledLoss;
-        private long totalBookings;
-        private long completedBookings;
-        private long inProgressBookings;
     }
 
     @Getter
@@ -38,27 +43,24 @@ public class AdminDashboardDTO {
     public static class ChartDataPointDTO {
         private String label;
         private Number value;
+        private double percentage;
     }
 
     @Getter
     @Setter
-    public static class UpcomingBookingDTO {
+    public static class BookingDTO {
         private UUID bookingId;
+        private String requestNumber;
         private String clientName;
         private Instant startAt;
         private Instant endAt;
         private String location;
-        private BigDecimal amount;
         private String status;
     }
 
-    @Getter
-    @Setter
-    public static class RecentBookingDTO {
-        private String requestNumber;
-        private String clientName;
-        private Instant startAt;
-        private String status;
-        private BigDecimal amount;
+    @Data
+    public static class StatusRequestBreakdownDTO {
+        List<ChartDataPointDTO> statusRequestBreakdown;
+
     }
 }
