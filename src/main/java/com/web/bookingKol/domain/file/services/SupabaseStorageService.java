@@ -31,7 +31,7 @@ public class SupabaseStorageService {
                 throw new RuntimeException("Upload failed: " + response.getStatusCode());
             }
         } catch (Exception e) {
-            throw new RuntimeException("Error uploading file to Supabase: " + e.getMessage());
+            throw new IllegalArgumentException("Error uploading file to Supabase: " + e.getMessage());
         }
         return SUPABASE_ANON_URL + "/storage/v1/object/public/" + STORAGE_BUCKET + "/" + fileName;
     }

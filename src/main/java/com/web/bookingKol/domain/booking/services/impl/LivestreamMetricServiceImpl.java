@@ -5,16 +5,22 @@ import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.domain.booking.dtos.livestreamMetric.LivestreamMetricDTO;
 import com.web.bookingKol.domain.booking.dtos.livestreamMetric.LivestreamMetricReqDTO;
 import com.web.bookingKol.domain.booking.mappers.LivestreamMetricMapper;
+import com.web.bookingKol.domain.booking.mappers.LivestreamMetricMapperV2;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
+import com.web.bookingKol.domain.booking.models.Contract;
 import com.web.bookingKol.domain.booking.models.LivestreamMetric;
 import com.web.bookingKol.domain.booking.repositories.BookingRequestRepository;
+import com.web.bookingKol.domain.booking.repositories.ContractRepository;
 import com.web.bookingKol.domain.booking.repositories.LivestreamMetricRepository;
 import com.web.bookingKol.domain.booking.services.LivestreamMetricService;
+import com.web.bookingKol.domain.kol.models.KolProfile;
 import com.web.bookingKol.domain.kol.models.KolWorkTime;
 import com.web.bookingKol.domain.kol.repositories.KolWorkTimeRepository;
 import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.domain.user.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AuthorizationServiceException;
 import org.springframework.stereotype.Service;
@@ -36,6 +42,10 @@ public class LivestreamMetricServiceImpl implements LivestreamMetricService {
     private UserRepository userRepository;
     @Autowired
     private BookingRequestRepository bookingRequestRepository;
+    @Autowired
+    private ContractRepository contractRepository;
+    @Autowired
+    private LivestreamMetricMapperV2 livestreamMetricMapperV2;
 
     @Override
     public ApiResponse<LivestreamMetricDTO> createLivestreamMetric(UUID kolId, UUID workTimeId, LivestreamMetricReqDTO livestreamMetricReqDTO) {
@@ -47,12 +57,12 @@ public class LivestreamMetricServiceImpl implements LivestreamMetricService {
         if (kolWorkTime.getStatus().equals(Enums.KOLWorkTimeStatus.COMPLETED.name())) {
             throw new IllegalArgumentException("Ca làm việc " + workTimeId + " đã hoàn thành.");
         }
-        if (kolWorkTime.getStartAt().isAfter(Instant.now())) {
-            throw new IllegalArgumentException("Ca làm việc " + workTimeId + " chưa bắt đầu.");
-        }
-        if (kolWorkTime.getEndAt().isAfter(Instant.now())) {
-            throw new IllegalArgumentException("Ca làm việc " + workTimeId + " chưa kết thúc.");
-        }
+//        if (kolWorkTime.getStartAt().isAfter(Instant.now())) {
+//            throw new IllegalArgumentException("Ca làm việc " + workTimeId + " chưa bắt đầu.");
+//        }
+//        if (kolWorkTime.getEndAt().isAfter(Instant.now())) {
+//            throw new IllegalArgumentException("Ca làm việc " + workTimeId + " chưa kết thúc.");
+//        }
         Instant metricDeadline = kolWorkTime.getEndAt().plus(3, ChronoUnit.DAYS);
         if (Instant.now().isAfter(metricDeadline)) {
             throw new IllegalArgumentException("Đã quá thời hạn 3 ngày kể từ khi ca làm việc " + workTimeId + " kết thúc. Không thể tạo Livestream Metric.");
@@ -124,14 +134,14 @@ public class LivestreamMetricServiceImpl implements LivestreamMetricService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng: " + userId));
         UUID bookingUserId = livestreamMetric.getKolWorkTime().getBookingRequest().getUser().getId();
-        boolean isAdmin = user.getRoles().stream().anyMatch(role -> role.getName().equals(Enums.Roles.ADMIN.name()));
+        boolean isAdmin = user.getRoles().stream().anyMatch(role -> role.getKey().equals(Enums.Roles.ADMIN.name()));
         if (!isAdmin && !bookingUserId.equals(userId)) {
             throw new AuthorizationServiceException("Bạn không có quyền xem Livestream Metric của ca làm này.");
         }
         return ApiResponse.<LivestreamMetricDTO>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Lấy dữ liệu của phiên live thành công: " + livestreamMetricId))
-                .data(livestreamMetricMapper.toDto(livestreamMetric))
+                .data(livestreamMetricMapperV2.toDto(livestreamMetric))
                 .build();
     }
 
@@ -144,24 +154,25 @@ public class LivestreamMetricServiceImpl implements LivestreamMetricService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng: " + userId));
         UUID bookingUserId = livestreamMetric.getKolWorkTime().getBookingRequest().getUser().getId();
-        boolean isAdmin = user.getRoles().stream().anyMatch(role -> role.getName().equals(Enums.Roles.ADMIN.name()));
+        boolean isAdmin = user.getRoles().stream().anyMatch(role -> role.getKey().equals(Enums.Roles.ADMIN.name()));
         if (!isAdmin && !bookingUserId.equals(userId)) {
             throw new AuthorizationServiceException("Bạn không có quyền xem Livestream Metric của ca làm này.");
         }
         return ApiResponse.<LivestreamMetricDTO>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Lấy dữ liệu của phiên live thành công: " + workTimeId))
-                .data(livestreamMetricMapper.toDto(livestreamMetric))
+                .data(livestreamMetricMapperV2.toDto(livestreamMetric))
                 .build();
     }
 
     @Override
-    public ApiResponse<List<LivestreamMetricDTO>> getLivestreamMetricOfKol(UUID kolId) {
-        List<LivestreamMetric> livestreamMetrics = livestreamMetricRepository.findAllByKolId(kolId);
-        return ApiResponse.<List<LivestreamMetricDTO>>builder()
+    public ApiResponse<Page<LivestreamMetricDTO>> getLivestreamMetricOfKol(UUID kolId, Pageable pageable) {
+        Page<LivestreamMetricDTO> livestreamMetrics = livestreamMetricRepository.findAllByKolId(kolId, pageable)
+                .map(livestreamMetricMapperV2::toDto);
+        return ApiResponse.<Page<LivestreamMetricDTO>>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Lấy dữ liệu livestream của Kol thành công:" + kolId))
-                .data(livestreamMetricMapper.toDtoList(livestreamMetrics))
+                .data(livestreamMetrics)
                 .build();
     }
 
@@ -172,6 +183,30 @@ public class LivestreamMetricServiceImpl implements LivestreamMetricService {
         if (allWorkTimesCompleted) {
             bookingRequest.setStatus(Enums.BookingStatus.COMPLETED.name());
             bookingRequestRepository.save(bookingRequest);
+            Contract contract = bookingRequest.getContracts().stream().findFirst().orElse(null);
+            if (contract != null) {
+                contract.setStatus(Enums.ContractStatus.COMPLETED.name());
+                contractRepository.save(contract);
+            }
         }
+    }
+
+    @Override
+    public ApiResponse<LivestreamMetricDTO> KolGetDetailLivestreamMetricByKolWorkTimeId(UUID userId, UUID workTimeId) {
+        LivestreamMetric livestreamMetric = livestreamMetricRepository.findByWorkTimeId(workTimeId);
+        if (livestreamMetric == null) {
+            throw new IllegalArgumentException("Không tìm thấy Livestream Metric của ca làm việc: " + workTimeId);
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng: " + userId));
+        KolProfile kolProfile = user.getKolProfile();
+        if (kolProfile.getId() != livestreamMetric.getKolWorkTime().getAvailability().getKol().getId()) {
+            throw new AuthorizationServiceException("Bạn không có quyền xem Livestream Metric của ca làm này.");
+        }
+        return ApiResponse.<LivestreamMetricDTO>builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Lấy dữ liệu của phiên live thành công: " + workTimeId))
+                .data(livestreamMetricMapperV2.toDto(livestreamMetric))
+                .build();
     }
 }

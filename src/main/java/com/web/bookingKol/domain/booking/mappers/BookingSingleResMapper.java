@@ -27,6 +27,7 @@ public class BookingSingleResMapper {
         }
         BookingSingleResDTO dto = new BookingSingleResDTO();
         dto.setId(bookingRequest.getId());
+        dto.setRequestNumber(bookingRequest.getRequestNumber());
         dto.setKolId(bookingRequest.getKol().getId());
         dto.setUserId(bookingRequest.getUser().getId());
         dto.setBookingType(bookingRequest.getBookingType());
@@ -37,6 +38,7 @@ public class BookingSingleResMapper {
         dto.setEndAt(bookingRequest.getEndAt());
         dto.setCreatedAt(bookingRequest.getCreatedAt());
         dto.setUpdatedAt(bookingRequest.getUpdatedAt());
+        dto.setPlatform(bookingRequest.getPlatform());
         if (bookingRequest.getAttachedFiles() != null) {
             Set<FileUsage> activeAttachedFiles = bookingRequest.getAttachedFiles().stream()
                     .filter(attachedFile ->

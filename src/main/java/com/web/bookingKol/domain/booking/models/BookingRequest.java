@@ -28,9 +28,10 @@ public class BookingRequest {
     @Column(name = "id", nullable = false)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "campaign_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "campaign_id", nullable = true)
     private Campaign campaign;
+
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "kol_id", nullable = true)
@@ -89,6 +90,10 @@ public class BookingRequest {
     @Column(name = "end_at")
     private Instant endAt;
 
+    @Column(name = "booking_number", length = 50, unique = true)
+    private String bookingNumber;
+
+
     @OneToMany
     @JoinColumn(name = "target_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Set<FileUsage> attachedFiles = new LinkedHashSet<>();
@@ -114,4 +119,17 @@ public class BookingRequest {
     @Size(max = 20)
     @Column(name = "request_number", unique = true, nullable = false)
     private String requestNumber;
+
+    @Size(max = 20)
+    @Column(name = "platform", length = 20)
+    private String platform;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.bookingNumber == null || this.bookingNumber.isBlank()) {
+            this.bookingNumber = "BK-" + System.currentTimeMillis();
+        }
+    }
+
+
 }

@@ -17,14 +17,16 @@ public class BookedPackageResponse {
     private String objective;
     private BigDecimal budgetMin;
     private BigDecimal budgetMax;
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private Instant startDate;
+    private Instant endDate;
     private String recurrencePattern;
 
     private String packageName;
     private String packageType;
     private Double price;
     private String status;
+    private String bookingNumber;
+
 
     private String buyerEmail;
     private List<KolInfo> kols;

@@ -16,7 +16,7 @@ public class PurchasedCourseResponse {
 
     private UUID id;
     private String courseName;
-    private Integer currentPrice;
+    private Long currentPrice;
     private Boolean isPaid;
     private String status;
     private Instant startDate;

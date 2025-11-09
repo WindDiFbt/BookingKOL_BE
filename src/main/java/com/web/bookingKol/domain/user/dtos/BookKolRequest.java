@@ -18,8 +18,8 @@ public class BookKolRequest {
     private String objective;
     private BigDecimal budgetMin;
     private BigDecimal budgetMax;
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private Instant startDate;
+    private Instant endDate;
     private String recurrencePattern;
     private List<UUID> liveIds;
 

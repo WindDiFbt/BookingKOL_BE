@@ -28,7 +28,7 @@ public class Payment {
     private UUID id;
 
     @OneToOne
-    @JoinColumn(name = "contract_id", nullable = false, unique = true)
+    @JoinColumn(name = "contract_id", unique = true)
     private Contract contract;
 
     @NotNull

@@ -1,13 +1,18 @@
 package com.web.bookingKol.domain.course.services.impl;
 
 import com.web.bookingKol.common.Enums;
+import com.web.bookingKol.common.NumberGenerateUtil;
 import com.web.bookingKol.common.UpdateEntityUtil;
 import com.web.bookingKol.common.payload.ApiResponse;
-import com.web.bookingKol.domain.course.CoursePackage;
-import com.web.bookingKol.domain.course.CoursePackageMapper;
 import com.web.bookingKol.domain.course.CoursePackageRepository;
 import com.web.bookingKol.domain.course.dtos.CoursePackageDTO;
+import com.web.bookingKol.domain.course.dtos.CoursePaymentDTO;
+import com.web.bookingKol.domain.course.dtos.PurchaseCourseReqDTO;
 import com.web.bookingKol.domain.course.dtos.UpdateCoursePackageDTO;
+import com.web.bookingKol.domain.course.mappers.CoursePackageMapper;
+import com.web.bookingKol.domain.course.mappers.CoursePaymentMapper;
+import com.web.bookingKol.domain.course.models.CoursePackage;
+import com.web.bookingKol.domain.course.models.PurchasedCoursePackage;
 import com.web.bookingKol.domain.course.services.CoursePackageService;
 import com.web.bookingKol.domain.file.dtos.FileDTO;
 import com.web.bookingKol.domain.file.dtos.FileUsageDTO;
@@ -18,7 +23,14 @@ import com.web.bookingKol.domain.file.models.FileUsage;
 import com.web.bookingKol.domain.file.repositories.FileRepository;
 import com.web.bookingKol.domain.file.repositories.FileUsageRepository;
 import com.web.bookingKol.domain.file.services.FileService;
+import com.web.bookingKol.domain.payment.dtos.PaymentReqDTO;
+import com.web.bookingKol.domain.payment.models.Payment;
+import com.web.bookingKol.domain.payment.services.PaymentService;
+import com.web.bookingKol.domain.payment.services.QRGenerateService;
+import com.web.bookingKol.domain.payment.services.SePayService;
+import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.domain.user.repositories.PurchasedCoursePackageRepository;
+import com.web.bookingKol.domain.user.repositories.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +43,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.*;
 
 @Service
@@ -51,6 +65,17 @@ public class CoursePackageServiceImpl implements CoursePackageService {
     private FileUsageRepository fileUsageRepository;
     @Autowired
     private PurchasedCoursePackageRepository purchasedCoursePackageRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private CoursePaymentMapper coursePaymentMapper;
+    @Autowired
+    private PaymentService paymentService;
+    @Autowired
+    private SePayService sePayService;
+    public static final String PAYMENT_TRANSFER_CONTENT_FORMAT = "Thanh toan cho ";
+    @Autowired
+    private QRGenerateService qRGenerateService;
 
     @Override
     public ApiResponse<CoursePackageDTO> getCoursePackageById(UUID coursePackageId) {
@@ -132,6 +157,7 @@ public class CoursePackageServiceImpl implements CoursePackageService {
         cp.setName(coursePackageDTO.getName());
         cp.setPrice(coursePackageDTO.getPrice());
         cp.setDiscount(coursePackageDTO.getDiscount());
+        cp.setCurrentPrice(coursePackageDTO.getPrice() * (100 - coursePackageDTO.getDiscount()) / 100);
         cp.setDescription(coursePackageDTO.getDescription());
         cp.setIsAvailable(true);
         Set<FileUsage> imageFiles = new LinkedHashSet<>();
@@ -158,8 +184,13 @@ public class CoursePackageServiceImpl implements CoursePackageService {
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy Gói khóa học với id: " + coursePackageId));
         if (updateCoursePackageDTO != null) {
             BeanUtils.copyProperties(updateCoursePackageDTO, cp, UpdateEntityUtil.getNullPropertyNames(updateCoursePackageDTO));
+            if (updateCoursePackageDTO.getPrice() != null || updateCoursePackageDTO.getDiscount() != null) {
+                long price = cp.getPrice();
+                int discount = cp.getDiscount();
+                cp.setCurrentPrice(price * (100 - discount) / 100);
+            }
         }
-        coursePackageRepository.save(cp);
+        coursePackageRepository.saveAndFlush(cp);
         return ApiResponse.<CoursePackageDTO>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Cập nhật gói khóa học thành công!"))
@@ -262,8 +293,9 @@ public class CoursePackageServiceImpl implements CoursePackageService {
         if (purchasedCoursePackageRepository.existsPurchasedCoursePackageByCoursePackageId(courseId)) {
             throw new IllegalArgumentException("Khóa học đã được mua, không thể xóa vĩnh viễn, courseId: " + courseId);
         }
-        Set<FileUsage> fileUsages = cp.getFileUsages();
+        Set<FileUsage> fileUsages = new HashSet<>(cp.getFileUsages());
         for (FileUsage fileUsage : fileUsages) {
+            cp.getFileUsages().remove(fileUsage);
             fileUsageRepository.delete(fileUsage);
             fileRepository.delete(fileUsage.getFile());
         }
@@ -272,6 +304,83 @@ public class CoursePackageServiceImpl implements CoursePackageService {
                 .status(HttpStatus.OK.value())
                 .message(List.of("Xóa khóa học thành công" + courseId))
                 .data(null)
+                .build();
+    }
+
+    @Override
+    public ApiResponse<CoursePaymentDTO> purchaseCoursePackage(UUID userId, UUID coursePackageId, PurchaseCourseReqDTO purchaseCourseReqDTO) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng id: " + userId));
+        CoursePackage coursePackage = coursePackageRepository.findById(coursePackageId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy gói khóa học: " + coursePackageId));
+        if (Boolean.FALSE.equals(coursePackage.getIsAvailable())) {
+            throw new IllegalArgumentException("Gói khóa học không có sẵn!");
+        }
+        PurchasedCoursePackage purchased = new PurchasedCoursePackage();
+        purchased.setId(UUID.randomUUID());
+        purchased.setUser(user);
+        purchased.setCoursePackage(coursePackage);
+        purchased.setCurrentPrice(coursePackage.getCurrentPrice());
+        purchased.setStatus(Enums.PurchasedCourse.NOTASSIGNED.name());
+        purchased.setIsPaid(false);
+        purchased.setEmail(purchaseCourseReqDTO.getEmail());
+        purchased.setPhoneNumber(purchaseCourseReqDTO.getPhone());
+        purchased.setStartDate(Instant.now());
+        String purchasedCourseNumber;
+        do {
+            purchasedCourseNumber = NumberGenerateUtil.generateSecureRandomPurchasedCourseNumber();
+        } while (purchasedCoursePackageRepository.existsByPurchasedCourseNumber(purchasedCourseNumber));
+        purchased.setPurchasedCourseNumber(purchasedCourseNumber);
+        purchasedCoursePackageRepository.save(purchased);
+        return ApiResponse.<CoursePaymentDTO>builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Tạo yêu cầu mua khóa học thành công"))
+                .data(coursePaymentMapper.toDto(purchased))
+                .build();
+    }
+
+    @Transactional
+    @Override
+    public ApiResponse<PaymentReqDTO> confirmPurchaseCoursePackage(UUID userId, UUID purchasedCoursePackageId) {
+        PurchasedCoursePackage purchasedCoursePackage = purchasedCoursePackageRepository.findById(purchasedCoursePackageId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy yêu cầu mua khóa học"));
+        if (!purchasedCoursePackage.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("Bạn không có quyền xác nhận yêu cầu mua khóa học này");
+        }
+        String transferContent = PAYMENT_TRANSFER_CONTENT_FORMAT + purchasedCoursePackage.getPurchasedCourseNumber() + " " + purchasedCoursePackage.getId().toString();
+        Payment payment = paymentService.initiateCoursePayment(
+                purchasedCoursePackage,
+                purchasedCoursePackage.getUser(),
+                purchasedCoursePackage.getCurrentPrice()
+        );
+        PaymentReqDTO paymentReqDTO = paymentService.createCoursePaymentRequest(
+                purchasedCoursePackage,
+                payment,
+                qRGenerateService.createQRCode(BigDecimal.valueOf(purchasedCoursePackage.getCurrentPrice()), transferContent)
+        );
+        purchasedCoursePackage.setPayment(payment);
+        purchasedCoursePackageRepository.save(purchasedCoursePackage);
+        paymentReqDTO.setTransferContent(transferContent);
+        return ApiResponse.<PaymentReqDTO>builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Xác nhận yêu cầu mua khóa học thành công"))
+                .data(paymentReqDTO)
+                .build();
+    }
+
+    @Transactional
+    @Override
+    public ApiResponse<CoursePaymentDTO> cancelPurchaseCoursePackage(UUID userId, UUID purchasedCoursePackageId) {
+        PurchasedCoursePackage purchasedCoursePackage = purchasedCoursePackageRepository.findById(purchasedCoursePackageId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy yêu cầu mua khóa học"));
+        if (!purchasedCoursePackage.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("Bạn không có quyền xác nhận yêu cầu mua khóa học này");
+        }
+        purchasedCoursePackageRepository.delete(purchasedCoursePackage);
+        return ApiResponse.<CoursePaymentDTO>builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Hủy yêu cầu mua khóa học thành công"))
+                .data(coursePaymentMapper.toDto(purchasedCoursePackage))
                 .build();
     }
 }

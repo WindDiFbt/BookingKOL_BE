@@ -5,7 +5,6 @@ import com.web.bookingKol.domain.booking.dtos.BookingDetailDTO;
 import com.web.bookingKol.domain.booking.dtos.BookingSingleReqDTO;
 import com.web.bookingKol.domain.booking.dtos.BookingSingleResDTO;
 import com.web.bookingKol.domain.booking.dtos.UpdateBookingReqDTO;
-import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.payment.dtos.PaymentReqDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,7 +15,11 @@ import java.util.UUID;
 
 @Service
 public interface BookingRequestService {
-    ApiResponse<PaymentReqDTO> createBookingSingleReq(UUID userId, BookingSingleReqDTO bookingRequestDTO, List<MultipartFile> attachedFiles);
+    ApiResponse<BookingDetailDTO> createBookingSingleReq(UUID userId, BookingSingleReqDTO bookingRequestDTO, List<MultipartFile> attachedFiles);
+
+    ApiResponse<PaymentReqDTO> confirmBookingSingleReq(UUID bookingRequestId, UUID userId);
+
+    ApiResponse<BookingDetailDTO> cancelBookingSingleReq(UUID bookingRequestId, UUID userId);
 
     ApiResponse<List<BookingSingleResDTO>> getAllSingleRequestAdmin(UUID kolId,
                                                                     UUID userId,
@@ -57,7 +60,7 @@ public interface BookingRequestService {
 
     ApiResponse<BookingDetailDTO> updateBookingRequest(UUID userId, UUID bookingRequestId, UpdateBookingReqDTO updateBookingReqDTO, List<MultipartFile> attachedFiles, List<UUID> fileIdsToDelete);
 
-    ApiResponse<BookingDetailDTO> cancelBookingRequest(UUID userId, UUID bookingRequestId);
+    ApiResponse<?> cancelBookingRequest(UUID userId, UUID bookingRequestId, String bankNumber, String bankName);
 
-    void checkAndCompleteBookingRequest(BookingRequest bookingRequest);
+    ApiResponse<PaymentReqDTO> continueBookingRequestPayment(UUID bookingRequestId, UUID userId);
 }

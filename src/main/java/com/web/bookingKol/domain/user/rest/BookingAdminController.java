@@ -2,10 +2,7 @@ package com.web.bookingKol.domain.user.rest;
 
 import com.web.bookingKol.common.PagedResponse;
 import com.web.bookingKol.common.payload.ApiResponse;
-import com.web.bookingKol.domain.user.dtos.AdminBookingRequestResponse;
-import com.web.bookingKol.domain.user.dtos.AdminCreateBookingRequestDTO;
-import com.web.bookingKol.domain.user.dtos.BookedPackageResponse;
-import com.web.bookingKol.domain.user.dtos.UpdateBookingStatusRequest;
+import com.web.bookingKol.domain.user.dtos.*;
 import com.web.bookingKol.domain.user.services.AdminBookingRequestService;
 
 import com.web.bookingKol.domain.user.services.AdminBookingRequestViewService;
@@ -79,6 +76,17 @@ public class BookingAdminController {
                 .getContext().getAuthentication().getName();
         return ResponseEntity.ok(bookingRequestService.updateBookingRequestStatus(id, dto, email));
     }
+
+
+
+
+    @PreAuthorize("hasAnyAuthority('ADMIN','SUPER_ADMIN')")
+    @GetMapping("/detail/{bookingRequestId}")
+    public ResponseEntity<ApiResponse<AdminBookingRequestResponse>> getBookingRequestDetail(
+            @PathVariable UUID bookingRequestId) {
+        return ResponseEntity.ok(bookingRequestService.getBookingRequestDetail(bookingRequestId));
+    }
+
 
 
 

@@ -2,6 +2,7 @@ package com.web.bookingKol.domain.user.rest;
 
 import com.web.bookingKol.domain.booking.dtos.UpdateBookingReqDTO;
 import com.web.bookingKol.domain.booking.services.BookingRequestService;
+import com.web.bookingKol.domain.payment.dtos.refund.CancellationRequest;
 import com.web.bookingKol.domain.user.models.UserDetailsImpl;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,10 +52,11 @@ public class UserSingleRequestController {
         return ResponseEntity.ok(bookingRequestService.updateBookingRequest(userId, requestId, updateBookingReqDTO, attachedFiles, fileIdsToDelete));
     }
 
-    @PatchMapping("/cancel/{requestId}")
+    @PostMapping("/cancel/{requestId}")
     public ResponseEntity<?> cancelBookingRequest(@AuthenticationPrincipal UserDetailsImpl userDetails,
-                                                  @PathVariable UUID requestId) {
+                                                  @PathVariable UUID requestId,
+                                                  @RequestBody @Valid CancellationRequest cancellationRequest) {
         UUID userId = userDetails.getId();
-        return ResponseEntity.ok(bookingRequestService.cancelBookingRequest(userId, requestId));
+        return ResponseEntity.ok(bookingRequestService.cancelBookingRequest(userId, requestId, cancellationRequest.getBankNumber(), cancellationRequest.getBankName()));
     }
 }

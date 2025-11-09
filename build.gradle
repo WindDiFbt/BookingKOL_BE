@@ -52,6 +52,7 @@ dependencies {
     implementation 'fr.opensagres.xdocreport:org.apache.poi.xwpf.converter.pdf:1.0.6'
     implementation 'org.json:json:20250517'
     implementation 'com.github.ben-manes.caffeine:caffeine:3.2.2'
+    implementation 'org.jobrunr:jobrunr-spring-boot-3-starter:7.3.0'
 }
 
 

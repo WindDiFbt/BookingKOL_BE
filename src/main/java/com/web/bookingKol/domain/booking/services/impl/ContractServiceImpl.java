@@ -9,6 +9,8 @@ import com.web.bookingKol.domain.booking.services.ContractService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 
 @Service
@@ -25,10 +27,35 @@ public class ContractServiceImpl implements ContractService {
         } while (contractRepository.existsByContractNumber(code));
         contract.setContractNumber(code);
         contract.setBookingRequest(bookingRequest);
-        contract.setStatus(Enums.ContractStatus.SIGNED.name());
+        contract.setStatus(Enums.ContractStatus.DRAFT.name());
         contract.setCreatedAt(Instant.now());
-        contract.setAmount(bookingRequest.getKol().getMinBookingPrice());
+        BigDecimal durationBig = BigDecimal.valueOf(
+                Duration.between(bookingRequest.getStartAt(), bookingRequest.getEndAt()).toMinutes() / 60.0
+        );
+        BigDecimal totalAmount = bookingRequest.getKol().getMinBookingPrice().multiply(durationBig);
+        contract.setAmount(totalAmount);
         contractRepository.save(contract);
         return contract;
+    }
+
+    @Override
+    public void confirmContract(Contract contract) {
+        contract.setStatus(Enums.ContractStatus.SIGNED.name());
+        contract.setUpdatedAt(Instant.now());
+        contractRepository.save(contract);
+    }
+
+    @Override
+    public void cancelContract(Contract contract) {
+        contract.setStatus(Enums.ContractStatus.CANCELLED.name());
+        contract.setUpdatedAt(Instant.now());
+        contractRepository.save(contract);
+    }
+
+    @Override
+    public void paidContract(Contract contract) {
+        contract.setStatus(Enums.ContractStatus.PAID.name());
+        contract.setUpdatedAt(Instant.now());
+        contractRepository.save(contract);
     }
 }

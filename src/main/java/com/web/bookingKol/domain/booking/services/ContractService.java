@@ -7,4 +7,11 @@ import org.springframework.stereotype.Service;
 @Service
 public interface ContractService {
     Contract createNewContract(BookingRequest bookingRequest);
+
+    void confirmContract(Contract contract);
+
+    void cancelContract(Contract contract);
+
+    void paidContract(Contract contract);
+
 }

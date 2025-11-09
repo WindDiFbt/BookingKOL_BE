@@ -1,6 +1,5 @@
-package com.web.bookingKol.temp_models;
+package com.web.bookingKol.domain.course.models;
 
-import com.web.bookingKol.domain.course.CoursePackage;
 import com.web.bookingKol.domain.payment.models.Payment;
 import com.web.bookingKol.domain.user.models.User;
 import jakarta.persistence.*;
@@ -32,7 +31,7 @@ public class PurchasedCoursePackage {
     private CoursePackage coursePackage;
 
     @Column(name = "current_price")
-    private Integer currentPrice;
+    private Long currentPrice;
 
     @Size(max = 20)
     @Column(name = "status", length = 20)
@@ -41,7 +40,6 @@ public class PurchasedCoursePackage {
     @Column(name = "is_paid")
     private Boolean isPaid;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "payment_id", nullable = false)
     private Payment payment;
@@ -55,5 +53,12 @@ public class PurchasedCoursePackage {
 
     @Column(name = "end_date")
     private Instant endDate;
+
+    @Column(name = "purchased_course_number")
+    private String purchasedCourseNumber;
+
+    @Size(max = 20)
+    @Column(name = "phone_number", length = 20)
+    private String phoneNumber;
 
 }

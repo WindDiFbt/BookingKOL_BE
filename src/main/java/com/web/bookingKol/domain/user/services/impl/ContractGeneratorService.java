@@ -37,8 +37,12 @@ public class ContractGeneratorService {
             String templatePath = "src/main/resources/templates/contract_template.docx";
 
             Path tempDir = Files.createTempDirectory("contracts_");
-            String fileName = "contract_" + contractId + ".docx";
+            String dateFolder = LocalDate.now().toString();
+            String uniqueSuffix = UUID.randomUUID().toString().substring(0, 8);
+
+            String fileName = String.format("contract_%s_%s.docx", contractId, uniqueSuffix);
             Path filePath = tempDir.resolve(fileName);
+
 
             try (FileInputStream fis = new FileInputStream(templatePath);
                  XWPFDocument document = new XWPFDocument(fis)) {

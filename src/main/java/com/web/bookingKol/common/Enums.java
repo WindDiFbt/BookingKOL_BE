@@ -83,6 +83,7 @@ public class Enums {
         REJECTED,
         CANCELLED,
         CONTRACT_SIGNED,
+        PAID,
         IN_PROGRESS,
         DELIVERED,
         COMPLETED,
@@ -95,9 +96,13 @@ public class Enums {
         DRAFT,
         SENT,
         SIGNED,
+        PAID,
         COMPLETED,
         CANCELLED,
-        EXPIRED
+        EXPIRED,
+        WAIT_FOR_REFUND,
+        REFUNDED,
+        REJECT
     }
 
     @Getter
@@ -110,6 +115,21 @@ public class Enums {
         private BookingRules(Integer value) {
             this.value = value;
         }
+    }
+
+    @Getter
+    public enum BookingParticipantRole {
+        KOL,
+        LIVE
+    }
+
+
+    @Getter
+    public enum PaymentScheduleStatus {
+        PENDING,
+        PAID,
+        OVERDUE,
+        CANCELLED
     }
 
     @Getter
@@ -166,6 +186,12 @@ public class Enums {
         FAILED,
         CANCELLED,
         ORPHANED
+    }
+
+    @Getter
+    public enum RefundStatus {
+        PENDING,
+        REFUNDED
     }
 
     // ---------------- PLATFORM ----------------

@@ -15,16 +15,20 @@ import com.web.bookingKol.domain.file.services.FileService;
 import com.web.bookingKol.domain.file.services.SupabaseStorageService;
 import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.domain.user.repositories.UserRepository;
-import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.text.Normalizer;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Service
 public class FileServiceImpl implements FileService {
@@ -72,13 +76,10 @@ public class FileServiceImpl implements FileService {
         fileUploading.setUploader(uploader);
         fileUploading.setStatus(Enums.FileStatus.ACTIVE.name());
 
-        String extension = FilenameUtils.getExtension(file.getOriginalFilename());
-        String fileName = extension == null || extension.isEmpty()
-                ? fileId.toString()
-                : fileId + "." + extension.toLowerCase();
-        fileUploading.setFileName(fileName);
+        String safeFileName = sanitizeFilename(file.getOriginalFilename());
+        fileUploading.setFileName(safeFileName);
 
-        String fileUrl = supabaseStorageService.uploadFile(file, fileName, file.getContentType());
+        String fileUrl = supabaseStorageService.uploadFile(file, safeFileName, file.getContentType());
         fileUploading.setFileUrl(fileUrl);
 
         fileUploading.setSizeBytes(file.getSize());
@@ -132,5 +133,30 @@ public class FileServiceImpl implements FileService {
             file.setStatus(Enums.FileStatus.DELETED.name());
             fileRepository.save(file);
         }
+    }
+
+    private static String sanitizeFilename(String originalFilename) {
+        if (originalFilename == null || originalFilename.isEmpty()) {
+            return "untitled";
+        }
+        int lastDot = originalFilename.lastIndexOf('.');
+        String nameWithoutExt = (lastDot > 0) ? originalFilename.substring(0, lastDot) : originalFilename;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
+        String formattedTime = LocalDateTime
+                .ofInstant(Instant.now(), ZoneId.of("UTC"))
+                .format(formatter);
+        String time = "_" + formattedTime;
+        String extension = (lastDot > 0) ? originalFilename.substring(lastDot) : "";
+        String normalized = Normalizer.normalize(nameWithoutExt, Normalizer.Form.NFD);
+        Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
+        String noAccents = pattern.matcher(normalized).replaceAll("");
+        String safeName = noAccents.toLowerCase()
+                .replaceAll("[^a-z0-9_\\-\\s]", " ")
+                .replaceAll("[\\s\\-]+", "-")
+                .replaceAll("^-+|-+$", "");
+        if (safeName.isEmpty()) {
+            return "file" + time + extension;
+        }
+        return safeName + time + extension;
     }
 }

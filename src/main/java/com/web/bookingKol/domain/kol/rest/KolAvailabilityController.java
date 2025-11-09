@@ -2,8 +2,7 @@ package com.web.bookingKol.domain.kol.rest;
 
 
 import com.web.bookingKol.common.payload.ApiResponse;
-import com.web.bookingKol.domain.kol.dtos.KolAvailabilityDTO;
-import com.web.bookingKol.domain.kol.dtos.TimeSlotDTO;
+import com.web.bookingKol.domain.kol.dtos.*;
 import com.web.bookingKol.domain.kol.models.KolAvailability;
 import com.web.bookingKol.domain.kol.models.KolWorkTimeDTO;
 import com.web.bookingKol.domain.kol.services.KolAvailabilityService;
@@ -17,6 +16,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -94,7 +94,7 @@ public class KolAvailabilityController {
     }
 
 
-    @PreAuthorize("hasAnyAuthority('ADMIN','SUPER_ADMIN','KOL')")
+    @PreAuthorize("hasAnyAuthority('ADMIN','SUPER_ADMIN')")
     @PutMapping("/schedule/{workTimeId}")
     public ResponseEntity<ApiResponse<KolWorkTimeDTO>> updateKolWorkTime(
             @PathVariable UUID workTimeId,
@@ -111,6 +111,64 @@ public class KolAvailabilityController {
     ) {
         return ResponseEntity.ok(availabilityService.createKolScheduleByAdmin(dto));
     }
+
+
+    // admin xóa lịch rảnh của kol
+    @PreAuthorize("hasAnyAuthority('ADMIN','SUPER_ADMIN')")
+    @DeleteMapping("/admin/schedule/{availabilityId}")
+    public ResponseEntity<ApiResponse<String>> deleteKolAvailabilityByAdmin(
+            @PathVariable UUID availabilityId
+    ) {
+        return ResponseEntity.ok(availabilityService.deleteKolAvailabilityByAdmin(availabilityId));
+    }
+
+    @PreAuthorize("hasAuthority('KOL')")
+    @PutMapping("/kol/remove-range")
+    public ResponseEntity<ApiResponse<String>> removeAvailabilityRange(
+            Authentication authentication,
+            @RequestBody TimeRangeDTO request
+    ) {
+        String email = authentication.getName();
+
+        TimeRangeDTO timeRange = new TimeRangeDTO();
+        timeRange.setStartRemove(request.getStartRemove());
+        timeRange.setEndRemove(request.getEndRemove());
+
+        return ResponseEntity.ok(
+                availabilityService.removeAvailabilityRange(email, request.getAvailabilityId(), timeRange)
+        );
+    }
+
+
+    // admin thêm lịch rảnh
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN')")
+    @PostMapping("/admin/add")
+    public ResponseEntity<ApiResponse<String>> adminAddAvailability(
+            @RequestBody AdminCreateAvailabilityDTO dto
+    ) {
+        return ResponseEntity.ok(availabilityService.adminCreateAvailability(dto));
+    }
+
+
+    @PreAuthorize("hasAnyAuthority('ADMIN','SUPER_ADMIN')")
+    @PostMapping("/admin/worktime/create")
+    public ResponseEntity<ApiResponse<?>> createKolWorkTimeByAdmin(@RequestBody KolWorkTimeCreateDTO dto) {
+        return ResponseEntity.ok(kolAvailabilityService.createKolWorkTimeByAdmin(dto));
+    }
+
+    @PreAuthorize("hasAuthority('KOL')")
+    @PutMapping("/kol/update")
+    public ResponseEntity<ApiResponse<KolAvailabilityDTO>> updateKolAvailability(
+            Authentication authentication,
+            @RequestBody KolAvailabilityUpdateDTO dto
+    ) {
+        String email = authentication.getName();
+        return ResponseEntity.ok(availabilityService.updateKolAvailability(email, dto));
+    }
+
+
+
+
 
 
 

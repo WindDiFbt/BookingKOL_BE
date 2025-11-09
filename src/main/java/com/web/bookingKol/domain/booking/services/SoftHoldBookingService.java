@@ -10,7 +10,6 @@ import com.web.bookingKol.domain.kol.repositories.KolProfileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.caffeine.CaffeineCache;
 import org.springframework.http.HttpStatus;
@@ -22,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 @Service
 public class SoftHoldBookingService {
@@ -31,6 +31,7 @@ public class SoftHoldBookingService {
     private BookingValidationService bookingValidationService;
     @Autowired
     private KolProfileRepository kolProfileRepository;
+    private final Logger logger = Logger.getLogger("SOFT_HOLD_SERVICE");
 
     public String generateHoldKey(UUID kolId, String startTimeIso, String endTimeIso) {
         return kolId + "_" + startTimeIso + "_" + endTimeIso;
@@ -38,18 +39,17 @@ public class SoftHoldBookingService {
 
     public ApiResponse<SoftHoldSlotDTO> attemptHoldSlot(UUID kolId, Instant startTime, Instant endTime, String holdingUserId) {
         KolProfile kol = kolProfileRepository.findById(kolId).
-                orElseThrow(() -> new IllegalArgumentException("Kol Not Found"));
+                orElseThrow(() -> new IllegalArgumentException("Không tìm thấy Kol"));
         BookingSingleReqDTO bookingSingleReqDTO = new BookingSingleReqDTO();
         bookingSingleReqDTO.setKolId(UUID.randomUUID());
         bookingSingleReqDTO.setStartAt(startTime);
         bookingSingleReqDTO.setEndAt(endTime);
-        bookingSingleReqDTO.setIsConfirmWithTerms(true);
         bookingValidationService.validateBookingRequest(bookingSingleReqDTO, kol);
         Cache cache = cacheManager.getCache(CacheConfig.SOFT_HOLD_CACHE);
         if (cache == null) {
             return ApiResponse.<SoftHoldSlotDTO>builder()
                     .status(HttpStatus.OK.value())
-                    .message(List.of("Soft Hold Bypassed: Success"))
+                    .message(List.of("Giữ chỗ tạm thời: Thành công"))
                     .data(SoftHoldSlotDTO.builder().kolId(kolId).startTimeIso(startTime).endTimeIso(endTime).build())
                     .build();
         }
@@ -61,7 +61,7 @@ public class SoftHoldBookingService {
                 if (!existingHold.userId().equals(holdingUserId)) {
                     boolean isOverlapping = startTime.isBefore(existingHold.endAt()) && endTime.isAfter(existingHold.startAt());
                     if (isOverlapping) {
-                        throw new IllegalArgumentException("Slot overlaps with another user's soft hold: FAILURE");
+                        throw new IllegalArgumentException("Khung giờ trùng với một người dùng khác đang giữ chỗ: THẤT BẠI");
                     }
                     updatedHoldsMap.put(entry.getKey(), existingHold);
                 }
@@ -73,7 +73,7 @@ public class SoftHoldBookingService {
                 cache.put(kolId, updatedHoldsMap);
                 return ApiResponse.<SoftHoldSlotDTO>builder()
                         .status(HttpStatus.OK.value())
-                        .message(List.of("Slot already held by YOU: SUCCESS (TTL refreshed)"))
+                        .message(List.of("Bạn đã giữ chỗ này: THÀNH CÔNG (TTL đã được làm mới)"))
                         .data(null)
                         .build();
             }
@@ -82,7 +82,7 @@ public class SoftHoldBookingService {
             cache.put(kolId, updatedHoldsMap);
             return ApiResponse.<SoftHoldSlotDTO>builder()
                     .status(HttpStatus.OK.value())
-                    .message(List.of("Hold slot SUCCESSFUL"))
+                    .message(List.of("Giữ chỗ THÀNH CÔNG"))
                     .data(SoftHoldSlotDTO.builder().kolId(kolId).startTimeIso(startTime).endTimeIso(endTime).build())
                     .build();
         }
@@ -93,8 +93,20 @@ public class SoftHoldBookingService {
         return null;
     }
 
-    @CacheEvict(value = CacheConfig.SOFT_HOLD_CACHE, key = "#root.target.generateHoldKey(#kolId, #startTimeIso, #endTimeIso)")
-    public void releaseSlot(UUID kolId, String startTimeIso, String endTimeIso) {
+    public void releaseSlot(UUID kolId, Instant startTime, Instant endTime) {
+        Cache cache = cacheManager.getCache(CacheConfig.SOFT_HOLD_CACHE);
+        if (cache == null) {
+            logger.warning("Cache not found: " + CacheConfig.SOFT_HOLD_CACHE);
+            return;
+        }
+        String targetSlotId = startTime.toString() + "_" + endTime.toString();
+        synchronized (kolId.toString().intern()) {
+            Map<String, SoftHoldDetails> synchronizedMap = cache.get(kolId, Map.class);
+            if (synchronizedMap != null) {
+                synchronizedMap.remove(targetSlotId);
+                cache.put(kolId, synchronizedMap);
+            }
+        }
     }
 
     public boolean checkAndReleaseSlot(UUID kolId, Instant startTime, Instant endTime, String currentUserId) {

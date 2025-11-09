@@ -10,7 +10,8 @@ import java.util.UUID;
 public class LivestreamMetricDTO {
     private Integer id;
     private UUID kolWorkTimeId;
-
+    private UUID bookingId;
+    private String requestNumber;
     private BigDecimal revenue;
 
     private Integer liveViewsOver1min;

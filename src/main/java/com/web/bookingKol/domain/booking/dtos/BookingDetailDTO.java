@@ -2,6 +2,10 @@ package com.web.bookingKol.domain.booking.dtos;
 
 import com.web.bookingKol.domain.file.dtos.FileUsageDTO;
 import com.web.bookingKol.domain.kol.dtos.KolDetailDTO;
+import com.web.bookingKol.domain.kol.dtos.feedbacks.FeedbackDTO;
+import com.web.bookingKol.domain.kol.dtos.feedbacks.FeedbackUserViewDTO;
+import com.web.bookingKol.domain.kol.models.KolWorkTimeDTO;
+import com.web.bookingKol.domain.payment.dtos.refund.RefundDTO;
 import com.web.bookingKol.domain.user.dtos.UserDTO;
 import lombok.Data;
 
@@ -12,6 +16,7 @@ import java.util.UUID;
 @Data
 public class BookingDetailDTO {
     private UUID id;
+    private String requestNumber;
     private UUID campaignId;
     private KolDetailDTO kol;
     private UserDTO user;
@@ -23,6 +28,7 @@ public class BookingDetailDTO {
     private String fullName;
     private String phone;
     private String email;
+    private String platform;
 
     private Instant startAt;
     private Instant endAt;
@@ -32,4 +38,7 @@ public class BookingDetailDTO {
 
     private Set<FileUsageDTO> attachedFiles;
     private Set<ContractDTO> contracts;
+    private Set<KolWorkTimeDTO> kolWorkTimes;
+    private RefundDTO refundDTO;
+    private Set<FeedbackDTO> feedbackDTOS;
 }

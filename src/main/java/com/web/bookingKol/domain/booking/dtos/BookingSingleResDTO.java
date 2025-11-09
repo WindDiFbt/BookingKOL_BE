@@ -20,6 +20,7 @@ public class BookingSingleResDTO {
     private String status;
     private String description;
     private String location;
+    private String platform;
 
     private Instant startAt;
     private Instant endAt;
