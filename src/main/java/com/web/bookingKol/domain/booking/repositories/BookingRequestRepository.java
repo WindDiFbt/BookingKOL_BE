@@ -4,12 +4,14 @@ import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.booking.models.Campaign;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -103,6 +105,21 @@ public interface BookingRequestRepository extends JpaRepository<BookingRequest, 
                                                 @Param("keyword") String keyword,
                                                 Pageable pageable);
 
+    @Query("SELECT DISTINCT b FROM BookingRequest b " +
+            "LEFT JOIN FETCH b.contracts c " +
+            "WHERE b.kol.id = :kolId " +
+            "AND b.createdAt BETWEEN :start AND :end " +
+            "AND b.status IN :statuses")
+    List<BookingRequest> findAllByKolIdAndStartAtBetweenAndStatusIn(
+            UUID kolId, Instant start, Instant end, List<String> statuses);
 
+    @Query("SELECT b.status as label, COUNT(b) as value " +
+            "FROM BookingRequest b " +
+            "WHERE b.kol.id = :kolId AND b.createdAt >= :start AND b.createdAt <= :end " +
+            "GROUP BY b.status")
+    List<IChartDataPointProjection> getStatusBreakdown(UUID kolId, Instant start, Instant end);
+
+    List<BookingRequest> findAllByKolIdAndStatusInAndStartAtAfter(
+            UUID kolId, List<String> statuses, Instant now, Sort sort);
 
 }
