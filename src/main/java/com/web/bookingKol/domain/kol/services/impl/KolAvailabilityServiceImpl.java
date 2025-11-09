@@ -2,12 +2,12 @@ package com.web.bookingKol.domain.kol.services.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.web.bookingKol.common.Enums;
 import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.common.services.EmailService;
-import com.web.bookingKol.domain.kol.dtos.KolAvailabilityDTO;
-import com.web.bookingKol.domain.kol.dtos.TimeRangeDTO;
-import com.web.bookingKol.domain.kol.dtos.TimeSlotDTO;
-import com.web.bookingKol.domain.kol.dtos.WorkTimeDTO;
+import com.web.bookingKol.domain.booking.models.BookingRequest;
+import com.web.bookingKol.domain.booking.repositories.BookingRequestRepository;
+import com.web.bookingKol.domain.kol.dtos.*;
 import com.web.bookingKol.domain.kol.models.KolAvailability;
 import com.web.bookingKol.domain.kol.models.KolProfile;
 import com.web.bookingKol.domain.kol.models.KolWorkTime;
@@ -50,6 +50,8 @@ public class KolAvailabilityServiceImpl implements KolAvailabilityService {
     private KolWorkTimeRepository kolWorkTimeRepository;
     @Autowired
     private KolProfileRepository kolProfileRepository;
+    @Autowired
+    private BookingRequestRepository bookingRequestRepository;
 
     @Override
     public ApiResponse<List<KolAvailabilityDTO>> getKolSchedule(UUID kolId, Instant start, Instant end) {
@@ -236,32 +238,33 @@ public class KolAvailabilityServiceImpl implements KolAvailabilityService {
             Instant cursor = freeStart;
 
             if (overlaps.isEmpty()) {
-                if (Duration.between(freeStart, freeEnd).toHours() >= 2) {
-                    freeSlots.add(new TimeSlotDTO(availability.getId(), freeStart, freeEnd));
-                }
+                freeSlots.add(new TimeSlotDTO(availability.getId(), freeStart, freeEnd));
                 continue;
             }
+
 
             for (KolWorkTime w : overlaps) {
                 Instant endOfFree = w.getStartAt();
                 long hoursFree = Duration.between(cursor, endOfFree).toHours();
 
-                if (hoursFree >= 2) {
+                if (hoursFree >= 1) {
                     Instant adjustedStart = cursor.isBefore(freeStart) ? freeStart : cursor;
                     if (adjustedStart.isBefore(endOfFree)) {
                         freeSlots.add(new TimeSlotDTO(availability.getId(), adjustedStart, endOfFree));
                     }
                 }
 
+
                 cursor = w.getEndAt().plus(Duration.ofHours(1));
             }
 
             if (cursor.isBefore(freeEnd)) {
                 long hoursRemain = Duration.between(cursor, freeEnd).toHours();
-                if (hoursRemain >= 2) {
+                if (hoursRemain >= 1) {
                     freeSlots.add(new TimeSlotDTO(availability.getId(), cursor, freeEnd));
                 }
             }
+
         }
 
 
@@ -606,6 +609,191 @@ public class KolAvailabilityServiceImpl implements KolAvailabilityService {
                 .message(List.of("Xóa lịch thành công"))
                 .build();
     }
+
+
+    @Override
+    @Transactional
+    public ApiResponse<String> adminCreateAvailability(AdminCreateAvailabilityDTO dto) {
+        KolProfile kol = kolProfileRepository.findById(dto.getKolId())
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy KOL với ID này"));
+
+        Instant start = dto.getStartAt();
+        Instant end = dto.getEndAt();
+
+        if (start == null || end == null || !end.isAfter(start)) {
+            return ApiResponse.<String>builder()
+                    .status(400)
+                    .message(List.of("Thời gian bắt đầu/kết thúc không hợp lệ"))
+                    .build();
+        }
+
+        boolean overlapExists = kolAvailabilityRepository.findByKolIdAndDateRange(
+                kol.getId(), start, end
+        ).stream().anyMatch(existing ->
+                !(existing.getEndAt().isBefore(start) || existing.getStartAt().isAfter(end))
+        );
+
+        if (overlapExists) {
+            return ApiResponse.<String>builder()
+                    .status(400)
+                    .message(List.of("Khoảng thời gian này đã trùng với lịch rảnh hiện có"))
+                    .build();
+        }
+
+        KolAvailability newAvailability = new KolAvailability();
+        newAvailability.setId(UUID.randomUUID());
+        newAvailability.setKol(kol);
+        newAvailability.setStartAt(start);
+        newAvailability.setEndAt(end);
+        newAvailability.setStatus("AVAILABLE");
+        newAvailability.setCreatedAt(Instant.now());
+
+        kolAvailabilityRepository.save(newAvailability);
+
+        User user = kol.getUser();
+        if (user.getEmail() != null) {
+            try {
+                emailService.sendHtmlEmail(
+                        user.getEmail(),
+                        " Admin đã thêm lịch rảnh cho bạn",
+                        """
+                        <p>Admin đã thêm lịch rảnh mới cho bạn trên hệ thống BookingKOL:</p>
+                        <ul>
+                          <li><b>Bắt đầu:</b> %s</li>
+                          <li><b>Kết thúc:</b> %s</li>
+                        </ul>
+                        <p>Hãy kiểm tra lịch của bạn trên hệ thống nhé.</p>
+                        """.formatted(start, end)
+                );
+            } catch (Exception e) {
+                logger.warn("Tạo lịch rảnh cho KOL thành công nhưng gửi email thất bại: {}", e.getMessage());
+            }
+        }
+
+        return ApiResponse.<String>builder()
+                .status(201)
+                .message(List.of("Thêm lịch rảnh cho KOL thành công"))
+                .data("Lịch từ %s đến %s đã được tạo cho KOL %s".formatted(start, end, user.getFullName()))
+                .build();
+    }
+
+
+
+    // admin thêm lịch booking request
+    @Override
+    @Transactional
+    public ApiResponse<?> createKolWorkTimeByAdmin(KolWorkTimeCreateDTO dto) {
+
+        BookingRequest booking = bookingRequestRepository.findById(dto.getBookingRequestId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy booking request."));
+
+        KolAvailability availability = kolAvailabilityRepository.findById(dto.getAvailabilityId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy lịch rảnh của KOL."));
+
+        KolProfile kol = kolProfileRepository.findById(dto.getKolId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy KOL."));
+
+        if (!availability.getKol().getId().equals(kol.getId())) {
+            throw new RuntimeException("Lịch rảnh không thuộc về KOL này.");
+        }
+
+        // Kiểm tra thời gian hợp lệ
+        if (dto.getStartAt().isBefore(availability.getStartAt()) ||
+                dto.getEndAt().isAfter(availability.getEndAt())) {
+            throw new RuntimeException("Ca làm việc vượt quá khung giờ rảnh của KOL!");
+        }
+
+
+            KolWorkTime workTime = new KolWorkTime();
+            workTime.setId(UUID.randomUUID());
+            workTime.setAvailability(availability);
+            workTime.setBookingRequest(booking);
+            workTime.setStartAt(dto.getStartAt());
+            workTime.setEndAt(dto.getEndAt());
+            workTime.setNote(dto.getNote());
+            workTime.setStatus(Enums.BookingStatus.IN_PROGRESS.name());
+            kolWorkTimeRepository.save(workTime);
+
+
+        availability.getWorkTimes().add(workTime);
+        kolAvailabilityRepository.save(availability);
+
+        return ApiResponse.builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Tạo ca làm việc thành công cho KOL"))
+                .data(new Object() {
+                    public final UUID bookingRequestId = booking.getId();
+                    public final UUID availabilityId = availability.getId();
+                    public final UUID kolId = kol.getId();
+                    public final Instant startAt = dto.getStartAt();
+                    public final Instant endAt = dto.getEndAt();
+                    public final String note = dto.getNote();
+                    public final String status = workTime.getStatus();
+                })
+                .build();
+    }
+
+
+
+    // kol sửa lịch rảnh
+    @Override
+    @Transactional
+    public ApiResponse<KolAvailabilityDTO> updateKolAvailability(String email, KolAvailabilityUpdateDTO dto) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy người dùng"));
+
+        KolProfile kol = user.getKolProfile();
+        if (kol == null) {
+            return ApiResponse.<KolAvailabilityDTO>builder()
+                    .status(400)
+                    .message(List.of("Tài khoản này không phải là KOL"))
+                    .build();
+        }
+
+        KolAvailability availability = kolAvailabilityRepository.findById(dto.getAvailabilityId())
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy lịch rảnh"));
+
+        if (!availability.getKol().getId().equals(kol.getId())) {
+            return ApiResponse.<KolAvailabilityDTO>builder()
+                    .status(403)
+                    .message(List.of("Lịch này không thuộc về bạn"))
+                    .build();
+        }
+
+        if (dto.getNewEndAt().isBefore(dto.getNewStartAt())) {
+            return ApiResponse.<KolAvailabilityDTO>builder()
+                    .status(400)
+                    .message(List.of("Thời gian kết thúc không thể trước thời gian bắt đầu"))
+                    .build();
+        }
+
+        boolean overlapExists = kolAvailabilityRepository
+                .findByKolIdAndDateRange(kol.getId(), dto.getNewStartAt(), dto.getNewEndAt())
+                .stream()
+                .anyMatch(existing ->
+                        !existing.getId().equals(dto.getAvailabilityId()) &&
+                                !(existing.getEndAt().isBefore(dto.getNewStartAt()) || existing.getStartAt().isAfter(dto.getNewEndAt()))
+                );
+
+        if (overlapExists) {
+            return ApiResponse.<KolAvailabilityDTO>builder()
+                    .status(409)
+                    .message(List.of("Khoảng thời gian này bị trùng với lịch rảnh khác của bạn"))
+                    .build();
+        }
+
+        availability.setStartAt(dto.getNewStartAt());
+        availability.setEndAt(dto.getNewEndAt());
+
+        kolAvailabilityRepository.save(availability);
+
+        return ApiResponse.<KolAvailabilityDTO>builder()
+                .status(200)
+                .message(List.of("Cập nhật lịch rảnh thành công"))
+                .data(new KolAvailabilityDTO(availability))
+                .build();
+    }
+
 
 
 

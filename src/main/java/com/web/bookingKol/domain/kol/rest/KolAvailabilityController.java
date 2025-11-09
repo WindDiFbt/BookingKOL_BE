@@ -2,9 +2,7 @@ package com.web.bookingKol.domain.kol.rest;
 
 
 import com.web.bookingKol.common.payload.ApiResponse;
-import com.web.bookingKol.domain.kol.dtos.KolAvailabilityDTO;
-import com.web.bookingKol.domain.kol.dtos.TimeRangeDTO;
-import com.web.bookingKol.domain.kol.dtos.TimeSlotDTO;
+import com.web.bookingKol.domain.kol.dtos.*;
 import com.web.bookingKol.domain.kol.models.KolAvailability;
 import com.web.bookingKol.domain.kol.models.KolWorkTimeDTO;
 import com.web.bookingKol.domain.kol.services.KolAvailabilityService;
@@ -140,6 +138,36 @@ public class KolAvailabilityController {
                 availabilityService.removeAvailabilityRange(email, request.getAvailabilityId(), timeRange)
         );
     }
+
+
+    // admin thêm lịch rảnh
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN')")
+    @PostMapping("/admin/add")
+    public ResponseEntity<ApiResponse<String>> adminAddAvailability(
+            @RequestBody AdminCreateAvailabilityDTO dto
+    ) {
+        return ResponseEntity.ok(availabilityService.adminCreateAvailability(dto));
+    }
+
+
+    @PreAuthorize("hasAnyAuthority('ADMIN','SUPER_ADMIN')")
+    @PostMapping("/admin/worktime/create")
+    public ResponseEntity<ApiResponse<?>> createKolWorkTimeByAdmin(@RequestBody KolWorkTimeCreateDTO dto) {
+        return ResponseEntity.ok(kolAvailabilityService.createKolWorkTimeByAdmin(dto));
+    }
+
+    @PreAuthorize("hasAuthority('KOL')")
+    @PutMapping("/kol/update")
+    public ResponseEntity<ApiResponse<KolAvailabilityDTO>> updateKolAvailability(
+            Authentication authentication,
+            @RequestBody KolAvailabilityUpdateDTO dto
+    ) {
+        String email = authentication.getName();
+        return ResponseEntity.ok(availabilityService.updateKolAvailability(email, dto));
+    }
+
+
+
 
 
 
