@@ -1,5 +1,7 @@
 package com.web.bookingKol.domain.booking.repositories;
 
+import com.web.bookingKol.domain.admin.dashboard.BookingMonthlyTrendDTO;
+import com.web.bookingKol.domain.admin.dashboard.KolBookingRevenueDTO;
 import com.web.bookingKol.domain.booking.models.Contract;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,26 +45,53 @@ public interface ContractRepository extends JpaRepository<Contract, UUID> {
 
     @Query("SELECT SUM(c.amount) FROM Contract c " +
             "JOIN c.bookingRequest b " +
-            "WHERE b.kol.id = :kolId " +
-            "AND c.status = :status " +
-            "AND b.createdAt BETWEEN :start AND :end")
-    BigDecimal getRevenueBetween(UUID kolId, Instant start, Instant end, String status);
+            "WHERE c.status = :status " +
+            "AND b.startAt BETWEEN :start AND :end AND b.endAt BETWEEN :start AND :end")
+    BigDecimal getRevenueBetween(Instant start, Instant end, String status);
 
     @Query("SELECT SUM(c.amount) FROM Contract c " +
             "JOIN c.bookingRequest b " +
-            "WHERE b.kol.id = :kolId " +
-            "AND c.status IN :statuses " +
-            "AND b.createdAt BETWEEN :start AND :end")
-    BigDecimal getTotalRevenueBetween(UUID kolId, Instant start, Instant end, List<String> statuses);
+            "WHERE c.status IN :statuses " +
+            "AND b.startAt BETWEEN :start AND :end AND b.endAt BETWEEN :start AND :end")
+    BigDecimal getTotalRevenueBetween(Instant start, Instant end, List<String> statuses);
 
-    // Lấy dữ liệu cho biểu đồ doanh thu
     @Query("SELECT CAST(b.endAt AS date) as label, SUM(c.amount) as value " +
             "FROM Contract c " +
             "JOIN c.bookingRequest b " +
-            "WHERE b.kol.id = :kolId " +
-            "AND b.status = 'COMPLETED' " +
+            "WHERE b.status = 'COMPLETED' " +
             "AND b.endAt BETWEEN :start AND :end " +
             "GROUP BY CAST(b.endAt AS date) " +
             "ORDER BY label ")
-    List<IChartDataPointProjection> getRevenueChartData(UUID kolId, Instant start, Instant end);
+    List<IChartDataPointProjection> getRevenueChartData(Instant start, Instant end);
+
+    @Query("SELECT b.status as label, COUNT(b) as value " +
+            "FROM Contract b " +
+            "WHERE b.createdAt >= :start AND b.createdAt <= :end " +
+            "AND b.status NOT IN :statuses " +
+            "GROUP BY b.status")
+    List<IChartDataPointProjection> getStatusBreakdown(Instant start, Instant end, List<String> statuses);
+
+    @Query("SELECT " +
+            "  YEAR(b.createdAt) AS year, " +   // <-- SỬA Ở ĐÂY
+            "  MONTH(b.createdAt) AS month, " + // <-- SỬA Ở ĐÂY
+            "  COUNT(b.id) AS count " +
+            "FROM Contract b " +
+            "WHERE b.createdAt >= :startDate " +
+            "AND b.status IN :statuses " +
+            "GROUP BY YEAR(b.createdAt), MONTH(b.createdAt) " + // <-- SỬA Ở ĐÂY
+            "ORDER BY year, month ASC")
+    List<BookingMonthlyTrendDTO> findBookingMonthlyTrend(@Param("startDate") Instant startDate, List<String> statuses);
+
+    @Query("SELECT " +
+            "  k.id AS kolId, " +
+            "  k.user.fullName AS kolName, " +
+            "  SUM(c.amount) AS totalRevenue " +
+            "FROM Contract c " +
+            "JOIN c.bookingRequest.kol k " +
+            "WHERE c.amount IS NOT NULL " + // Chỉ tính các booking có doanh thu
+            "AND c.bookingRequest.status IN :statuses " +
+            "AND c.bookingRequest.startAt BETWEEN :start AND :end AND c.bookingRequest.endAt BETWEEN :start AND :end " +
+            "GROUP BY k.id, k.user.fullName " +
+            "ORDER BY totalRevenue DESC")
+    List<KolBookingRevenueDTO> findTopKolBookingRevenue(Pageable pageable, List<String> statuses, Instant start, Instant end);
 }
