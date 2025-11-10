@@ -78,4 +78,6 @@ public interface KolProfileRepository extends JpaRepository<KolProfile, UUID> {
             Pageable pageable
     );
 
+    @Query("SELECT kp FROM KolProfile kp JOIN FETCH kp.user")
+    List<KolProfile> findAllWithUser();
 }
