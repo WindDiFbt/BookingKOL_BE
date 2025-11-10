@@ -150,4 +150,7 @@ public interface BookingRequestRepository extends JpaRepository<BookingRequest, 
             "AND b.status IN :statuses " +
             "GROUP BY b.platform")
     List<PlatformCountDTO> findPlatformCounts(List<String> statuses, Instant start, Instant end);
+
+    boolean existsByCampaign_Id(UUID campaignId);
+
 }
