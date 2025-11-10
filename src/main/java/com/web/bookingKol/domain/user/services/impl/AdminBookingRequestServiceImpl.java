@@ -68,6 +68,15 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
                     .build();
         }
 
+        boolean exists = bookingRequestRepository.existsByCampaign_Id(campaign.getId());
+        if (exists) {
+            return ApiResponse.builder()
+                    .status(HttpStatus.CONFLICT.value())
+                    .message(List.of("Campaign này đã có Booking Request, không thể tạo thêm."))
+                    .data(Map.of("campaignId", campaign.getId(), "campaignName", campaign.getName()))
+                    .build();
+        }
+
 
         BookingRequest booking = new BookingRequest();
         booking.setId(UUID.randomUUID());
@@ -94,32 +103,36 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
         contract.setUpdatedAt(Instant.now());
         contractRepository.saveAndFlush(contract);
 
-        if (contractFile != null && !contractFile.isEmpty()) {
-            try {
+        try {
+            if (contractFile != null && !contractFile.isEmpty()) {
                 String uploadDir = "uploads/contracts/" + Instant.now().toEpochMilli();
                 Files.createDirectories(Paths.get(uploadDir));
 
                 String fileName = UUID.randomUUID() + "_" + contractFile.getOriginalFilename();
                 Path filePath = Paths.get(uploadDir).resolve(fileName);
                 Files.copy(contractFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
                 savedContractPath = filePath.toString();
-            } catch (IOException e) {
-                throw new RuntimeException("Lỗi khi lưu file hợp đồng", e);
-            }
-        } else {
-            var placeholders = Map.of(
-                    "brand_name", campaign.getCreatedBy().getFullName(),
-                    "kol_name", booking.getUser().getFullName(),
-                    "campaign_name", campaign.getName(),
-                    "today", LocalDate.now().toString(),
-                    "contract_number", contract.getContractNumber(),
-                    "contract_amount", booking.getContractAmount().toString()
-            );
+            } else {
+                var placeholders = Map.of(
+                        "brand_name", campaign.getCreatedBy().getFullName(),
+                        "kol_name", booking.getUser().getFullName(),
+                        "campaign_name", campaign.getName(),
+                        "today", LocalDate.now().toString(),
+                        "contract_number", contract.getContractNumber(),
+                        "contract_amount", booking.getContractAmount().toString()
+                );
 
-            var fileUsage = contractGeneratorService.generateAndSaveContract(placeholders, admin.getId(), contract.getId());
-            savedContractPath = fileUsage.getFile().getFileUrl();
+                var fileUsage = contractGeneratorService.generateAndSaveContract(placeholders, admin.getId(), contract.getId());
+                savedContractPath = fileUsage.getFile().getFileUrl();
+            }
+        } catch (Exception e) {
+            return ApiResponse.builder()
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                    .message(List.of("Lỗi khi sinh hoặc upload hợp đồng: " + e.getMessage()))
+                    .data(Map.of("campaignId", campaign.getId(), "bookingRequestId", booking.getId()))
+                    .build();
         }
+
 
         contract.setTerms(savedContractPath != null
                 ? "File hợp đồng: " + savedContractPath
@@ -148,6 +161,7 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
             }
         }
 
+
         if (dto.getLiveIds() != null && !dto.getLiveIds().isEmpty()) {
             for (UUID liveId : dto.getLiveIds()) {
                 KolProfile live = kolProfileRepository.findById(liveId)
@@ -168,12 +182,16 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
             }
         }
 
+        booking.setStatus(Enums.BookingStatus.NEGOTIATING.name());
+        booking.setUpdatedAt(Instant.now());
+        bookingRequestRepository.save(booking);
+
         final String savedContractPathFinal = savedContractPath;
         final int participantCount = inserted;
 
         return ApiResponse.builder()
                 .status(HttpStatus.OK.value())
-                .message(List.of("Tạo booking request + hợp đồng + participants thành công"))
+                .message(List.of("Tạo booking request thành công và chuyển trạng thái sang NEGOTIATING"))
                 .data(new Object() {
                     public final UUID bookingRequestId = booking.getId();
                     public final String status = booking.getStatus();
@@ -195,8 +213,8 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
                     public final List<UUID> liveIds = dto.getLiveIds();
                 })
                 .build();
-
     }
+
 
 
 

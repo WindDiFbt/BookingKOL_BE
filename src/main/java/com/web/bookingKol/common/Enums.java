@@ -88,7 +88,8 @@ public class Enums {
         DELIVERED,
         COMPLETED,
         DISPUTED,
-        EXPIRED
+        EXPIRED,
+
     }
 
     @Getter
