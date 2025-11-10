@@ -13,6 +13,7 @@ import java.util.UUID;
 @Builder
 public class BookedPackageResponse {
     private UUID id;
+    private UUID campaignId;
     private String campaignName;
     private String objective;
     private BigDecimal budgetMin;
