@@ -15,6 +15,7 @@ public class BookedPackageResponse {
     private UUID id;
     private UUID campaignId;
     private String campaignName;
+    private String campaignStatus;
     private String objective;
     private BigDecimal budgetMin;
     private BigDecimal budgetMax;

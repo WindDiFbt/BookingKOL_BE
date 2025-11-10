@@ -94,6 +94,7 @@ public class BookingAdminServiceImpl implements BookingAdminService {
                     .campaignId(p.getCampaign() != null ? p.getCampaign().getId() : null)
                     .campaignName(p.getCampaign() != null ? p.getCampaign().getName() : null)
                     .objective(p.getCampaign() != null ? p.getCampaign().getObjective() : null)
+                    .campaignStatus(p.getCampaign() != null ? p.getCampaign().getStatus() : null)
                     .budgetMin(p.getCampaign() != null ? p.getCampaign().getBudgetMin() : null)
                     .budgetMax(p.getCampaign() != null ? p.getCampaign().getBudgetMax() : null)
                     .startDate(p.getCampaign() != null ? p.getCampaign().getStartDate() : null)

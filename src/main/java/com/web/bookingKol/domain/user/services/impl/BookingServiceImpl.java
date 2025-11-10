@@ -58,7 +58,7 @@ public class BookingServiceImpl implements BookingService {
         campaign.setBudgetMax(req.getTargetPrice());
         campaign.setStartDate(req.getStartDate());
         campaign.setEndDate(req.getEndDate());
-        campaign.setStatus(Enums.BookingStatus.DRAFT.name());
+        campaign.setStatus(Enums.BookingStatus.REQUESTED.name());
         campaign.setCreatedAt(Instant.now());
         campaign.setUpdatedAt(Instant.now());
         campaignRepository.save(campaign);
