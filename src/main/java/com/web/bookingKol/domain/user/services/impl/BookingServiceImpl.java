@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -53,8 +54,8 @@ public class BookingServiceImpl implements BookingService {
         campaign.setCreatedBy(user);
         campaign.setName(req.getCampaignName());
         campaign.setObjective(req.getObjective());
-        campaign.setBudgetMin(req.getBudgetMin());
-        campaign.setBudgetMax(req.getBudgetMax());
+        campaign.setBudgetMin(BigDecimal.ZERO);
+        campaign.setBudgetMax(req.getTargetPrice());
         campaign.setStartDate(req.getStartDate());
         campaign.setEndDate(req.getEndDate());
         campaign.setStatus(Enums.BookingStatus.DRAFT.name());

@@ -16,8 +16,7 @@ public class BookKolRequest {
 
     private String campaignName;
     private String objective;
-    private BigDecimal budgetMin;
-    private BigDecimal budgetMax;
+    private BigDecimal targetPrice;
     private Instant startDate;
     private Instant endDate;
     private String recurrencePattern;

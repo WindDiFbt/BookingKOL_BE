@@ -34,19 +34,20 @@ public class ContractGeneratorService {
 
     public FileUsageDTO generateAndSaveContract(Map<String, String> placeholders, UUID uploaderId, UUID contractId) {
         try {
-            String templatePath = "src/main/resources/templates/contract_template.docx";
+            InputStream templateStream = getClass()
+                    .getClassLoader()
+                    .getResourceAsStream("templates/contract_template.docx");
+
+            if (templateStream == null) {
+                throw new RuntimeException("Không tìm thấy file mẫu hợp đồng trong resources/templates/");
+            }
 
             Path tempDir = Files.createTempDirectory("contracts_");
-            String dateFolder = LocalDate.now().toString();
             String uniqueSuffix = UUID.randomUUID().toString().substring(0, 8);
-
             String fileName = String.format("contract_%s_%s.docx", contractId, uniqueSuffix);
             Path filePath = tempDir.resolve(fileName);
 
-
-            try (FileInputStream fis = new FileInputStream(templatePath);
-                 XWPFDocument document = new XWPFDocument(fis)) {
-
+            try (XWPFDocument document = new XWPFDocument(templateStream)) {
                 for (XWPFParagraph p : document.getParagraphs()) {
                     for (XWPFRun r : p.getRuns()) {
                         String text = r.getText(0);
@@ -67,7 +68,6 @@ public class ContractGeneratorService {
             MultipartFile multipartFile = toMultipartFile(filePath.toFile(), fileName);
 
             FileDTO fileDTO = fileService.uploadFilePoint(uploaderId, multipartFile);
-
             FileUsageDTO fileUsageDTO = fileService.createFileUsage(
                     fileMapper.toEntity(fileDTO),
                     contractId,
@@ -84,6 +84,7 @@ public class ContractGeneratorService {
             throw new RuntimeException("Lỗi khi sinh hợp đồng và upload Supabase: " + e.getMessage(), e);
         }
     }
+
 
     private MultipartFile toMultipartFile(java.io.File file, String fileName) {
         return new MultipartFile() {
