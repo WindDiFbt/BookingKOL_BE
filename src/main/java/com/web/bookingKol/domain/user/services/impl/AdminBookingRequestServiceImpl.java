@@ -59,8 +59,15 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
         User admin = userRepository.findByEmail(adminEmail)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy admin: " + adminEmail));
 
-        Campaign campaign = campaignRepository.findById(dto.getCampaignId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy campaign"));
+        Campaign campaign = campaignRepository.findById(dto.getCampaignId()).orElse(null);
+        if (campaign == null) {
+            return ApiResponse.builder()
+                    .status(HttpStatus.BAD_REQUEST.value())
+                    .message(List.of("Không tìm thấy campaign với ID: " + dto.getCampaignId()))
+                    .data(null)
+                    .build();
+        }
+
 
         BookingRequest booking = new BookingRequest();
         booking.setId(UUID.randomUUID());
