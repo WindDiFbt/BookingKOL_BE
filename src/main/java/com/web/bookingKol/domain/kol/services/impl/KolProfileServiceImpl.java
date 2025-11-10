@@ -30,6 +30,8 @@ import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.domain.user.repositories.RoleRepository;
 import com.web.bookingKol.domain.user.repositories.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -43,6 +45,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
@@ -585,5 +590,163 @@ public class KolProfileServiceImpl implements KolProfileService {
                 .message(List.of("Set cover image successfully"))
                 .data(fileUsageMapper.toDto(fileUsage))
                 .build();
+    }
+
+    @Override
+    public ByteArrayInputStream exportKolsToExcel() throws IOException {
+        List<KolProfile> kolProfiles = kolProfileRepository.findAllWithUser();
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Danh sách KOLs");
+
+        // --- STYLE ---
+        CellStyle headerCellStyle = workbook.createCellStyle();
+        Font headerFont = workbook.createFont();
+        headerFont.setBold(true);
+        headerFont.setFontHeightInPoints((short) 12);
+        headerCellStyle.setFont(headerFont);
+        headerCellStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        headerCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        headerCellStyle.setAlignment(HorizontalAlignment.CENTER);
+        headerCellStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        headerCellStyle.setBorderTop(BorderStyle.THIN);
+        headerCellStyle.setBorderBottom(BorderStyle.THIN);
+        headerCellStyle.setBorderLeft(BorderStyle.THIN);
+        headerCellStyle.setBorderRight(BorderStyle.THIN);
+
+        // Style cho các ô dữ liệu (Text)
+        CellStyle dataCellStyle = workbook.createCellStyle();
+        dataCellStyle.setBorderTop(BorderStyle.THIN);
+        dataCellStyle.setBorderBottom(BorderStyle.THIN);
+        dataCellStyle.setBorderLeft(BorderStyle.THIN);
+        dataCellStyle.setBorderRight(BorderStyle.THIN);
+        dataCellStyle.setAlignment(HorizontalAlignment.LEFT);
+        dataCellStyle.setVerticalAlignment(VerticalAlignment.TOP);
+        dataCellStyle.setWrapText(true);
+
+        // Style cho các ô dữ liệu (Date)
+        DataFormat dataFormat = workbook.createDataFormat();
+        CellStyle dateCellStyle = workbook.createCellStyle();
+        dateCellStyle.cloneStyleFrom(dataCellStyle);
+        dateCellStyle.setDataFormat(dataFormat.getFormat("yyyy-MM-dd"));
+
+        // Style cho các ô dữ liệu (Number/Price)
+        CellStyle priceCellStyle = workbook.createCellStyle();
+        priceCellStyle.cloneStyleFrom(dataCellStyle);
+        priceCellStyle.setDataFormat(dataFormat.getFormat("#,##0"));
+        priceCellStyle.setAlignment(HorizontalAlignment.RIGHT);
+
+        Row headerRow = sheet.createRow(0);
+        headerRow.setHeightInPoints(30);
+        String[] columns = {
+                "User ID", "Tên đầy đủ", "Biệt danh", "Ngày sinh", "Địa chỉ",
+                "Vị trí/Vai trò", "Kinh nghiệm livestream", "Email", "Số điện thoại",
+                "Điểm mạnh", "Chuyên ngành",
+                "Giá book tối thiểu", "Trạng thái"
+        };
+
+        for (int i = 0; i < columns.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(columns[i]);
+            cell.setCellStyle(headerCellStyle);
+        }
+        int rowIdx = 1;
+        for (KolProfile profile : kolProfiles) {
+            User user = profile.getUser();
+            Row dataRow = sheet.createRow(rowIdx++);
+            Cell cell;
+
+            // 0. User ID
+            cell = dataRow.createCell(0);
+            cell.setCellValue(user.getId().toString());
+            cell.setCellStyle(dataCellStyle);
+
+            // 1. Tên đầy đủ
+            cell = dataRow.createCell(1);
+            cell.setCellValue(user.getFullName());
+            cell.setCellStyle(dataCellStyle);
+
+            // 2. Biệt danh
+            cell = dataRow.createCell(2);
+            cell.setCellValue(user.getKolProfile().getDisplayName());
+            cell.setCellStyle(dataCellStyle);
+
+            // 3. Ngày sinh (Định dạng ĐÚNG)
+            cell = dataRow.createCell(3);
+            if (user.getKolProfile().getDob() != null) {
+                cell.setCellValue(user.getKolProfile().getDob());
+            }
+            cell.setCellStyle(dateCellStyle);
+
+            // 4. Địa chỉ (Sửa lỗi thứ tự cột)
+            cell = dataRow.createCell(4);
+            cell.setCellValue(user.getAddress());
+            cell.setCellStyle(dataCellStyle);
+
+            // 5. Vị trí/Vai trò (Sửa lỗi thứ tự cột)
+            cell = dataRow.createCell(5);
+            String position = "Host livestream";
+            if (user.getKolProfile().getRole() != null) {
+                position = user.getKolProfile().getRole().equals(Enums.Roles.LIVE) ? "Trợ Live" : "Host livestream";
+            }
+            cell.setCellValue(position);
+            cell.setCellStyle(dataCellStyle);
+
+            // 6. Kinh nghiệm
+            cell = dataRow.createCell(6);
+            cell.setCellValue(user.getKolProfile().getExperience());
+            cell.setCellStyle(dataCellStyle);
+
+            // 7. Email
+            cell = dataRow.createCell(7);
+            cell.setCellValue(user.getEmail());
+            cell.setCellStyle(dataCellStyle);
+
+            // 8. Số điện thoại
+            cell = dataRow.createCell(8);
+            cell.setCellValue(user.getPhone());
+            cell.setCellStyle(dataCellStyle);
+
+            // 9. Điểm mạnh (Bio)
+            cell = dataRow.createCell(9);
+            cell.setCellValue(profile.getBio());
+            cell.setCellStyle(dataCellStyle);
+
+            // 10. Chuyên ngành (Categories)
+            cell = dataRow.createCell(10);
+            Set<Category> cate = user.getKolProfile().getCategories();
+            StringBuilder cateString = new StringBuilder();
+            if (cate != null && !cate.isEmpty()) {
+                for (Category category : cate) {
+                    cateString.append(category.getName()).append(", ");
+                }
+                cell.setCellValue(cateString.substring(0, cateString.length() - 2));
+            }
+            cell.setCellStyle(dataCellStyle);
+
+            // 11. Giá book (Định dạng ĐÚNG)
+            cell = dataRow.createCell(11);
+            if (profile.getMinBookingPrice() != null) {
+                cell.setCellValue(profile.getMinBookingPrice().toString());
+            } else {
+                cell.setCellValue(0);
+            }
+            cell.setCellStyle(priceCellStyle);
+
+            // 12. Trạng thái
+            cell = dataRow.createCell(12);
+            cell.setCellValue(user.getStatus());
+            cell.setCellStyle(dataCellStyle);
+        }
+        for (int i = 0; i < columns.length; i++) {
+            if (i == 9 || i == 10) {
+                sheet.setColumnWidth(i, 80 * 256);
+            } else {
+                sheet.autoSizeColumn(i);
+            }
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        workbook.write(out);
+        workbook.close();
+        return new ByteArrayInputStream(out.toByteArray());
     }
 }

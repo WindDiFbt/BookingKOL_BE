@@ -5,6 +5,7 @@ import com.web.bookingKol.domain.kol.dtos.NewKolDTO;
 import com.web.bookingKol.domain.kol.dtos.UpdateKolDTO;
 import com.web.bookingKol.domain.kol.services.KolProfileService;
 import com.web.bookingKol.domain.user.models.UserDetailsImpl;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,7 +14,12 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,6 +28,7 @@ import java.util.UUID;
 public class AdminKolRestController {
     @Autowired
     private KolProfileService kolProfileService;
+    private static final String EXPORT_EMPLOYEE_NAME_FILE = "Danh_sach_nhan_su_";
 
     @GetMapping("/all")
     public ResponseEntity<?> getAllKolProfile(@RequestParam(required = false) BigDecimal minBookingPrice,
@@ -128,5 +135,20 @@ public class AdminKolRestController {
         UUID changerId = userDetails.getId();
         return ResponseEntity.status(HttpStatus.OK)
                 .body(kolProfileService.deleteFileMedia(changerId, fileId));
+    }
+
+    @GetMapping("/export/excel")
+    public void exportKolsToExcel(HttpServletResponse response) throws IOException {
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+        String currentDateTime = dateFormatter.format(new Date());
+        String fileName = EXPORT_EMPLOYEE_NAME_FILE + currentDateTime + ".xlsx";
+        String headerKey = "Content-Disposition";
+        String headerValue = "attachment; filename=" + fileName;
+        response.setHeader(headerKey, headerValue);
+        ByteArrayInputStream inputStream = kolProfileService.exportKolsToExcel();
+        inputStream.transferTo(response.getOutputStream());
+        inputStream.close();
+        response.getOutputStream().flush();
     }
 }

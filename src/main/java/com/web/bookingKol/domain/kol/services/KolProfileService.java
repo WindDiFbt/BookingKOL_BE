@@ -9,6 +9,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -66,4 +68,8 @@ public interface KolProfileService {
 
     //Helper method
     KolProfile getKolProfileEntityByUserId(UUID userId);
+
+    //Export kol list
+    ByteArrayInputStream exportKolsToExcel() throws IOException;
+
 }
