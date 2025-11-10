@@ -186,6 +186,9 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
         booking.setUpdatedAt(Instant.now());
         bookingRequestRepository.save(booking);
 
+        campaign.setStatus(Enums.BookingStatus.NEGOTIATING.name());
+        campaignRepository.save(campaign);
+
         final String savedContractPathFinal = savedContractPath;
         final int participantCount = inserted;
 
