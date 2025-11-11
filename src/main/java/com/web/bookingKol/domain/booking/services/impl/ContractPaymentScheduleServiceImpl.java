@@ -49,10 +49,10 @@ public class ContractPaymentScheduleServiceImpl implements ContractPaymentSchedu
         BookingRequest bookingRequest = bookingRequestRepository.findById(request.getBookingRequestId())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy booking request"));
 
-        if (!Enums.ContractStatus.SIGNED.name().equalsIgnoreCase(contract.getStatus())) {
+        if (!Enums.ContractStatus.DRAFT.name().equalsIgnoreCase(contract.getStatus())) {
             return ApiResponse.builder()
                     .status(HttpStatus.BAD_REQUEST.value())
-                    .message(List.of("Chỉ có thể chia đợt thanh toán khi hợp đồng ở trạng thái SIGNED"))
+                    .message(List.of("Chỉ có thể chia đợt thanh toán khi hợp đồng ở trạng thái DRAFT"))
                     .data(null)
                     .build();
         }
