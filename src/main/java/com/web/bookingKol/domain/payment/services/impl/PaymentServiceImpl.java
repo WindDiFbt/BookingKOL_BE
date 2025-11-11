@@ -175,7 +175,6 @@ public class PaymentServiceImpl implements PaymentService {
             if (purchasedCoursePackage == null) {
                 throw new IllegalArgumentException("Không tìm thấy PurchasedCoursePackage với Payment ID: " + transactionDTO.getPaymentId());
             }
-            purchasedCoursePackage.setStatus(Enums.PurchasedCourse.COURSEASSIGNED.name());
             purchasedCoursePackage.setIsPaid(true);
             purchasedCoursePackageRepository.save(purchasedCoursePackage);
         }

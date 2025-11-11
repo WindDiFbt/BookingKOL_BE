@@ -1,6 +1,8 @@
 package com.web.bookingKol.config;
 
 import com.web.bookingKol.auth.AuthEntryPointImpl;
+import com.web.bookingKol.auth.CustomOAuth2LoginSuccessHandler;
+import com.web.bookingKol.auth.CustomOAuth2UserService;
 import com.web.bookingKol.auth.JwtAuthenticationFilter;
 import com.web.bookingKol.common.Enums;
 import com.web.bookingKol.domain.user.services.impl.UserDetailsServiceImpl;
@@ -28,10 +30,18 @@ import java.util.List;
 public class SecurityConfig {
     private final UserDetailsServiceImpl userDetailsServiceImpl;
     private final AuthEntryPointImpl authEntryPoint;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final CustomOAuth2LoginSuccessHandler customOAuth2LoginSuccessHandler;
 
-    public SecurityConfig(UserDetailsServiceImpl userDetailsServiceImpl, AuthEntryPointImpl authEntryPoint) {
+
+    public SecurityConfig(UserDetailsServiceImpl userDetailsServiceImpl,
+                          AuthEntryPointImpl authEntryPoint,
+                          CustomOAuth2UserService customOAuth2UserService,
+                          CustomOAuth2LoginSuccessHandler customOAuth2LoginSuccessHandler) {
         this.userDetailsServiceImpl = userDetailsServiceImpl;
         this.authEntryPoint = authEntryPoint;
+        this.customOAuth2UserService = customOAuth2UserService;
+        this.customOAuth2LoginSuccessHandler = customOAuth2LoginSuccessHandler;
     }
 
     @Bean
@@ -73,7 +83,7 @@ public class SecurityConfig {
                 }))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/auth/**", "/error", "/webjars/**").permitAll()
                         .requestMatchers("/actuator/**").hasAuthority(Enums.Roles.SUPER_ADMIN.name())
                         .requestMatchers("/kol-profiles/**", "/courses/**").permitAll()
                         .requestMatchers("/register/**", "/payment/**", "/platforms/**").permitAll()
@@ -88,6 +98,13 @@ public class SecurityConfig {
                                 "/swagger-ui.html"
                         ).permitAll()
                         .anyRequest().authenticated())
+                .oauth2Login(oauth2 -> oauth2
+                        .loginPage("/login")
+                        .successHandler(customOAuth2LoginSuccessHandler)
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService)
+                        )
+                )
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(authEntryPoint))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         http.authenticationProvider(authenticationProvider(userDetailsServiceImpl));
