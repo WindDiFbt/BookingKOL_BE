@@ -4,13 +4,17 @@ import com.web.bookingKol.domain.course.dtos.CoursePackageDTO;
 import com.web.bookingKol.domain.course.dtos.UpdateCoursePackageDTO;
 import com.web.bookingKol.domain.course.services.CoursePackageService;
 import com.web.bookingKol.domain.user.models.UserDetailsImpl;
+import com.web.bookingKol.domain.user.services.CoursePurchaseService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,6 +23,8 @@ import java.util.UUID;
 public class AdminCourseRestController {
     @Autowired
     private CoursePackageService coursePackageService;
+    @Autowired
+    private CoursePurchaseService coursePurchaseService;
 
     @GetMapping("/all")
     public ResponseEntity<?> getAllCoursesAdmin(@RequestParam(required = false) Boolean isAvailable,
@@ -76,5 +82,18 @@ public class AdminCourseRestController {
     @DeleteMapping("/delete/{courseId}")
     public ResponseEntity<?> deleteCourse(@PathVariable("courseId") UUID courseId) {
         return ResponseEntity.ok(coursePackageService.deleteCoursePackage(courseId));
+    }
+
+    @GetMapping("/history/all")
+    public ResponseEntity<?> getAllPurchaseHistory(@RequestParam(required = false) String search,
+                                                   @RequestParam(required = false) Instant startDate,
+                                                   @RequestParam(required = false) Instant endDate,
+                                                   @PageableDefault(size = 10, sort = "startDate") Pageable pageable) {
+        return ResponseEntity.ok(coursePurchaseService.getPurchaseHistoryAdmin(search, startDate, endDate, pageable));
+    }
+
+    @PostMapping("/confirm/{purchasedCourseId}")
+    public ResponseEntity<?> confirmPurchasedCourse(@PathVariable("purchasedCourseId") UUID purchasedCourseId) {
+        return ResponseEntity.ok(coursePurchaseService.confirmPurchasedCourse(purchasedCourseId));
     }
 }

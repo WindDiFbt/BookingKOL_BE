@@ -60,7 +60,7 @@ public class BlogService {
         if (!isAdmin) {
             blogPage = blogRepository.findAllDESC(pageable);
         } else {
-            blogPage = blogRepository.findAll(pageable);
+            blogPage = blogRepository.findAllDESCAdmin(pageable);
         }
         Page<BlogDTO> blogDTOPage = blogPage.map(blogMapperV2::toDtoWithoutContent);
         return ApiResponse.<Page<BlogDTO>>builder()
