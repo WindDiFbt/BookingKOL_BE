@@ -14,6 +14,7 @@ public class BlogMapperV2 {
         blogDTO.setIsPublish(blog.getIsPublish());
         blogDTO.setCreatedAt(blog.getCreatedAt());
         blogDTO.setUpdatedAt(blog.getUpdatedAt());
+        blogDTO.setThumbnail(blog.getThumbnail());
         return blogDTO;
     }
 }

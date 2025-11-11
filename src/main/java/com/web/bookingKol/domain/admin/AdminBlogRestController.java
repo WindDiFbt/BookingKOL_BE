@@ -60,4 +60,17 @@ public class AdminBlogRestController {
         UUID userId = userDetails.getId();
         return ResponseEntity.ok().body(fileService.uploadOneFile(userId, file));
     }
+
+    @PostMapping("/thumbnail/upload/{blogId}")
+    public ResponseEntity<?> addThumbnailForBlog(@RequestParam("thumbnail") MultipartFile thumbnail,
+                                                 @AuthenticationPrincipal UserDetailsImpl userDetails,
+                                                 @PathVariable Integer blogId) {
+        UUID userId = userDetails.getId();
+        return ResponseEntity.ok().body(blogService.addThumbnailForBlog(userId, blogId, thumbnail));
+    }
+
+    @DeleteMapping("/thumbnail/delete/{blogId}")
+    public ResponseEntity<?> deleteThumbnailForBlog(@PathVariable Integer blogId) {
+        return ResponseEntity.ok().body(blogService.deleteThumbnailForBlog(blogId));
+    }
 }
