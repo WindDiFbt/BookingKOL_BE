@@ -11,4 +11,7 @@ public interface BlogRepository extends JpaRepository<Blog, Integer> {
 
     @Query("SELECT b FROM Blog b WHERE b.isPublish = true ORDER BY b.createdAt DESC")
     Page<Blog> findAllDESC(Pageable pageable);
+
+    @Query("SELECT b FROM Blog b ORDER BY b.createdAt DESC")
+    Page<Blog> findAllDESCAdmin(Pageable pageable);
 }
