@@ -1,5 +1,6 @@
 package com.web.bookingKol.auth;
 
+import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.domain.user.models.UserDetailsImpl;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
@@ -32,6 +33,15 @@ public class JwtUtils {
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
         return Jwts.builder()
                 .setSubject(userPrincipal.getId().toString())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .signWith(key())
+                .compact();
+    }
+
+    public String generateAccessTokenUser(User user) {
+        return Jwts.builder()
+                .setSubject(user.getId().toString())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(key())
