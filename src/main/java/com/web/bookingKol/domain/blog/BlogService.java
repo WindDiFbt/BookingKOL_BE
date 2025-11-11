@@ -4,6 +4,8 @@ import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.domain.blog.dtos.BlogCreateDTO;
 import com.web.bookingKol.domain.blog.dtos.BlogDTO;
 import com.web.bookingKol.domain.blog.dtos.BlogUpdateDTO;
+import com.web.bookingKol.domain.file.dtos.FileDTO;
+import com.web.bookingKol.domain.file.services.FileService;
 import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.domain.user.repositories.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -12,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
 import java.util.List;
@@ -27,6 +30,8 @@ public class BlogService {
     private BlogMapper blogMapper;
     @Autowired
     private BlogMapperV2 blogMapperV2;
+    @Autowired
+    private FileService fileService;
 
     public ApiResponse<BlogDTO> createBlog(UUID userId, BlogCreateDTO blogCreateDTO) {
         Blog newBlog = new Blog();
@@ -109,6 +114,31 @@ public class BlogService {
         return ApiResponse.builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Xóa bài viết thành công!"))
+                .build();
+    }
+
+    public ApiResponse<?> addThumbnailForBlog(UUID adminId, Integer blogId, MultipartFile thumbnail) {
+        Blog blog = blogRepository.findById(blogId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy bài viết ID: " + blogId));
+        FileDTO fileDTO = fileService.uploadFilePoint(adminId, thumbnail);
+        blog.setThumbnail(fileDTO.getFileUrl());
+        blogRepository.save(blog);
+        return ApiResponse.builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Thêm ảnh thumbnail cho bài viết thành công"))
+                .data(fileDTO)
+                .build();
+    }
+
+    public ApiResponse<?> deleteThumbnailForBlog(Integer blogId) {
+        Blog blog = blogRepository.findById(blogId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy bài viết ID: " + blogId));
+        blog.setThumbnail(null);
+        blogRepository.save(blog);
+        return ApiResponse.builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Xóa ảnh thumbnail cho bài viết thành công blogId: " + blogId))
+                .data(null)
                 .build();
     }
 }

@@ -48,4 +48,8 @@ public class Blog {
     @Column(name = "author")
     private String author;
 
+    @Size(max = 255)
+    @Column(name = "thumbnail")
+    private String thumbnail;
+
 }
