@@ -4,12 +4,14 @@ package com.web.bookingKol.domain.user.services.impl;
 import com.web.bookingKol.common.Enums;
 import com.web.bookingKol.common.PagedResponse;
 import com.web.bookingKol.common.payload.ApiResponse;
+import com.web.bookingKol.domain.booking.dtos.ContractPaymentScheduleResponse;
 import com.web.bookingKol.domain.booking.dtos.KolParticipantResponse;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.booking.models.BookingRequestParticipant;
 import com.web.bookingKol.domain.booking.models.Contract;
 import com.web.bookingKol.domain.booking.repositories.BookingRequestParticipantRepository;
 import com.web.bookingKol.domain.booking.repositories.BookingRequestRepository;
+import com.web.bookingKol.domain.booking.repositories.ContractPaymentScheduleRepository;
 import com.web.bookingKol.domain.user.dtos.UserBookingRequestResponse;
 import com.web.bookingKol.domain.user.repositories.UserRepository;
 import com.web.bookingKol.domain.user.services.UserBookingRequestService;
@@ -30,6 +32,7 @@ public class UserBookingRequestServiceImpl implements UserBookingRequestService 
     private final UserRepository userRepository;
     private final BookingRequestRepository bookingRequestRepository;
     private final BookingRequestParticipantRepository bookingRequestParticipantRepository;
+    private final ContractPaymentScheduleRepository contractPaymentScheduleRepository;
 
     @Override
     public ApiResponse<PagedResponse<UserBookingRequestResponse>> getUserBookingRequests(String userEmail, Pageable pageable) {
@@ -97,11 +100,34 @@ public class UserBookingRequestServiceImpl implements UserBookingRequestService 
                 .max(Comparator.comparing(Contract::getCreatedAt))
                 .orElse(null);
 
+        List<ContractPaymentScheduleResponse> payments = latestContract != null
+                ? contractPaymentScheduleRepository.findByContract_Id(latestContract.getId())
+                .stream()
+                .map(cps -> ContractPaymentScheduleResponse.builder()
+                        .id(cps.getId())
+                        .contractId(cps.getContract().getId())
+                        .bookingRequestId(cps.getBookingRequest().getId())
+                        .installmentNumber(cps.getInstallmentNumber())
+                        .amount(cps.getAmount())
+                        .dueDate(cps.getDueDate())
+                        .status(cps.getStatus().name())
+                        .createdAt(cps.getCreatedAt())
+                        .updatedAt(cps.getUpdatedAt())
+                        .build())
+                .toList()
+                : List.of();
+
+        var response = UserBookingRequestResponse.from(booking, latestContract)
+                .toBuilder()
+                .paymentSchedules(payments)
+                .build();
+
         return ApiResponse.<UserBookingRequestResponse>builder()
                 .status(HttpStatus.OK.value())
-                .message(java.util.List.of("Lấy chi tiết booking request thành công"))
-                .data(UserBookingRequestResponse.from(booking, latestContract))
+                .message(List.of("Lấy chi tiết booking request thành công"))
+                .data(response)
                 .build();
     }
+
 }
 

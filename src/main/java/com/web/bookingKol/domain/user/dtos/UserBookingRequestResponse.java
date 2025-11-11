@@ -1,5 +1,6 @@
 package com.web.bookingKol.domain.user.dtos;
 
+import com.web.bookingKol.domain.booking.dtos.ContractPaymentScheduleResponse;
 import com.web.bookingKol.domain.booking.dtos.KolParticipantResponse;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.booking.models.Contract;
@@ -39,6 +40,7 @@ public class UserBookingRequestResponse {
 
     private List<KolParticipantResponse> kolParticipants;
     private List<KolParticipantResponse> liveParticipants;
+    private List<ContractPaymentScheduleResponse> paymentSchedules;
 
     public static UserBookingRequestResponse from(BookingRequest br, Contract contract) {
         var campaign = br.getCampaign();
@@ -65,6 +67,7 @@ public class UserBookingRequestResponse {
                 .contractStatus(contract != null ? contract.getStatus() : null)
                 .contractTerms(contract != null ? contract.getTerms() : null)
                 .contractFileUrl(contract != null ? extractFileUrl(contract.getTerms()) : null)
+                .paymentSchedules(List.of())
                 .build();
     }
 
