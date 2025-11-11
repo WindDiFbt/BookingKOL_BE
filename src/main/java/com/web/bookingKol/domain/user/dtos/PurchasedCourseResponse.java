@@ -13,13 +13,16 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PurchasedCourseResponse {
-
     private UUID id;
+    private String purchasedCourseNumber;
     private String courseName;
     private Long currentPrice;
     private Boolean isPaid;
     private String status;
     private Instant startDate;
     private Instant endDate;
+    private String email;
+    private String phoneNumber;
+    private UserDTO user;
 }
 
