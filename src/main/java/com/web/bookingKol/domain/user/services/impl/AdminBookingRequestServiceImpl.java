@@ -101,6 +101,7 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
         contract.setStatus(Enums.ContractStatus.DRAFT.name());
         contract.setCreatedAt(Instant.now());
         contract.setUpdatedAt(Instant.now());
+        contract.setAmount(booking.getContractAmount());
         contractRepository.saveAndFlush(contract);
 
         try {
