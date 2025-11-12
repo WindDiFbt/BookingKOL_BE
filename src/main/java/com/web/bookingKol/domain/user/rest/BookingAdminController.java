@@ -95,11 +95,6 @@ public class BookingAdminController {
         return ResponseEntity.ok(adminBookingRequestService.getCampaignDetail(campaignId));
     }
 
-    @PreAuthorize("hasAnyAuthority('USER')")
-    @GetMapping("/user/{campaignId}")
-    public ResponseEntity<ApiResponse<CampaignDetailResponse>> getCampaignDetailUser(@PathVariable UUID campaignId) {
-        return ResponseEntity.ok(adminBookingRequestService.getCampaignDetail(campaignId));
-    }
 
 
 
