@@ -94,4 +94,6 @@ public interface ContractRepository extends JpaRepository<Contract, UUID> {
             "GROUP BY k.id, k.user.fullName " +
             "ORDER BY totalRevenue DESC")
     List<KolBookingRevenueDTO> findTopKolBookingRevenue(Pageable pageable, List<String> statuses, Instant start, Instant end);
+
+    List<Contract> findByBookingRequest_Id(UUID bookingRequestId);
 }
