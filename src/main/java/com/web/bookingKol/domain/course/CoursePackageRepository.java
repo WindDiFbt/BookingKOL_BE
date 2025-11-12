@@ -1,5 +1,8 @@
 package com.web.bookingKol.domain.course;
 
+import com.web.bookingKol.domain.admin.dashboard.course.RevenueByDateProjection;
+import com.web.bookingKol.domain.admin.dashboard.course.CourseRevenueDTO;
+import com.web.bookingKol.domain.admin.dashboard.course.RevenueOverviewDTO;
 import com.web.bookingKol.domain.course.models.CoursePackage;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -8,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -54,4 +58,40 @@ public interface CoursePackageRepository extends JpaRepository<CoursePackage, UU
             @Param("maxDiscount") Integer maxDiscount,
             Pageable pageable
     );
+
+    @Query("""
+                SELECT new com.web.bookingKol.domain.admin.dashboard.course.RevenueOverviewDTO(
+                    SUM(p.currentPrice),
+                    COUNT(p),
+                    COUNT(DISTINCT p.user.id),
+                    SUM(CASE WHEN p.status = 'NOTASSIGNED' THEN 1 ELSE 0 END)
+                )
+                FROM PurchasedCoursePackage p
+                WHERE p.isPaid = true
+            """)
+    RevenueOverviewDTO getOverview();
+
+    @Query("""
+                SELECT new com.web.bookingKol.domain.admin.dashboard.course.CourseRevenueDTO(
+                    p.coursePackage.name,
+                    COUNT(p),
+                    SUM(p.currentPrice)
+                )
+                FROM PurchasedCoursePackage p
+                WHERE p.isPaid = true
+                GROUP BY p.coursePackage.name
+                ORDER BY SUM(p.currentPrice) DESC
+            """)
+    List<CourseRevenueDTO> getRevenueByCourse();
+
+    @Query("""
+                SELECT DATE(p.startDate) AS date, SUM(p.currentPrice) AS totalRevenue
+                FROM PurchasedCoursePackage p
+                WHERE p.isPaid = true
+                GROUP BY DATE(p.startDate)
+                ORDER BY DATE(p.startDate)
+            """)
+    List<RevenueByDateProjection> getRevenueByDate();
+
+
 }
