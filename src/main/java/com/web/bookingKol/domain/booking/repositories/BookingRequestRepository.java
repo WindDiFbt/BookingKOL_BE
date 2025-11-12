@@ -153,4 +153,5 @@ public interface BookingRequestRepository extends JpaRepository<BookingRequest, 
 
     boolean existsByCampaign_Id(UUID campaignId);
 
+    List<BookingRequest> findByCampaign_Id(UUID campaignId);
 }

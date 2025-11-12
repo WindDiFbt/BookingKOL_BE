@@ -6,13 +6,11 @@ import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.domain.booking.models.*;
 import com.web.bookingKol.domain.booking.repositories.BookingRequestParticipantRepository;
 import com.web.bookingKol.domain.booking.repositories.BookingRequestRepository;
+import com.web.bookingKol.domain.booking.repositories.ContractPaymentScheduleRepository;
 import com.web.bookingKol.domain.booking.repositories.ContractRepository;
 import com.web.bookingKol.domain.kol.models.KolProfile;
 import com.web.bookingKol.domain.kol.repositories.KolProfileRepository;
-import com.web.bookingKol.domain.user.dtos.AdminBookingRequestResponse;
-import com.web.bookingKol.domain.user.dtos.AdminCreateBookingRequestDTO;
-import com.web.bookingKol.domain.user.dtos.KolInfo;
-import com.web.bookingKol.domain.user.dtos.UpdateBookingRequestStatusDTO;
+import com.web.bookingKol.domain.user.dtos.*;
 import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.domain.user.repositories.BookingPackageKolRepository;
 import com.web.bookingKol.domain.user.repositories.CampaignRepository;
@@ -34,6 +32,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +51,7 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
     private final BookingPackageKolRepository bookingPackageKolRepository;
     private final KolProfileRepository kolProfileRepository;
     private final BookingRequestParticipantRepository bookingRequestParticipantRepository;
+    private final ContractPaymentScheduleRepository contractPaymentScheduleRepository;
 
     @Override
     @Transactional
@@ -391,6 +391,129 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
                 .data(detail)
                 .build();
     }
+
+
+
+
+
+    // xem chi tiết campaign
+    @Override
+    public ApiResponse<CampaignDetailResponse> getCampaignDetail(UUID campaignId) {
+        Campaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy campaign với ID: " + campaignId));
+
+        List<BookingRequest> bookingRequests = bookingRequestRepository.findByCampaign_Id(campaignId);
+
+        List<BookingRequestDetail> bookingDetails = bookingRequests.stream().map(br -> {
+
+            Contract contract = br.getContracts().stream()
+                    .max(Comparator.comparing(Contract::getCreatedAt))
+                    .orElse(null);
+
+            List<PaymentScheduleResponse> paymentSchedules = contract != null
+                    ? contractPaymentScheduleRepository.findByContract_Id(contract.getId())
+                    .stream().map(sch -> PaymentScheduleResponse.builder()
+                            .id(sch.getId())
+                            .installmentNumber(sch.getInstallmentNumber())
+                            .amount(sch.getAmount())
+
+                            .dueDate(sch.getDueDate() != null
+                                    ? sch.getDueDate().atStartOfDay(ZoneId.systemDefault()).toInstant()
+                                    : null)
+
+                            .status(sch.getStatus().name())
+                            .transactionId(sch.getTransaction() != null
+                                    ? UUID.nameUUIDFromBytes(sch.getTransaction().getId().toString().getBytes())
+                                    : null)
+
+                            .transactionStatus(sch.getTransaction() != null ? sch.getTransaction().getStatus() : null)
+                            .build())
+                    .toList()
+                    : List.of();
+
+
+            // ====== Lấy danh sách KOL & LIVE ======
+            List<BookingRequestParticipant> participants =
+                    bookingRequestParticipantRepository.findByBookingRequest_Id(br.getId());
+
+            List<KolInfo> kols = participants.stream()
+                    .filter(p -> p.getRole() == Enums.BookingParticipantRole.KOL)
+                    .map(p -> KolInfo.builder()
+                            .id(p.getKol().getId())
+                            .displayName(p.getKol().getDisplayName())
+                            .build())
+                    .toList();
+
+            List<KolInfo> lives = participants.stream()
+                    .filter(p -> p.getRole() == Enums.BookingParticipantRole.LIVE)
+                    .map(p -> KolInfo.builder()
+                            .id(p.getKol().getId())
+                            .displayName(p.getKol().getDisplayName())
+                            .build())
+                    .toList();
+
+            // ====== Trả về BookingRequest chi tiết ======
+            return BookingRequestDetail.builder()
+                    .id(br.getId())
+                    .bookingNumber(br.getBookingNumber())
+                    .status(br.getStatus())
+                    .description(br.getDescription())
+                    .repeatType(br.getRepeatType())
+                    .dayOfWeek(br.getDayOfWeek())
+                    .repeatUntil(br.getRepeatUntil())
+                    .contractAmount(br.getContractAmount())
+                    .createdAt(br.getCreatedAt())
+                    .updatedAt(br.getUpdatedAt())
+
+                    .campaignId(campaign.getId())
+                    .campaignName(campaign.getName())
+                    .campaignObjective(campaign.getObjective())
+                    .budgetMin(campaign.getBudgetMin())
+                    .budgetMax(campaign.getBudgetMax())
+                    .startDate(campaign.getStartDate())
+                    .endDate(campaign.getEndDate())
+                    .createdByEmail(campaign.getCreatedBy() != null ? campaign.getCreatedBy().getEmail() : null)
+
+                    .contractId(contract != null ? contract.getId() : null)
+                    .contractNumber(contract != null ? contract.getContractNumber() : null)
+                    .contractStatus(contract != null ? contract.getStatus() : null)
+                    .contractReason(contract != null ? contract.getReason() : null)
+                    .contractTerms(contract != null ? contract.getTerms() : null)
+                    .contractFileUrl(contract != null ? extractFileUrl(contract.getTerms()) : null)
+                    .signedAtBrand(contract != null ? contract.getSignedAtBrand() : null)
+                    .signedAtKol(contract != null ? contract.getSignedAtKol() : null)
+                    .amount(contract != null ? contract.getAmount() : null)
+
+                    .paymentSchedules(paymentSchedules)
+
+                    .kols(kols)
+                    .lives(lives)
+                    .build();
+        }).toList();
+
+        CampaignDetailResponse response = CampaignDetailResponse.builder()
+                .id(campaign.getId())
+                .name(campaign.getName())
+                .objective(campaign.getObjective())
+                .budgetMin(campaign.getBudgetMin())
+                .budgetMax(campaign.getBudgetMax())
+                .startDate(campaign.getStartDate())
+                .endDate(campaign.getEndDate())
+                .status(campaign.getStatus())
+                .createdByEmail(campaign.getCreatedBy() != null ? campaign.getCreatedBy().getEmail() : null)
+                .bookingRequests(bookingDetails)
+                .build();
+
+        return ApiResponse.<CampaignDetailResponse>builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Lấy chi tiết campaign thành công"))
+                .data(response)
+                .build();
+    }
+
+
+
+
 
 
 }
