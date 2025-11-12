@@ -4,6 +4,7 @@ import com.web.bookingKol.common.PagedResponse;
 import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.domain.user.dtos.AdminBookingRequestResponse;
 import com.web.bookingKol.domain.user.dtos.AdminCreateBookingRequestDTO;
+import com.web.bookingKol.domain.user.dtos.CampaignDetailResponse;
 import com.web.bookingKol.domain.user.dtos.UpdateBookingRequestStatusDTO;
 import org.springframework.data.domain.Pageable;
 
@@ -17,6 +18,7 @@ public interface AdminBookingRequestService {
 
     ApiResponse<AdminBookingRequestResponse> getBookingRequestDetail(UUID bookingRequestId);
 
+    ApiResponse<CampaignDetailResponse> getCampaignDetail(UUID campaignId);
 
 }
 

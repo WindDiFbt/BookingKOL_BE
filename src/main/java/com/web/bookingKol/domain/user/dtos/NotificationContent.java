@@ -1,13 +1,11 @@
 package com.web.bookingKol.domain.user.dtos;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class NotificationRequest {
+@Getter
+@Setter
+public class NotificationContent {
 
     private String message;
     private String type;
@@ -23,6 +21,5 @@ public class NotificationRequest {
     public void setType(String type) {
         this.type = type;
     }
-
 
 }

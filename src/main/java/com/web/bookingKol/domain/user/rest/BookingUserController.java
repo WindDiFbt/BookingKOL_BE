@@ -12,10 +12,12 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/user/bookings")
@@ -45,5 +47,15 @@ public class BookingUserController {
                 )
         );
     }
+
+
+    //user hủy đơn campaign
+    @PreAuthorize("hasAuthority('USER')")
+    @PutMapping("/cancel/{id}")
+    public ResponseEntity<ApiResponse<?>> cancelBookingRequest(@PathVariable UUID id) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(bookingUserService.cancelBookingRequest(id, email));
+    }
+
 }
 
