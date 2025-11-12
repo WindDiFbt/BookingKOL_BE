@@ -136,6 +136,7 @@ public class Enums {
     @Getter
     public enum BookingType {
         SINGLE,
+        CAMPAIGN
     }
 
     @Getter
