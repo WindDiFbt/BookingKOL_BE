@@ -9,6 +9,8 @@ import com.web.bookingKol.domain.payment.dtos.PaymentReqDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -63,4 +65,6 @@ public interface BookingRequestService {
     ApiResponse<?> cancelBookingRequest(UUID userId, UUID bookingRequestId, String bankNumber, String bankName);
 
     ApiResponse<PaymentReqDTO> continueBookingRequestPayment(UUID bookingRequestId, UUID userId);
+
+    ByteArrayInputStream exportBookingDataToExcel(String type) throws IOException;
 }
