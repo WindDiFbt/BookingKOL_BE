@@ -3,16 +3,15 @@ package com.web.bookingKol.domain.booking.services.impl;
 import com.web.bookingKol.common.Enums;
 import com.web.bookingKol.common.NumberGenerateUtil;
 import com.web.bookingKol.common.payload.ApiResponse;
-import com.web.bookingKol.domain.booking.dtos.BookingDetailDTO;
-import com.web.bookingKol.domain.booking.dtos.BookingSingleReqDTO;
-import com.web.bookingKol.domain.booking.dtos.BookingSingleResDTO;
-import com.web.bookingKol.domain.booking.dtos.UpdateBookingReqDTO;
+import com.web.bookingKol.domain.booking.dtos.*;
 import com.web.bookingKol.domain.booking.jobrunr.BookingRequestJob;
 import com.web.bookingKol.domain.booking.jobrunr.WorkTimeJob;
 import com.web.bookingKol.domain.booking.mappers.BookingDetailMapper;
 import com.web.bookingKol.domain.booking.mappers.BookingSingleResMapper;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
+import com.web.bookingKol.domain.booking.models.BookingRequestParticipant;
 import com.web.bookingKol.domain.booking.models.Contract;
+import com.web.bookingKol.domain.booking.repositories.BookingRequestParticipantRepository;
 import com.web.bookingKol.domain.booking.repositories.BookingRequestRepository;
 import com.web.bookingKol.domain.booking.repositories.ContractRepository;
 import com.web.bookingKol.domain.booking.services.BookingRequestService;
@@ -41,6 +40,8 @@ import com.web.bookingKol.domain.payment.services.RefundService;
 import com.web.bookingKol.domain.user.models.User;
 import com.web.bookingKol.domain.user.repositories.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.jobrunr.scheduling.BackgroundJob;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -53,10 +54,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -104,6 +109,8 @@ public class BookingRequestServiceImpl implements BookingRequestService {
     private KolWorkTimeRepository kolWorkTimeRepository;
     @Autowired
     private QRGenerateService qRGenerateService;
+    @Autowired
+    private BookingRequestParticipantRepository bookingRequestParticipantRepository;
 
     @Transactional
     @Override
@@ -522,5 +529,171 @@ public class BookingRequestServiceImpl implements BookingRequestService {
                 .message(List.of("Tiếp tục thanh toán yêu cầu đặt lịch thành công!"))
                 .data(paymentReqDTO)
                 .build();
+    }
+
+    @Override
+    public ByteArrayInputStream exportBookingDataToExcel(String type) throws IOException {
+        List<BookingExportDTO> bookingExportDTOList = contractRepository.findAllForExport(type);
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Danh sách Hợp đồng");
+
+        // --- STYLE ---
+        CellStyle headerCellStyle = workbook.createCellStyle();
+        Font headerFont = workbook.createFont();
+        headerFont.setBold(true);
+        headerFont.setFontHeightInPoints((short) 12);
+        headerCellStyle.setFont(headerFont);
+        headerCellStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        headerCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        headerCellStyle.setAlignment(HorizontalAlignment.CENTER);
+        headerCellStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        headerCellStyle.setBorderTop(BorderStyle.THIN);
+        headerCellStyle.setBorderBottom(BorderStyle.THIN);
+        headerCellStyle.setBorderLeft(BorderStyle.THIN);
+        headerCellStyle.setBorderRight(BorderStyle.THIN);
+
+        // Style cho các ô dữ liệu (Text)
+        CellStyle dataCellStyle = workbook.createCellStyle();
+        dataCellStyle.setBorderTop(BorderStyle.THIN);
+        dataCellStyle.setBorderBottom(BorderStyle.THIN);
+        dataCellStyle.setBorderLeft(BorderStyle.THIN);
+        dataCellStyle.setBorderRight(BorderStyle.THIN);
+        dataCellStyle.setAlignment(HorizontalAlignment.LEFT);
+        dataCellStyle.setVerticalAlignment(VerticalAlignment.TOP);
+        dataCellStyle.setWrapText(true);
+
+        // Style cho các ô dữ liệu (Date) - Dùng cho ngày tháng năm
+        DataFormat dataFormat = workbook.createDataFormat();
+        CellStyle dateCellStyle = workbook.createCellStyle();
+        dateCellStyle.cloneStyleFrom(dataCellStyle);
+        dateCellStyle.setDataFormat(dataFormat.getFormat("yyyy-MM-dd"));
+
+        // Style cho các ô dữ liệu (DateTime) - Dùng cho Instant (timestamp)
+        CellStyle dateTimeCellStyle = workbook.createCellStyle();
+        dateTimeCellStyle.cloneStyleFrom(dataCellStyle);
+        dateTimeCellStyle.setDataFormat(dataFormat.getFormat("yyyy-MM-dd HH:mm"));
+
+        // Style cho các ô dữ liệu (Number/Price)
+        CellStyle priceCellStyle = workbook.createCellStyle();
+        priceCellStyle.cloneStyleFrom(dataCellStyle);
+        priceCellStyle.setDataFormat(dataFormat.getFormat("#,##0"));
+        priceCellStyle.setAlignment(HorizontalAlignment.RIGHT);
+
+        // --- HEADER ---
+        Row headerRow = sheet.createRow(0);
+        headerRow.setHeightInPoints(30);
+        String[] columns = {
+                "Mã Hợp đồng", "Trạng thái HĐ", "Giá trị HĐ",
+                "Mã Yêu cầu",
+                "Tên KOL", "Tên người thuê", "Email người thuê", "SĐT người thuê",
+                "Chiến dịch", "Loại Booking", "Nền tảng",
+                "Thời gian bắt đầu (Booking)", "Thời gian kết thúc (Booking)"
+        };
+
+        for (int i = 0; i < columns.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(columns[i]);
+            cell.setCellStyle(headerCellStyle);
+        }
+        int rowIdx = 1;
+        for (BookingExportDTO booking : bookingExportDTOList) {
+            if (booking == null) {
+                continue;
+            }
+            Row dataRow = sheet.createRow(rowIdx++);
+            Cell cell;
+            cell = dataRow.createCell(0);
+            cell.setCellValue(booking.getContractNumber());
+            cell.setCellStyle(dataCellStyle);
+
+            // 1. Trạng thái HĐ
+            cell = dataRow.createCell(1);
+            cell.setCellValue(booking.getContractStatus());
+            cell.setCellStyle(dataCellStyle);
+
+            // 2. Giá trị HĐ (Quan trọng)
+            cell = dataRow.createCell(2);
+            if (booking.getContractAmount() != null) {
+                cell.setCellValue(booking.getContractAmount().doubleValue());
+            } else {
+                cell.setCellValue(0);
+            }
+            cell.setCellStyle(priceCellStyle);
+
+            // 4. Mã Yêu cầu
+            cell = dataRow.createCell(3);
+            cell.setCellValue(booking.getRequestNumber());
+            cell.setCellStyle(dataCellStyle);
+
+            // 6. Tên KOL (Quan trọng)
+            cell = dataRow.createCell(4);
+            String kol = booking.getKolName();
+            String kolName;
+            if (kol != null) {
+                kolName = kol;
+                cell.setCellValue(kolName);
+            } else {
+                List<BookingRequestParticipant> bk = bookingRequestParticipantRepository.findByBookingRequest_Id(booking.getBookingId());
+                StringBuilder kolNameBuilder = new StringBuilder();
+                for (BookingRequestParticipant p : bk) {
+                    kolNameBuilder.append(p.getKol().getUser().getFullName()).append(", ");
+                }
+                kolName = kolNameBuilder.toString();
+                cell.setCellValue(kolName);
+            }
+            cell.setCellStyle(dataCellStyle);
+
+            // 7. Tên Brand/Client (Người tạo booking)
+            cell = dataRow.createCell(5);
+            cell.setCellValue(booking.getBrandName());
+            cell.setCellStyle(dataCellStyle);
+
+            // 8. Email Brand
+            cell = dataRow.createCell(6);
+            cell.setCellValue(booking.getBrandEmail());
+            cell.setCellStyle(dataCellStyle);
+
+
+            // 9. SĐT Brand
+            cell = dataRow.createCell(7);
+            cell.setCellValue(booking.getBrandPhone());
+            cell.setCellStyle(dataCellStyle);
+
+            // 10. Chiến dịch
+            cell = dataRow.createCell(8);
+            cell.setCellValue(booking.getCampaignName());
+            cell.setCellStyle(dataCellStyle);
+
+            // 11. Loại Booking
+            cell = dataRow.createCell(9);
+            cell.setCellValue(booking.getBookingType());
+            cell.setCellStyle(dataCellStyle);
+
+            // 12. Nền tảng
+            cell = dataRow.createCell(10);
+            cell.setCellValue(booking.getPlatform());
+            cell.setCellStyle(dataCellStyle);
+
+            // 13. Thời gian bắt đầu (Booking)
+            cell = dataRow.createCell(11);
+            if (booking.getStartAt() != null) {
+                cell.setCellValue(Date.from(booking.getStartAt()));
+            }
+            cell.setCellStyle(dateTimeCellStyle);
+
+            // 14. Thời gian kết thúc (Booking)
+            cell = dataRow.createCell(12);
+            if (booking.getEndAt() != null) {
+                cell.setCellValue(Date.from(booking.getEndAt()));
+            }
+            cell.setCellStyle(dateTimeCellStyle);
+        }
+        for (int i = 0; i < columns.length; i++) {
+            sheet.autoSizeColumn(i);
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        workbook.write(out);
+        workbook.close();
+        return new ByteArrayInputStream(out.toByteArray());
     }
 }
