@@ -2,9 +2,11 @@ package com.web.bookingKol.domain.booking.repositories;
 
 import com.web.bookingKol.domain.admin.dashboard.BookingMonthlyTrendDTO;
 import com.web.bookingKol.domain.admin.dashboard.KolBookingRevenueDTO;
+import com.web.bookingKol.domain.booking.dtos.BookingExportDTO;
 import com.web.bookingKol.domain.booking.models.Contract;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -94,6 +96,37 @@ public interface ContractRepository extends JpaRepository<Contract, UUID> {
             "GROUP BY k.id, k.user.fullName " +
             "ORDER BY totalRevenue DESC")
     List<KolBookingRevenueDTO> findTopKolBookingRevenue(Pageable pageable, List<String> statuses, Instant start, Instant end);
+
+    @Query("SELECT c FROM Contract c WHERE (:bookingType IS NULL OR c.bookingRequest.bookingType = :bookingType)")
+    List<Contract> findAllByBookingType(@Param("bookingType") String bookingType);
+
+    @Query("SELECT new com.web.bookingKol.domain.booking.dtos.BookingExportDTO(" +
+            "br.id, c.contractNumber, c.status, c.amount, " +
+            "br.bookingNumber, br.requestNumber, br.status, " +
+            "COALESCE(k.displayName, ku.fullName), " + // Logic lấy tên KOL
+            "bu.fullName, bu.email, bu.phone, " +
+            "camp.name, " +
+            "br.bookingType, br.platform, " +
+            "br.startAt, br.endAt, " +
+            "c.signedAtBrand, c.signedAtKol) " +
+            "FROM Contract c " +
+            "LEFT JOIN c.bookingRequest br " + // JOIN bình thường
+            "LEFT JOIN br.kol k " +
+            "LEFT JOIN k.user ku " +
+            "LEFT JOIN br.user bu " +
+            "LEFT JOIN br.campaign camp " +
+            "WHERE (:bookingType IS NULL OR c.bookingRequest.bookingType = :bookingType)")
+    List<BookingExportDTO> findAllForExport(@Param("bookingType") String bookingType);
+
+    @EntityGraph(attributePaths = {
+            "bookingRequest",
+            "bookingRequest.kol",
+            "bookingRequest.kol.user",
+            "bookingRequest.user",
+            "bookingRequest.campaign"
+    })
+    @Query("SELECT c FROM Contract c WHERE (:bookingType IS NULL OR c.bookingRequest.bookingType = :bookingType)")
+    List<Contract> findAllWithGraph(@Param("bookingType") String bookingType);
 
     List<Contract> findByBookingRequest_Id(UUID bookingRequestId);
 }

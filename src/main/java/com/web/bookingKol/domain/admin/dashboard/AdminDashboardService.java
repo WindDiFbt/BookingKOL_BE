@@ -7,6 +7,7 @@ import com.web.bookingKol.domain.booking.models.Contract;
 import com.web.bookingKol.domain.booking.repositories.BookingRequestRepository;
 import com.web.bookingKol.domain.booking.repositories.ContractRepository;
 import com.web.bookingKol.domain.booking.repositories.IChartDataPointProjection;
+import com.web.bookingKol.domain.course.CoursePackageRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -24,15 +25,19 @@ import java.util.stream.Collectors;
 public class AdminDashboardService {
     private final ContractRepository contractRepository;
     private final BookingRequestRepository bookingRequestRepository;
+    private final CoursePackageRepository coursePackageRepository;
     private static final int TOP_KOL_LIMIT = 10;
     private static final int DEFAULT_DATA_DAY = 7;
 
-    public AdminDashboardService(ContractRepository contractRepository, BookingRequestRepository bookingRequestRepository) {
+    public AdminDashboardService(ContractRepository contractRepository,
+                                 BookingRequestRepository bookingRequestRepository,
+                                 CoursePackageRepository coursePackageRepository) {
         this.contractRepository = contractRepository;
         this.bookingRequestRepository = bookingRequestRepository;
+        this.coursePackageRepository = coursePackageRepository;
     }
 
-    public ApiResponse<AdminDashboardDTO> getAdminDashboard(Instant startDate, Instant endDate) {
+    public AdminDashboardDTO getDashboard(Instant startDate, Instant endDate) {
         Instant now = Instant.now();
         if (startDate == null) {
             startDate = now.minus(DEFAULT_DATA_DAY, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
@@ -138,12 +143,31 @@ public class AdminDashboardService {
         adminDashboardDTO.setRecentBookingRequests(recentBookingRequests.stream().map(this::mapBookingRequestToDTO).collect(Collectors.toList()));
         adminDashboardDTO.setUpcomingBookingRequests(upcomingBookingRequests.stream().map(this::mapBookingRequestToDTO).collect(Collectors.toList()));
 
+        adminDashboardDTO.setRevenueOverview(coursePackageRepository.getOverview());
+        adminDashboardDTO.setCourseRevenue(coursePackageRepository.getRevenueByCourse());
+        adminDashboardDTO.setRevenueByDate(coursePackageRepository.getRevenueByDate());
+
+        return adminDashboardDTO;
+    }
+
+    public ApiResponse<AdminDashboardDTO> getAdminDashboard(Instant startDate, Instant endDate) {
         return ApiResponse.<AdminDashboardDTO>builder()
                 .status(HttpStatus.OK.value())
                 .message(List.of("Lấy dashboard Admin thành công"))
-                .data(adminDashboardDTO)
+                .data(getDashboard(startDate, endDate))
                 .build();
     }
+
+//    public ApiResponse<?> getSuperAdminDashboard(Instant startDate, Instant endDate) {
+//        Instant now = Instant.now();
+//        if (startDate == null) {
+//            startDate = now.minus(DEFAULT_DATA_DAY, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
+//        }
+//        if (endDate == null) {
+//            endDate = now;
+//        }
+//
+//    }
 
     private BigDecimal getPrimaryContractAmount(BookingRequest booking) {
         if (booking.getContracts() == null || booking.getContracts().isEmpty()) {
