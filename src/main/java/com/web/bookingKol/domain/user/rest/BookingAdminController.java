@@ -26,6 +26,7 @@ public class BookingAdminController {
 
     private final BookingAdminService bookingAdminService;
     private final AdminBookingRequestService bookingRequestService;
+    private final AdminBookingRequestService adminBookingRequestService;
 
 
     @PreAuthorize("hasAnyAuthority('ADMIN','SUPER_ADMIN')")
@@ -86,6 +87,16 @@ public class BookingAdminController {
             @PathVariable UUID bookingRequestId) {
         return ResponseEntity.ok(bookingRequestService.getBookingRequestDetail(bookingRequestId));
     }
+
+    // xem chi tiết campaign
+    @PreAuthorize("hasAnyAuthority('ADMIN','SUPER_ADMIN')")
+    @GetMapping("/admin/{campaignId}")
+    public ResponseEntity<ApiResponse<CampaignDetailResponse>> getCampaignDetail(@PathVariable UUID campaignId) {
+        return ResponseEntity.ok(adminBookingRequestService.getCampaignDetail(campaignId));
+    }
+
+
+
 
 
 

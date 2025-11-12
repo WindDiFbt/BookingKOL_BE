@@ -128,4 +128,5 @@ public interface ContractRepository extends JpaRepository<Contract, UUID> {
     @Query("SELECT c FROM Contract c WHERE (:bookingType IS NULL OR c.bookingRequest.bookingType = :bookingType)")
     List<Contract> findAllWithGraph(@Param("bookingType") String bookingType);
 
+    List<Contract> findByBookingRequest_Id(UUID bookingRequestId);
 }

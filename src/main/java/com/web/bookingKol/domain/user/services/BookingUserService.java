@@ -6,6 +6,7 @@ import com.web.bookingKol.domain.user.dtos.BookedPackageResponse;
 import org.springframework.data.domain.Pageable;
 
 import java.time.Instant;
+import java.util.UUID;
 
 public interface BookingUserService {
 
@@ -17,5 +18,8 @@ public interface BookingUserService {
             String packageType,
             Pageable pageable
     );
+
+    ApiResponse<?> cancelBookingRequest(UUID id, String userEmail);
+
 }
 
