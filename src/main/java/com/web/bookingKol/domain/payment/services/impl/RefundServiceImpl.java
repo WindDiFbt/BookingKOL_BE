@@ -34,7 +34,7 @@ public class RefundServiceImpl implements RefundService {
     private RefundMapper refundMapper;
 
     @Override
-    public RefundDTO createRefundRequest(Contract contract, String bankNumber, String bankName) {
+    public RefundDTO createRefundRequest(Contract contract, String bankNumber, String bankName, String reason, String ownerName) {
         BookingRequest bookingRequest = contract.getBookingRequest();
         if (!contract.getStatus().equals(Enums.ContractStatus.PAID.name())) {
             throw new IllegalArgumentException("Hợp đồng đã hủy hoặc đã hoàn thành. Không thể tạo yêu cầu hoàn tiền.");
@@ -43,7 +43,7 @@ public class RefundServiceImpl implements RefundService {
         Instant bookingStartTime = bookingRequest.getStartAt();
         BigDecimal totalAmount = contract.getAmount();
         BigDecimal refundAmount;
-        String refundReason;
+        String refundDescription;
         Duration timeRemaining = Duration.between(cancellationTime, bookingStartTime);
         Duration twentyFourHours = Duration.ofHours(24);
 
@@ -52,21 +52,23 @@ public class RefundServiceImpl implements RefundService {
         } else if (timeRemaining.compareTo(twentyFourHours) > 0) {
             BigDecimal percentage = new BigDecimal("0.80");
             refundAmount = totalAmount.multiply(percentage).setScale(2, RoundingMode.HALF_UP);
-            refundReason = "Hủy trước 24 giờ. Phí phạt 20%.";
+            refundDescription = "Hủy trước 24 giờ. Phí phạt 20%.";
         } else {
             BigDecimal percentage = new BigDecimal("0.50");
             refundAmount = totalAmount.multiply(percentage).setScale(2, RoundingMode.HALF_UP);
-            refundReason = "Hủy trong vòng 24 giờ. Phí phạt 50%.";
+            refundDescription = "Hủy trong vòng 24 giờ. Phí phạt 50%.";
         }
         Refund refund = new Refund();
         refund.setId(UUID.randomUUID());
         refund.setAmount(refundAmount);
-        refund.setReason(refundReason);
+        refund.setReason(reason);
+        refund.setDescription(refundDescription);
         refund.setStatus(Enums.RefundStatus.PENDING.name());
         refund.setCreatedAt(Instant.now());
         refund.setContract(contract);
         refund.setBankNumber(bankNumber);
         refund.setBankName(bankName);
+        refund.setOwnerName(ownerName);
         refundRepository.save(refund);
         return refundMapper.toDto(refund);
     }
