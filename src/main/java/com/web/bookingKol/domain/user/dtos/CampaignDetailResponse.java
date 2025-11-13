@@ -22,5 +22,8 @@ public class CampaignDetailResponse {
     private String createdByEmail;
 
     private List<BookingRequestDetail> bookingRequests;
+
+    private List<KolInfo> allKols;
+    private List<KolInfo> allLives;
 }
 
