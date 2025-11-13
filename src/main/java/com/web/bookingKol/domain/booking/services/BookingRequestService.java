@@ -62,7 +62,7 @@ public interface BookingRequestService {
 
     ApiResponse<BookingDetailDTO> updateBookingRequest(UUID userId, UUID bookingRequestId, UpdateBookingReqDTO updateBookingReqDTO, List<MultipartFile> attachedFiles, List<UUID> fileIdsToDelete);
 
-    ApiResponse<?> cancelBookingRequest(UUID userId, UUID bookingRequestId, String bankNumber, String bankName);
+    ApiResponse<?> cancelBookingRequest(UUID userId, UUID bookingRequestId, String bankNumber, String bankName, String reason, String ownerName);
 
     ApiResponse<PaymentReqDTO> continueBookingRequestPayment(UUID bookingRequestId, UUID userId);
 

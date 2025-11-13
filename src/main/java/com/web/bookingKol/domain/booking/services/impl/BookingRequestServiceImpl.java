@@ -465,7 +465,7 @@ public class BookingRequestServiceImpl implements BookingRequestService {
 
     @Transactional
     @Override
-    public ApiResponse<?> cancelBookingRequest(UUID userId, UUID bookingRequestId, String bankNumber, String bankName) {
+    public ApiResponse<?> cancelBookingRequest(UUID userId, UUID bookingRequestId, String bankNumber, String bankName, String reason, String ownerName) {
         BookingRequest bookingRequest = bookingRequestRepository.findByIdWithAttachedFiles(bookingRequestId);
         if (bookingRequest == null) {
             throw new EntityNotFoundException("Không tìm thấy yêu cầu đặt lịch: " + bookingRequestId);
@@ -485,7 +485,7 @@ public class BookingRequestServiceImpl implements BookingRequestService {
         }
         kolWorkTimeRepository.saveAll(kolWorkTimes);
         Contract contract = contractRepository.findByRequestId(bookingRequestId);
-        RefundDTO refundDTO = refundService.createRefundRequest(contract, bankNumber, bankName);
+        RefundDTO refundDTO = refundService.createRefundRequest(contract, bankNumber, bankName, reason, ownerName);
         contract.setStatus(Enums.ContractStatus.WAIT_FOR_REFUND.name());
         contractRepository.save(contract);
         return ApiResponse.builder()

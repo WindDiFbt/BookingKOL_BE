@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @Service
 public interface RefundService {
-    RefundDTO createRefundRequest(Contract contract, String bankNumber, String bankName);
+    RefundDTO createRefundRequest(Contract contract, String bankNumber, String bankName, String reason, String ownerName);
 
     ApiResponse<RefundDTO> confirmRefunded(UUID refundId);
 
