@@ -88,7 +88,7 @@ public class SecurityConfig {
                         .requestMatchers("/kol-profiles/**", "/courses/**").permitAll()
                         .requestMatchers("/register/**", "/payment/**", "/platforms/**").permitAll()
                         .requestMatchers("/password/**").permitAll()
-                        .requestMatchers("/admin/**").hasAuthority(Enums.Roles.ADMIN.name())
+                        .requestMatchers("/admin/**").hasAnyAuthority(Enums.Roles.ADMIN.name(), Enums.Roles.SUPER_ADMIN.name())
                         .requestMatchers("/kol/**").hasAuthority(Enums.Roles.KOL.name())
                         .requestMatchers("/superadmin/**").hasAuthority(Enums.Roles.SUPER_ADMIN.name())
                         .requestMatchers(
