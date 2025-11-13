@@ -90,6 +90,7 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
         booking.setCreatedAt(Instant.now());
         booking.setUpdatedAt(Instant.now());
         booking.setContractAmount(dto.getContractAmount() != null ? dto.getContractAmount() : BigDecimal.ZERO);
+        booking.setBookingType(Enums.BookingType.CAMPAIGN.name());
         bookingRequestRepository.saveAndFlush(booking);
 
         String savedContractPath = null;
