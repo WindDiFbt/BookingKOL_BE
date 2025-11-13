@@ -19,7 +19,9 @@ import com.web.bookingKol.domain.user.services.BookingUserService;
 import com.web.bookingKol.temp_models.PurchasedServicePackage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -83,7 +85,13 @@ public class BookingUserServiceImpl implements BookingUserService {
                     cb.lessThanOrEqualTo(root.get("createdAt"), endDate));
         }
 
-        Page<PurchasedServicePackage> page = purchasedRepo.findAll(spec, pageable);
+        Pageable sortedPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        Page<PurchasedServicePackage> page = purchasedRepo.findAll(spec, sortedPageable);
 
         Page<BookedPackageResponse> result = page.map(p -> {
             List<BookingPackageKol> links = bookingPackageKolRepository.findByPurchasedPackageId(p.getId());
@@ -107,6 +115,7 @@ public class BookingUserServiceImpl implements BookingUserService {
             return BookedPackageResponse.builder()
                     .id(p.getId())
                     .campaignName(p.getCampaign() != null ? p.getCampaign().getName() : null)
+                    .campaignId(p.getCampaign().getId())
                     .objective(p.getCampaign() != null ? p.getCampaign().getObjective() : null)
                     .budgetMin(p.getCampaign() != null ? p.getCampaign().getBudgetMin() : null)
                     .budgetMax(p.getCampaign() != null ? p.getCampaign().getBudgetMax() : null)
