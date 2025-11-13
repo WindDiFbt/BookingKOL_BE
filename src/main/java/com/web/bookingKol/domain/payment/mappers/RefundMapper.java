@@ -22,6 +22,8 @@ public class RefundMapper {
         dto.setContract(contractMapper.toDto(refund.getContract()));
         dto.setBankNumber(refund.getBankNumber());
         dto.setBankName(refund.getBankName());
+        dto.setOwnerName(refund.getOwnerName());
+        dto.setDescription(refund.getDescription());
         return dto;
     }
 
@@ -35,6 +37,8 @@ public class RefundMapper {
         dto.setCreatedAt(refund.getCreatedAt());
         dto.setBankNumber(refund.getBankNumber());
         dto.setBankName(refund.getBankName());
+        dto.setOwnerName(refund.getOwnerName());
+        dto.setDescription(refund.getDescription());
         return dto;
     }
 }
