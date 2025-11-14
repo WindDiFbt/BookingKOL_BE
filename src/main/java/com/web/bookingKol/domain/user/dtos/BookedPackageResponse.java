@@ -1,5 +1,6 @@
 package com.web.bookingKol.domain.user.dtos;
 
+import com.web.bookingKol.domain.booking.models.BookingRequest;
 import lombok.Builder;
 import lombok.Data;
 
@@ -21,6 +22,7 @@ public class BookedPackageResponse {
     private Instant startDate;
     private Instant endDate;
     private String recurrencePattern;
+    private String campaignNumber;
 
     private String packageName;
     private String packageType;
@@ -35,5 +37,8 @@ public class BookedPackageResponse {
 
     private Instant createdAt;
     private Instant updatedAt;
+    private UUID bookingRequestId;
+
+
 }
 

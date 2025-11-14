@@ -91,6 +91,7 @@ public class BookingAdminServiceImpl implements BookingAdminService {
             return BookedPackageResponse.builder()
                     .id(p.getId())
                     .bookingNumber(p.getBookingNumber())
+                    .campaignNumber(p.getCampaign() != null ? p.getCampaign().getCampaignNumber() : null)
                     .campaignId(p.getCampaign() != null ? p.getCampaign().getId() : null)
                     .campaignName(p.getCampaign() != null ? p.getCampaign().getName() : null)
                     .objective(p.getCampaign() != null ? p.getCampaign().getObjective() : null)

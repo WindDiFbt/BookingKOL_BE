@@ -14,8 +14,7 @@ public class CampaignDetailResponse {
     private UUID id;
     private String name;
     private String objective;
-    private BigDecimal budgetMin;
-    private BigDecimal budgetMax;
+    private BigDecimal targetPrice;
     private Instant startDate;
     private Instant endDate;
     private String status;
@@ -25,5 +24,8 @@ public class CampaignDetailResponse {
 
     private List<KolInfo> allKols;
     private List<KolInfo> allLives;
+    private List<KolInfo> campaignKols;
+    private List<KolInfo> campaignLives;
+
 }
 

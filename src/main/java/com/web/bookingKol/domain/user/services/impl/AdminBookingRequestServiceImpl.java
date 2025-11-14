@@ -400,10 +400,35 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
     // xem chi tiết campaign
     @Override
     public ApiResponse<CampaignDetailResponse> getCampaignDetail(UUID campaignId) {
+
         Campaign campaign = campaignRepository.findById(campaignId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy campaign với ID: " + campaignId));
 
+        // ====== Lấy booking request ======
         List<BookingRequest> bookingRequests = bookingRequestRepository.findByCampaign_Id(campaignId);
+
+        // ====== Lấy danh sách KOL/LIVE thuộc PurchasedServicePackages của campaign ======
+        List<BookingPackageKol> pkgKols = bookingPackageKolRepository
+                .findByPurchasedPackage_Campaign_Id(campaignId);
+
+        // ====== Map Campaign KOL ======
+        List<KolInfo> campaignKols = pkgKols.stream()
+                .filter(k -> "KOL".equalsIgnoreCase(k.getRoleInBooking()))
+                .map(k -> KolInfo.builder()
+                        .id(k.getKol().getId())
+                        .displayName(k.getKol().getDisplayName())
+                        .build())
+                .toList();
+
+        // ====== Map Campaign LIVE ======
+        List<KolInfo> campaignLives = pkgKols.stream()
+                .filter(k -> "LIVE".equalsIgnoreCase(k.getRoleInBooking()))
+                .map(k -> KolInfo.builder()
+                        .id(k.getKol().getId())
+                        .displayName(k.getKol().getDisplayName())
+                        .build())
+                .toList();
+
 
         List<BookingRequestDetail> bookingDetails = bookingRequests.stream().map(br -> {
 
@@ -417,23 +442,19 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
                             .id(sch.getId())
                             .installmentNumber(sch.getInstallmentNumber())
                             .amount(sch.getAmount())
-
                             .dueDate(sch.getDueDate() != null
                                     ? sch.getDueDate().atStartOfDay(ZoneId.systemDefault()).toInstant()
                                     : null)
-
                             .status(sch.getStatus().name())
                             .transactionId(sch.getTransaction() != null
                                     ? UUID.nameUUIDFromBytes(sch.getTransaction().getId().toString().getBytes())
                                     : null)
-
                             .transactionStatus(sch.getTransaction() != null ? sch.getTransaction().getStatus() : null)
                             .build())
                     .toList()
                     : List.of();
 
-
-            // ====== Lấy danh sách KOL & LIVE ======
+            // === KOL/LIVE theo từng booking request ===
             List<BookingRequestParticipant> participants =
                     bookingRequestParticipantRepository.findByBookingRequest_Id(br.getId());
 
@@ -453,7 +474,6 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
                             .build())
                     .toList();
 
-            // ====== Trả về BookingRequest chi tiết ======
             return BookingRequestDetail.builder()
                     .id(br.getId())
                     .bookingNumber(br.getBookingNumber())
@@ -492,16 +512,20 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
                     .build();
         }).toList();
 
+        // ====== Build response ======
         CampaignDetailResponse response = CampaignDetailResponse.builder()
                 .id(campaign.getId())
                 .name(campaign.getName())
                 .objective(campaign.getObjective())
-                .budgetMin(campaign.getBudgetMin())
-                .budgetMax(campaign.getBudgetMax())
+                .targetPrice(campaign.getBudgetMax())
                 .startDate(campaign.getStartDate())
                 .endDate(campaign.getEndDate())
                 .status(campaign.getStatus())
                 .createdByEmail(campaign.getCreatedBy() != null ? campaign.getCreatedBy().getEmail() : null)
+
+                .campaignKols(campaignKols)
+                .campaignLives(campaignLives)
+
                 .bookingRequests(bookingDetails)
                 .build();
 
@@ -511,6 +535,8 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
                 .data(response)
                 .build();
     }
+
+
 
 
 

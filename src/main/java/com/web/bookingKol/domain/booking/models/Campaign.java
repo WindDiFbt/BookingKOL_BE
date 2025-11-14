@@ -88,4 +88,9 @@ public class Campaign {
     @OneToMany(mappedBy = "campaign")
     private Set<PurchasedServicePackage> purchasedServicePackages = new LinkedHashSet<>();
 
+    @Size(max = 100)
+    @Column(name = "campaign_number", length = 100, unique = true)
+    private String campaignNumber;
+
+
 }

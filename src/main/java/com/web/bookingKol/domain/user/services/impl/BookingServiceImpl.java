@@ -61,6 +61,7 @@ public class BookingServiceImpl implements BookingService {
         campaign.setStatus(Enums.BookingStatus.REQUESTED.name());
         campaign.setCreatedAt(Instant.now());
         campaign.setUpdatedAt(Instant.now());
+        campaign.setCampaignNumber("CP-" + System.currentTimeMillis());
         campaignRepository.save(campaign);
 
         if (req.getAttachment() != null && !req.getAttachment().isEmpty()) {
