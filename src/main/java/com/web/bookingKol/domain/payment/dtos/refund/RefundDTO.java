@@ -18,4 +18,6 @@ public class RefundDTO {
     private ContractDTO contract;
     private String bankNumber;
     private String bankName;
+    private String ownerName;
+    private String description;
 }

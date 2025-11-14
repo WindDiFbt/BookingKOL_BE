@@ -57,6 +57,7 @@ public class UserSingleRequestController {
                                                   @PathVariable UUID requestId,
                                                   @RequestBody @Valid CancellationRequest cancellationRequest) {
         UUID userId = userDetails.getId();
-        return ResponseEntity.ok(bookingRequestService.cancelBookingRequest(userId, requestId, cancellationRequest.getBankNumber(), cancellationRequest.getBankName()));
+        return ResponseEntity.ok(bookingRequestService.cancelBookingRequest(userId, requestId, cancellationRequest.getBankNumber(), cancellationRequest.getBankName(),
+                cancellationRequest.getReason(), cancellationRequest.getOwnerName()));
     }
 }

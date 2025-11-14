@@ -53,4 +53,12 @@ public class Refund {
     @Column(name = "bank_name")
     private String bankName;
 
+    @Size(max = 255)
+    @Column(name = "owner_name")
+    private String ownerName;
+
+    @Size(max = 255)
+    @Column(name = "description")
+    private String description;
+
 }
