@@ -85,13 +85,13 @@ public class BookingUserServiceImpl implements BookingUserService {
                     cb.lessThanOrEqualTo(root.get("createdAt"), endDate));
         }
 
-        Pageable sorted = PageRequest.of(
+        Pageable sortedPageable = PageRequest.of(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
                 Sort.by(Sort.Direction.DESC, "createdAt")
         );
 
-        Page<PurchasedServicePackage> page = purchasedRepo.findAll(spec, sorted);
+        Page<PurchasedServicePackage> page = purchasedRepo.findAll(spec, sortedPageable);
 
         Page<BookedPackageResponse> result = page.map(p -> {
             List<BookingPackageKol> links = bookingPackageKolRepository.findByPurchasedPackageId(p.getId());

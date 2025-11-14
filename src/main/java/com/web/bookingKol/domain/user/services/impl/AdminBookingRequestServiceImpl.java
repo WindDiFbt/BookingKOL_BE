@@ -476,6 +476,7 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
 
             return BookingRequestDetail.builder()
                     .id(br.getId())
+                    .campaignId(campaign.getId())
                     .bookingNumber(br.getBookingNumber())
                     .status(br.getStatus())
                     .description(br.getDescription())
@@ -485,8 +486,6 @@ public class AdminBookingRequestServiceImpl implements AdminBookingRequestServic
                     .contractAmount(br.getContractAmount())
                     .createdAt(br.getCreatedAt())
                     .updatedAt(br.getUpdatedAt())
-
-                    .campaignId(campaign.getId())
                     .campaignName(campaign.getName())
                     .campaignObjective(campaign.getObjective())
                     .budgetMin(campaign.getBudgetMin())

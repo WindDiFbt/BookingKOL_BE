@@ -75,8 +75,7 @@ public class CampaignServiceImpl implements CampaignService {
         data.put("campaignId", campaign.getId());
         data.put("name", campaign.getName());
         data.put("objective", campaign.getObjective());
-        data.put("budgetMin", campaign.getBudgetMin());
-        data.put("budgetMax", campaign.getBudgetMax());
+        data.put("targetPrice", campaign.getBudgetMax());
         data.put("startDate", campaign.getStartDate());
         data.put("endDate", campaign.getEndDate());
         data.put("status", campaign.getStatus());
