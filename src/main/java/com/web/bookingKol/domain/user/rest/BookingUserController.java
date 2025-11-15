@@ -3,9 +3,16 @@ package com.web.bookingKol.domain.user.rest;
 
 import com.web.bookingKol.common.PagedResponse;
 import com.web.bookingKol.common.payload.ApiResponse;
+import com.web.bookingKol.domain.booking.dtos.livestreamMetric.LivestreamMetricReqDTO;
+import com.web.bookingKol.domain.booking.services.LivestreamMetricService;
 import com.web.bookingKol.domain.user.dtos.BookedPackageResponse;
+import com.web.bookingKol.domain.user.models.User;
+import com.web.bookingKol.domain.user.models.UserDetailsImpl;
+import com.web.bookingKol.domain.user.repositories.UserRepository;
 import com.web.bookingKol.domain.user.services.BookingUserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -26,6 +33,10 @@ import java.util.UUID;
 public class BookingUserController {
 
     private final BookingUserService bookingUserService;
+    private final UserRepository userRepository;
+
+    @Autowired
+    private LivestreamMetricService livestreamMetricService;
 
     @PreAuthorize("hasAuthority('USER')")
     @GetMapping
@@ -51,12 +62,21 @@ public class BookingUserController {
     }
 
 
-    //user hủy đơn campaign
+//    //user hủy đơn campaign
+//    @PreAuthorize("hasAuthority('USER')")
+//    @PutMapping("/cancel/campaign/{id}")
+//    public ResponseEntity<ApiResponse<?>> cancelBookingCampaign(@PathVariable UUID id) {
+//        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+//        return ResponseEntity.ok(bookingUserService.cancelBookingCampaign(id, email));
+//    }
+
     @PreAuthorize("hasAuthority('USER')")
-    @PutMapping("/cancel/{id}")
-    public ResponseEntity<ApiResponse<?>> cancelBookingRequest(@PathVariable UUID id) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return ResponseEntity.ok(bookingUserService.cancelBookingRequest(id, email));
+    @PostMapping("/cancel/bookingrequest/{bookingRequestId}")
+    public ResponseEntity<ApiResponse<?>> cancelBookingRequest(
+            @PathVariable UUID bookingRequestId
+    ) {
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(bookingUserService.cancelBookingRequest(bookingRequestId, userEmail));
     }
 
 }

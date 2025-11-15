@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import com.web.bookingKol.domain.kol.services.KolWorkTimeService;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -36,6 +37,9 @@ public class KolAvailabilityController {
 
     @Autowired
     private KolAvailabilityService kolAvailabilityService;
+
+    @Autowired
+    private KolWorkTimeService kolWorkTimeService;
 
 //    @PreAuthorize("hasAuthority('KOL')")
 //    @GetMapping("/{kolId}/schedule")
@@ -164,6 +168,25 @@ public class KolAvailabilityController {
     ) {
         String email = authentication.getName();
         return ResponseEntity.ok(availabilityService.updateKolAvailability(email, dto));
+    }
+
+
+    @PreAuthorize("hasAnyAuthority('USER')")
+    @GetMapping("/admin/booking/{bookingRequestId}")
+    public ResponseEntity<ApiResponse<List<KolWorkTimeDTO>>> getWorkTimesByBooking(
+            @PathVariable UUID bookingRequestId
+    ) {
+        ApiResponse<List<KolWorkTimeDTO>> response = kolWorkTimeService.getWorkTimesByBookingRequest(bookingRequestId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasAnyAuthority('USER')")
+    @GetMapping("/user/booking/{bookingRequestId}")
+    public ResponseEntity<ApiResponse<List<KolWorkTimeDTO>>> getWorkTimesByBookingUser(
+            @PathVariable UUID bookingRequestId
+    ) {
+        ApiResponse<List<KolWorkTimeDTO>> response = kolWorkTimeService.getWorkTimesByBookingRequest(bookingRequestId);
+        return ResponseEntity.ok(response);
     }
 
 

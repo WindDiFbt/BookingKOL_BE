@@ -136,4 +136,9 @@ public interface KolWorkTimeRepository extends JpaRepository<KolWorkTime, UUID> 
             "AND k.status IN :statuses")
     List<KolWorkTime> findAllByKolIdAndStartAtBetweenAndStatusIn(
             UUID kolId, Instant start, Instant end, List<String> statuses);
+
+
+    @Query("SELECT w FROM KolWorkTime w WHERE w.bookingRequest.id = :bookingRequestId ORDER BY w.startAt ASC")
+    List<KolWorkTime> findByBookingRequestId(@Param("bookingRequestId") UUID bookingRequestId);
+
 }

@@ -4,6 +4,7 @@ import com.web.bookingKol.common.Enums;
 import com.web.bookingKol.common.PagedResponse;
 import com.web.bookingKol.common.payload.ApiResponse;
 import com.web.bookingKol.domain.booking.models.BookingPackageKol;
+import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.booking.models.Campaign;
 import com.web.bookingKol.domain.booking.models.Contract;
 import com.web.bookingKol.domain.booking.repositories.BookingRequestRepository;
@@ -28,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -112,35 +114,51 @@ public class BookingUserServiceImpl implements BookingUserService {
                             .build())
                     .collect(Collectors.toList());
 
+            UUID bookingRequestId = null;
+            UUID contractId = null;
+
+            if (p.getCampaign() != null) {
+                BookingRequest bookingRequest = bookingRequestRepository
+                        .findFirstByCampaign_Id(p.getCampaign().getId())
+                        .orElse(null);
+
+                if (bookingRequest != null) {
+                    bookingRequestId = bookingRequest.getId();
+
+                    Contract latestContract = bookingRequest.getContracts().stream()
+                            .max(Comparator.comparing(Contract::getCreatedAt))
+                            .orElse(null);
+
+                    if (latestContract != null) {
+                        contractId = latestContract.getId();
+                    }
+                }
+            }
+
             return BookedPackageResponse.builder()
                     .id(p.getId())
-                    .campaignNumber(
-                            p.getCampaign() != null
-                                    ? p.getCampaign().getCampaignNumber()
-                                    : null
-                    )
-
+                    .campaignNumber(p.getCampaign() != null ? p.getCampaign().getCampaignNumber() : null)
                     .campaignName(p.getCampaign() != null ? p.getCampaign().getName() : null)
-                    .campaignId(p.getCampaign().getId())
+                    .campaignId(p.getCampaign() != null ? p.getCampaign().getId() : null)
                     .objective(p.getCampaign() != null ? p.getCampaign().getObjective() : null)
                     .targetPrice(p.getCampaign() != null ? p.getCampaign().getBudgetMax() : null)
                     .startDate(p.getCampaign() != null ? p.getCampaign().getStartDate() : null)
                     .endDate(p.getCampaign() != null ? p.getCampaign().getEndDate() : null)
                     .recurrencePattern(p.getRecurrencePattern())
-
                     .packageName(p.getPackageField() != null ? p.getPackageField().getName() : null)
                     .packageType(p.getPackageField() != null ? p.getPackageField().getPackageType() : null)
                     .price(p.getPrice() != null ? p.getPrice().doubleValue() : null)
                     .status(p.getStatus())
-
                     .buyerEmail(p.getCampaign() != null && p.getCampaign().getCreatedBy() != null
                             ? p.getCampaign().getCreatedBy().getEmail()
                             : null)
-
                     .kols(kols)
                     .lives(lives)
                     .createdAt(p.getCreatedAt())
                     .updatedAt(p.getUpdatedAt())
+
+                    .bookingRequestId(bookingRequestId)
+                    .contractId(contractId)
                     .build();
         });
 
@@ -154,10 +172,11 @@ public class BookingUserServiceImpl implements BookingUserService {
 
 
 
+
     //user hủy đơn campaign
     @Override
     @Transactional
-    public ApiResponse<?> cancelBookingRequest(UUID id, String userEmail) {
+    public ApiResponse<?> cancelBookingCampaign(UUID id, String userEmail) {
 
         var userOpt = userRepository.findByEmail(userEmail);
         if (userOpt.isEmpty()) {
@@ -229,6 +248,70 @@ public class BookingUserServiceImpl implements BookingUserService {
                 })
                 .build();
     }
+
+
+    @Override
+    @Transactional
+    public ApiResponse<?> cancelBookingRequest(UUID bookingRequestId, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy user: " + userEmail));
+
+        BookingRequest booking = bookingRequestRepository.findById(bookingRequestId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy Booking Request"));
+
+        Campaign campaign = booking.getCampaign();
+
+        if (campaign == null) {
+            throw new RuntimeException("Booking Request không thuộc campaign nào");
+        }
+
+        if (!campaign.getCreatedBy().getId().equals(user.getId())) {
+            return ApiResponse.builder()
+                    .status(HttpStatus.FORBIDDEN.value())
+                    .message(List.of("Bạn không có quyền hủy Booking Request này"))
+                    .build();
+        }
+
+//        if (booking.getStatus().equals(Enums.BookingStatus.COMPLETED.name()) ||
+//                booking.getStatus().equals(Enums.BookingStatus.PAID.name()) ||
+//                booking.getStatus().equals(Enums.BookingStatus.DELIVERED.name()) ||
+//                booking.getStatus().equals(Enums.BookingStatus.CONTRACT_SIGNED.name())) {
+//
+//            return ApiResponse.builder()
+//                    .status(HttpStatus.BAD_REQUEST.value())
+//                    .message(List.of("Không thể hủy vì booking đã sang bước xử lý cao hơn"))
+//                    .build();
+//        }
+
+        booking.setStatus(Enums.BookingStatus.CANCELLED.name());
+        booking.setUpdatedAt(Instant.now());
+        bookingRequestRepository.save(booking);
+
+        Contract contract = booking.getContracts().stream()
+                .max(Comparator.comparing(Contract::getCreatedAt))
+                .orElse(null);
+
+        if (contract != null) {
+            contract.setStatus(Enums.ContractStatus.CANCELLED.name());
+            contract.setUpdatedAt(Instant.now());
+            contractRepository.save(contract);
+        }
+
+        campaign.setStatus(Enums.BookingStatus.CANCELLED.name());
+        campaign.setUpdatedAt(Instant.now());
+        campaignRepository.save(campaign);
+
+        return ApiResponse.builder()
+                .status(HttpStatus.OK.value())
+                .message(List.of("Hủy Booking Request thành công"))
+                .data(Map.of(
+                        "bookingRequestId", booking.getId(),
+                        "campaignId", campaign.getId(),
+                        "status", Enums.BookingStatus.CANCELLED.name()
+                ))
+                .build();
+    }
+
 
 
 }
