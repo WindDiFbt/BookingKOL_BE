@@ -1,5 +1,6 @@
 package com.web.bookingKol.domain.user.dtos;
 
+import com.web.bookingKol.domain.booking.dtos.ContractPaymentScheduleResponse;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
 import lombok.Builder;
 import lombok.Data;
@@ -40,6 +41,9 @@ public class BookedPackageResponse {
 
     private UUID bookingRequestId;
     private UUID contractId;
+
+    private List<ContractPaymentScheduleResponse> paymentSchedules;
+
 
 
 
