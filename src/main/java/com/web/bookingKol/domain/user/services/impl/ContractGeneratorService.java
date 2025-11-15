@@ -85,6 +85,59 @@ public class ContractGeneratorService {
         }
     }
 
+    public FileUsageDTO generateAndSaveContractForSingle(Map<String, String> placeholders, UUID uploaderId, UUID contractId) {
+        try {
+            InputStream templateStream = getClass()
+                    .getClassLoader()
+                    .getResourceAsStream("templates/contract_template_single.docx");
+
+            if (templateStream == null) {
+                throw new RuntimeException("Không tìm thấy file mẫu hợp đồng trong resources/templates/");
+            }
+
+            Path tempDir = Files.createTempDirectory("contracts_");
+            String uniqueSuffix = UUID.randomUUID().toString().substring(0, 8);
+            String fileName = String.format("contract_%s_%s.docx", contractId, uniqueSuffix);
+            Path filePath = tempDir.resolve(fileName);
+
+            try (XWPFDocument document = new XWPFDocument(templateStream)) {
+                for (XWPFParagraph p : document.getParagraphs()) {
+                    for (XWPFRun r : p.getRuns()) {
+                        String text = r.getText(0);
+                        if (text != null) {
+                            for (var entry : placeholders.entrySet()) {
+                                text = text.replace("${" + entry.getKey() + "}", entry.getValue());
+                            }
+                            r.setText(text, 0);
+                        }
+                    }
+                }
+
+                try (FileOutputStream fos = new FileOutputStream(filePath.toFile())) {
+                    document.write(fos);
+                }
+            }
+
+            MultipartFile multipartFile = toMultipartFile(filePath.toFile(), fileName);
+
+            FileDTO fileDTO = fileService.uploadFilePoint(uploaderId, multipartFile);
+            FileUsageDTO fileUsageDTO = fileService.createFileUsage(
+                    fileMapper.toEntity(fileDTO),
+                    contractId,
+                    Enums.TargetType.CONTRACT.name(),
+                    false
+            );
+
+            Files.deleteIfExists(filePath);
+            Files.deleteIfExists(tempDir);
+
+            return fileUsageDTO;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi khi sinh hợp đồng và upload Supabase: " + e.getMessage(), e);
+        }
+    }
+
 
     private MultipartFile toMultipartFile(java.io.File file, String fileName) {
         return new MultipartFile() {
