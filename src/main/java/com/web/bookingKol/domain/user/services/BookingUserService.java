@@ -19,7 +19,9 @@ public interface BookingUserService {
             Pageable pageable
     );
 
-    ApiResponse<?> cancelBookingRequest(UUID id, String userEmail);
+    ApiResponse<?> cancelBookingCampaign(UUID id, String userEmail);
+
+    ApiResponse<?> cancelBookingRequest(UUID bookingRequestId, String userEmail);
 
 }
 

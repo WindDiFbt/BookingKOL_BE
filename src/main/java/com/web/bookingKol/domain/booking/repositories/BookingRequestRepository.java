@@ -14,6 +14,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -154,4 +155,7 @@ public interface BookingRequestRepository extends JpaRepository<BookingRequest, 
     boolean existsByCampaign_Id(UUID campaignId);
 
     List<BookingRequest> findByCampaign_Id(UUID campaignId);
+
+    Optional<BookingRequest> findFirstByCampaign_Id(UUID campaignId);
+
 }

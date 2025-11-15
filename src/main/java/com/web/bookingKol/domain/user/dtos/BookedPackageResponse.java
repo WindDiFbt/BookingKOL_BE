@@ -37,7 +37,10 @@ public class BookedPackageResponse {
 
     private Instant createdAt;
     private Instant updatedAt;
+
     private UUID bookingRequestId;
+    private UUID contractId;
+
 
 
 }
