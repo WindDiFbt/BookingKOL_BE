@@ -3,11 +3,13 @@ package com.web.bookingKol.domain.user.services.impl;
 import com.web.bookingKol.common.Enums;
 import com.web.bookingKol.common.PagedResponse;
 import com.web.bookingKol.common.payload.ApiResponse;
+import com.web.bookingKol.domain.booking.dtos.ContractPaymentScheduleResponse;
 import com.web.bookingKol.domain.booking.models.BookingPackageKol;
 import com.web.bookingKol.domain.booking.models.BookingRequest;
 import com.web.bookingKol.domain.booking.models.Campaign;
 import com.web.bookingKol.domain.booking.models.Contract;
 import com.web.bookingKol.domain.booking.repositories.BookingRequestRepository;
+import com.web.bookingKol.domain.booking.repositories.ContractPaymentScheduleRepository;
 import com.web.bookingKol.domain.booking.repositories.ContractRepository;
 import com.web.bookingKol.domain.user.dtos.BookedPackageResponse;
 import com.web.bookingKol.domain.user.dtos.KolInfo;
@@ -45,6 +47,7 @@ public class BookingUserServiceImpl implements BookingUserService {
     private final BookingRequestRepository bookingRequestRepository;
     private final ContractRepository contractRepository;
     private final CampaignRepository campaignRepository;
+    private final ContractPaymentScheduleRepository contractPaymentScheduleRepository;
 
     @Override
     public ApiResponse<PagedResponse<BookedPackageResponse>> getUserBookings(
@@ -96,6 +99,7 @@ public class BookingUserServiceImpl implements BookingUserService {
         Page<PurchasedServicePackage> page = purchasedRepo.findAll(spec, sortedPageable);
 
         Page<BookedPackageResponse> result = page.map(p -> {
+
             List<BookingPackageKol> links = bookingPackageKolRepository.findByPurchasedPackageId(p.getId());
 
             List<KolInfo> kols = links.stream()
@@ -104,7 +108,7 @@ public class BookingUserServiceImpl implements BookingUserService {
                             .id(l.getKol().getId())
                             .displayName(l.getKol().getDisplayName())
                             .build())
-                    .collect(Collectors.toList());
+                    .toList();
 
             List<KolInfo> lives = links.stream()
                     .filter(l -> "LIVE".equalsIgnoreCase(l.getRoleInBooking()))
@@ -112,10 +116,12 @@ public class BookingUserServiceImpl implements BookingUserService {
                             .id(l.getKol().getId())
                             .displayName(l.getKol().getDisplayName())
                             .build())
-                    .collect(Collectors.toList());
+                    .toList();
+
 
             UUID bookingRequestId = null;
             UUID contractId = null;
+            List<ContractPaymentScheduleResponse> paymentSchedules = List.of();
 
             if (p.getCampaign() != null) {
                 BookingRequest bookingRequest = bookingRequestRepository
@@ -131,15 +137,33 @@ public class BookingUserServiceImpl implements BookingUserService {
 
                     if (latestContract != null) {
                         contractId = latestContract.getId();
+
+                        paymentSchedules = contractPaymentScheduleRepository
+                                .findByContract_Id(latestContract.getId())
+                                .stream()
+                                .map(cps -> ContractPaymentScheduleResponse.builder()
+                                        .id(cps.getId())
+                                        .contractId(cps.getContract().getId())
+                                        .bookingRequestId(cps.getBookingRequest().getId())
+                                        .installmentNumber(cps.getInstallmentNumber())
+                                        .amount(cps.getAmount())
+                                        .dueDate(cps.getDueDate())
+                                        .status(cps.getStatus().name())
+                                        .createdAt(cps.getCreatedAt())
+                                        .updatedAt(cps.getUpdatedAt())
+                                        .build())
+                                .toList();
                     }
                 }
             }
+
 
             return BookedPackageResponse.builder()
                     .id(p.getId())
                     .campaignNumber(p.getCampaign() != null ? p.getCampaign().getCampaignNumber() : null)
                     .campaignName(p.getCampaign() != null ? p.getCampaign().getName() : null)
                     .campaignId(p.getCampaign() != null ? p.getCampaign().getId() : null)
+                    .campaignStatus(p.getCampaign() != null ? p.getCampaign().getStatus() : null)
                     .objective(p.getCampaign() != null ? p.getCampaign().getObjective() : null)
                     .targetPrice(p.getCampaign() != null ? p.getCampaign().getBudgetMax() : null)
                     .startDate(p.getCampaign() != null ? p.getCampaign().getStartDate() : null)
@@ -152,6 +176,7 @@ public class BookingUserServiceImpl implements BookingUserService {
                     .buyerEmail(p.getCampaign() != null && p.getCampaign().getCreatedBy() != null
                             ? p.getCampaign().getCreatedBy().getEmail()
                             : null)
+
                     .kols(kols)
                     .lives(lives)
                     .createdAt(p.getCreatedAt())
@@ -159,6 +184,9 @@ public class BookingUserServiceImpl implements BookingUserService {
 
                     .bookingRequestId(bookingRequestId)
                     .contractId(contractId)
+
+                    .paymentSchedules(paymentSchedules)
+
                     .build();
         });
 
@@ -168,6 +196,7 @@ public class BookingUserServiceImpl implements BookingUserService {
                 .data(PagedResponse.fromPage(result))
                 .build();
     }
+
 
 
 
